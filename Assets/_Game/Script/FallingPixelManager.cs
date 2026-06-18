@@ -35,6 +35,12 @@ namespace FruitSort
         [Tooltip("Tốc độ xoay tối đa của dot (độ/giây).")]
         public float maxSpin = 90f;
 
+        [Header("Bay thẳng vào băng chuyền (spawn từ model 3D)")]
+        [Tooltip("Tốc độ bay thẳng từ điểm spawn tới miệng băng chuyền (world unit/giây).")]
+        public float approachSpeed = 8f;
+        [Tooltip("Vị trí trên spline để các dot bay vào (0 = đầu băng, 1 = cuối băng).")]
+        [Range(0f, 1f)] public float spawnEntryProgress = 0f;
+
         [Header("Spatial grid / tách dot")]
         [Tooltip("Cell size = dotSize * hệ số này (~1.2). Ô ~ cỡ dot => mỗi ô vài dot.")]
         public float cellSizeMultiplier = 1.2f;
@@ -85,6 +91,38 @@ namespace FruitSort
             d.fallSpeed = 0f;
             d.targetBucket = null;
             d.markedForRemoval = false;
+            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+            d.spin = Random.Range(-maxSpin, maxSpin);
+            d.ApplyColor();
+            d.transform.SetParent(transform, true);
+            _dots.Add(d);
+        }
+
+        /// <summary>
+        /// Thêm 1 dot bay THẲNG từ vị trí hiện tại tới miệng băng chuyền rồi chạy như bình thường.
+        /// Dùng cho spawn từ model 3D (ModelDotSpawner).
+        /// </summary>
+        /// <param name="entryProgress">Progress (t, 0..1) trên spline để vào belt. NaN = dùng spawnEntryProgress.</param>
+        /// <param name="lateral">Lệch ngang khi vào belt. NaN = random trong bề rộng.</param>
+        public void AddDotApproaching(Dot d, float entryProgress = float.NaN, float lateral = float.NaN)
+        {
+            if (d == null) return;
+            if (_dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
+
+            float t = float.IsNaN(entryProgress) ? spawnEntryProgress : Mathf.Clamp01(entryProgress);
+            float lat = float.IsNaN(lateral)
+                ? ((conveyor != null) ? Random.Range(-conveyor.HalfWidth, conveyor.HalfWidth) : 0f)
+                : lateral;
+
+            d.state = DotState.Approaching;
+            d.fallSpeed = 0f;
+            d.targetBucket = null;
+            d.markedForRemoval = false;
+            d.beltEntryProgress = t;
+            d.entryLateral = lat;
+            d.approachTarget = (conveyor != null)
+                ? conveyor.GetPositionOnSpline(t, lat)
+                : d.transform.position;
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
             d.spin = Random.Range(-maxSpin, maxSpin);
             d.ApplyColor();
@@ -196,6 +234,9 @@ namespace FruitSort
 
                 switch (d.state)
                 {
+                    case DotState.Approaching:
+                        StepApproaching(d, sep, dt);
+                        break;
                     case DotState.Falling:
                         StepFalling(d, sep, dt);
                         break;
@@ -205,6 +246,37 @@ namespace FruitSort
                     case DotState.Attracting:
                         StepAttracting(d, dt);
                         break;
+                }
+            }
+        }
+
+        // Bay thẳng tới đích trên spline; tới nơi thì chuyển sang OnBelt.
+        void StepApproaching(Dot d, Vector2 sep, float dt)
+        {
+            // Đích có thể đổi nếu spline di chuyển -> cập nhật lại cho an toàn.
+            if (conveyor != null)
+                d.approachTarget = conveyor.GetPositionOnSpline(d.beltEntryProgress, d.entryLateral);
+
+            Vector3 pos = d.transform.position;
+            pos = Vector3.MoveTowards(pos, d.approachTarget, approachSpeed * dt);
+            // Tách nhẹ để các dot không chồng khít lên nhau khi bay theo bầy.
+            pos.x += sep.x;
+            pos.y += sep.y;
+            d.transform.position = pos;
+            d.transform.Rotate(0f, 0f, d.spin * dt);
+
+            if (Vector3.Distance(pos, d.approachTarget) <= dotSize * 0.5f)
+            {
+                if (conveyor != null)
+                {
+                    d.state = DotState.OnBelt;
+                    d.beltProgress = d.beltEntryProgress;
+                    d.lateralOffset = d.entryLateral;
+                    d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+                }
+                else
+                {
+                    d.markedForRemoval = true;
                 }
             }
         }
