@@ -315,17 +315,22 @@ namespace FruitSort
 
             // Tiến dọc spline theo tốc độ riêng.
             d.beltProgress += (beltSpeed * d.beltSpeedFactor / _splineLength) * dt;
+            if (d.beltProgress >= 1f) { d.markedForRemoval = true; return; } // hết băng -> xoá
 
-            // Phân tích lực đẩy tách thành: dọc spline (progress) và ngang (lateral).
-            Vector3 tan = conveyor.GetTangent(d.beltProgress);
+            // MỘT lần lấy mẫu spline (LUT): vị trí tâm + tiếp tuyến tại progress hiện tại.
+            // Thay cho 2 lần Container.Evaluate trước đây (GetTangent + GetPositionOnSpline).
+            if (!conveyor.TrySampleCenterline(d.beltProgress, out Vector3 center, out Vector3 tan))
+            { d.markedForRemoval = true; return; }
             Vector3 nrm = new Vector3(-tan.y, tan.x, 0f);
-            d.beltProgress += Vector2.Dot(sep, (Vector2)tan) / _splineLength;
+
+            // Phân tích lực đẩy tách thành: dọc spline (theo tiếp tuyến) và ngang (theo pháp tuyến).
+            float along = Vector2.Dot(sep, (Vector2)tan);             // world unit, theo hướng đi
+            d.beltProgress += along / _splineLength;                  // ghi nhận vào progress
             d.lateralOffset += Vector2.Dot(sep, (Vector2)nrm);
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -half, half); // clamp trong bề rộng
 
-            if (d.beltProgress >= 1f) { d.markedForRemoval = true; return; } // hết băng -> xoá
-
-            d.transform.position = conveyor.GetPositionOnSpline(d.beltProgress, d.lateralOffset);
+            // Vị trí = tâm + lệch ngang + nhích dọc (xấp xỉ bậc 1 — sep mỗi frame rất nhỏ nên đủ mượt).
+            d.transform.position = center + nrm * d.lateralOffset + tan * along;
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
             TryAttract(d);
