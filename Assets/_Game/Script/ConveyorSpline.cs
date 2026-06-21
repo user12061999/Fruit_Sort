@@ -19,8 +19,13 @@ namespace FruitSort
         [Tooltip("Bề rộng băng chuyền (world unit). Dùng để random vị trí ban đầu và clamp lệch ngang.")]
         public float beltWidth = 3f;
 
-        [Tooltip("Số điểm sample khi bake LUT. Cao hơn = mượt hơn nhưng tốn RAM/tải bake. 256 là đủ cho hầu hết băng chuyền.")]
-        [Min(2)] public int bakeResolution = 256;
+        [Tooltip("Số điểm sample khi bake LUT. Cao hơn = mượt hơn nhưng tốn RAM/tải bake. 64-128 là đủ cho hầu hết băng chuyền.")]
+        [Min(2)] public int bakeResolution = 96;
+
+        [Tooltip("Lúc PLAY có tự bake lại khi transform băng chuyền đổi không? " +
+                 "TẮT (mặc định) = chỉ bake 1 lần -> tránh re-bake 256 evaluate mỗi frame nếu hasChanged bị bật. " +
+                 "Bật nếu băng chuyền THỰC SỰ di chuyển lúc chơi.")]
+        public bool autoRebakeAtRuntime = false;
 
         SplineContainer _container;
         public SplineContainer Container
@@ -45,7 +50,11 @@ namespace FruitSort
 
         void Update()
         {
-            // Băng chuyền di chuyển/quay -> LUT (world space) cần tính lại.
+            // Lúc PLAY: mặc định KHÔNG auto re-bake để tránh 256 evaluate/frame nếu hasChanged
+            // bị bật liên tục. Băng chuyền tĩnh -> bake 1 lần ở Awake/OnEnable là đủ.
+            if (Application.isPlaying && !autoRebakeAtRuntime) return;
+
+            // Editor (chỉnh spline) hoặc khi bật autoRebakeAtRuntime: re-bake khi transform đổi.
             if (transform.hasChanged)
             {
                 Bake();

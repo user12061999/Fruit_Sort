@@ -1,12 +1,15 @@
 using UnityEngine;
+using DG.Tweening;
 
 namespace FruitSort
 {
     /// <summary>
     /// Thùng phân loại: có ID màu và tỉ lệ Fill (cần maxFill dot để đầy).
-    /// Chỉ hút dot CÙNG MÀU khi dot đi vào attractRadius. Đầy 100% -> biến mất.
-    /// Cho phép nhiều bucket cùng màu.
+    /// Dot CÙNG MÀU đi vào VÙNG VA CHẠM (Collider2D chỉnh trong editor) sẽ bị hút vào và
+    /// fill dần SPRITE chính của thùng (qua shader FruitSort/SpriteFill, _FillAmount).
+    /// Đầy 100% -> punch scale (DOTween) -> Destroy. Cho phép nhiều bucket cùng màu.
     /// </summary>
+    [RequireComponent(typeof(SpriteRenderer))]
     public class Bucket : MonoBehaviour
     {
         [Header("Identity")]
@@ -19,30 +22,46 @@ namespace FruitSort
         public int maxFill = 5;
         public int currentFill = 0;
 
+        [Header("Vùng va chạm (chỉnh trong editor)")]
+        [Tooltip("Collider2D làm vùng phát hiện dot. Để trống = tự lấy Collider2D trên object, " +
+                 "không có thì fallback dùng attractRadius. Nên đặt 'Is Trigger' = true.")]
+        public Collider2D zone;
+        [Tooltip("Bán kính hút dự phòng khi KHÔNG gán zone.")]
+        public float attractRadius = 1.2f;
+        [Tooltip("Kiểm tra chính xác theo hình collider (OverlapPoint, có gọi Physics2D). " +
+                 "TẮT (mặc định) = chỉ kiểm tra AABB bounds, rẻ hơn nhiều, hợp cho zone hình hộp.")]
+        public bool precisePointTest = false;
+
         [Header("Hút dot")]
         [Tooltip("Điểm hút (miệng thùng). Để trống = dùng vị trí của bucket.")]
         public Transform mouth;
-        [Tooltip("Tầm gần để bắt đầu hút dot.")]
-        public float attractRadius = 1.2f;
         [Tooltip("Tốc độ kéo dot vào (world unit/giây).")]
         public float attractSpeed = 6f;
 
-        [Header("Hiển thị (tuỳ chọn)")]
-        [Tooltip("Sprite chính của bucket (để tô màu). Để trống sẽ tự lấy SpriteRenderer.")]
+        [Header("Hiển thị")]
+        [Tooltip("Sprite chính của bucket (sẽ fill dần). Để trống sẽ tự lấy SpriteRenderer.")]
         public SpriteRenderer body;
-        [Tooltip("Thanh fill: scale Y theo % đầy.")]
+        [Tooltip("Thanh fill phụ (tuỳ chọn): scale Y theo % đầy.")]
         public Transform fillBar;
-        [Tooltip("Đầy thì Destroy (true) hay chỉ tắt (false).")]
-        public bool destroyOnFull = false;
 
-        public bool IsActive => isActiveAndEnabled && currentFill < maxFill;
+        [Header("Hành động khi đầy")]
+        [Tooltip("Cường độ punch scale khi đầy.")]
+        public float punchScale = 0.35f;
+        [Tooltip("Thời lượng punch trước khi destroy.")]
+        public float punchDuration = 0.4f;
+
+        // ---- runtime ----
+        MaterialPropertyBlock _mpb;
+        static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
+        bool _full;
+
+        public bool IsActive => isActiveAndEnabled && !_full && currentFill < maxFill;
         public float FillRatio => maxFill > 0 ? Mathf.Clamp01(currentFill / (float)maxFill) : 1f;
         public Vector3 MouthPosition => mouth != null ? mouth.position : transform.position;
 
         void OnEnable()
         {
             ApplyVisual();
-            // Tự đăng ký với manager (manager có thể chưa sẵn -> Start sẽ thử lại).
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.RegisterBucket(this);
         }
 
@@ -56,48 +75,84 @@ namespace FruitSort
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
         }
 
-        /// <summary>Tăng fill. Đầy -> thông báo GameManager rồi biến mất.</summary>
+        /// <summary>Dot ở world position này có nằm trong vùng bắt của bucket không?</summary>
+        public bool Contains(Vector3 worldPos)
+        {
+            if (zone != null)
+            {
+                // Đường nhanh: AABB bounds (chỉ là so sánh số, KHÔNG gọi Physics2D).
+                if (!zone.bounds.Contains(new Vector3(worldPos.x, worldPos.y, zone.bounds.center.z)))
+                    return false;
+                // Chỉ khi đã trong AABB mới (tuỳ chọn) test chính xác theo hình.
+                return !precisePointTest || zone.OverlapPoint(worldPos);
+            }
+            // Không có zone: dùng bình phương khoảng cách (tránh Sqrt).
+            float dx = worldPos.x - MouthPosition.x;
+            float dy = worldPos.y - MouthPosition.y;
+            return dx * dx + dy * dy <= attractRadius * attractRadius;
+        }
+
+        /// <summary>Tăng fill. Đầy -> punch scale rồi Destroy.</summary>
         public void AddFill(int n)
         {
-            if (currentFill >= maxFill) return;
+            if (_full || currentFill >= maxFill) return;
             currentFill = Mathf.Min(maxFill, currentFill + Mathf.Max(1, n));
-            UpdateFillBar();
+            UpdateFillVisual();
 
-            if (currentFill >= maxFill)
-            {
-                if (GameManager.Instance != null) GameManager.Instance.OnBucketFilled(this);
-                if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
+            if (currentFill >= maxFill) DoFull();
+        }
 
-                if (destroyOnFull) Destroy(gameObject);
-                else gameObject.SetActive(false);
-            }
+        void DoFull()
+        {
+            _full = true;
+            if (GameManager.Instance != null) GameManager.Instance.OnBucketFilled(this);
+            if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
+
+            // Hành động: punch scale rồi destroy.
+            transform.DOKill();
+            transform.DOPunchScale(Vector3.one * punchScale, punchDuration, 8, 0.8f)
+                     .SetUpdate(false)
+                     .OnComplete(() => Destroy(gameObject));
         }
 
         void ApplyVisual()
         {
             if (body == null) body = GetComponent<SpriteRenderer>();
             if (body != null) body.color = color;
-            UpdateFillBar();
+            UpdateFillVisual();
         }
 
-        void UpdateFillBar()
+        void UpdateFillVisual()
         {
-            if (fillBar == null) return;
-            Vector3 s = fillBar.localScale;
-            s.y = FillRatio;
-            fillBar.localScale = s;
+            // Fill chính sprite qua MaterialPropertyBlock (không tạo material instance, không leak).
+            if (body != null)
+            {
+                if (_mpb == null) _mpb = new MaterialPropertyBlock();
+                body.GetPropertyBlock(_mpb);
+                _mpb.SetFloat(FillAmountID, FillRatio);
+                body.SetPropertyBlock(_mpb);
+            }
+
+            // Thanh fill phụ tuỳ chọn.
+            if (fillBar != null)
+            {
+                Vector3 s = fillBar.localScale;
+                s.y = FillRatio;
+                fillBar.localScale = s;
+            }
         }
 
         void OnValidate()
         {
             if (body == null) body = GetComponent<SpriteRenderer>();
+            if (zone == null) zone = GetComponent<Collider2D>();
             if (body != null) body.color = color;
         }
 
         void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(color.r, color.g, color.b, 0.4f);
-            Gizmos.DrawWireSphere(MouthPosition, attractRadius);
+            if (zone == null) Gizmos.DrawWireSphere(MouthPosition, attractRadius);
         }
     }
 }

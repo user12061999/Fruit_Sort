@@ -44,6 +44,9 @@ namespace FruitSort
         [System.NonSerialized] public float beltEntryProgress;    // progress (t) sẽ vào belt khi tới đích
         [System.NonSerialized] public float entryLateral;         // lệch ngang khi vào belt
 
+        // Băng chuyền dot đang chạy trên đó (đổi khi đi qua liên kết sang băng kế). Không serialize.
+        [System.NonSerialized] public ConveyorSpline conveyor;
+
         // Hệ số tốc độ riêng từng dot để tạo nhiễu (set khi lên belt). Không serialize.
         [System.NonSerialized] public float beltSpeedFactor = 1f;
         // Cờ đánh dấu để xoá an toàn bằng for-loop ngược. Không serialize.

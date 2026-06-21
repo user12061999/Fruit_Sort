@@ -37,9 +37,12 @@ namespace FruitSort
             RefreshUI();
         }
 
+        // Cache để chỉ ghi .text khi giá trị đổi (tránh GC chuỗi + Canvas rebuild mỗi frame).
+        int _lastScore = int.MinValue, _lastDotsLeft = int.MinValue, _lastOnBelt = int.MinValue;
+
         void Update()
         {
-            RefreshUI(); // số dot biến động liên tục -> cập nhật mỗi frame
+            RefreshUI(); // chỉ thực sự ghi .text khi có thay đổi
         }
 
         /// <summary>Gọi khi 1 dot được hút vào bucket.</summary>
@@ -56,9 +59,21 @@ namespace FruitSort
 
         void RefreshUI()
         {
-            if (scoreText != null) scoreText.text = $"Score: {score}";
-            if (dotsLeftText != null && gridManager != null) dotsLeftText.text = $"Dots: {gridManager.AliveCount}";
-            if (onBeltText != null && fallingManager != null) onBeltText.text = $"On belt: {fallingManager.ActiveCount}";
+            if (scoreText != null && score != _lastScore)
+            {
+                scoreText.text = $"Score: {score}";
+                _lastScore = score;
+            }
+            if (dotsLeftText != null && gridManager != null)
+            {
+                int v = gridManager.AliveCount;
+                if (v != _lastDotsLeft) { dotsLeftText.text = $"Dots: {v}"; _lastDotsLeft = v; }
+            }
+            if (onBeltText != null && fallingManager != null)
+            {
+                int v = fallingManager.ActiveCount;
+                if (v != _lastOnBelt) { onBeltText.text = $"On belt: {v}"; _lastOnBelt = v; }
+            }
         }
     }
 }

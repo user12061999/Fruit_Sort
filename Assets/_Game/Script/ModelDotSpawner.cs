@@ -1,13 +1,16 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem; // Project dùng Input System (New)
+using DG.Tweening;
 
 namespace FruitSort
 {
     /// <summary>
-    /// Gắn lên 1 MODEL 3D. Khi click (chuột trái) trúng model -> sinh ra N dot có màu
-    /// tại vị trí model, các dot bay THẲNG vào băng chuyền (spline) rồi chạy như bình thường.
-    /// Số lượng dot mỗi lần spawn cấu hình qua <see cref="spawnCount"/>.
+    /// "GÓI" (package) hiển thị bằng 1 SpriteRenderer. Mỗi lần click vào sprite:
+    /// - Sinh ra spawnCount dot bay vào băng chuyền (như cũ).
+    /// - Sprite VƠI đi 1 phần (qua shader FruitSort/SpriteFill, _FillAmount giảm dần 1 -> 0).
+    /// Click đủ totalClicks lần -> gói rỗng -> gọi onDepleted (UnityEvent) -> fade out -> ẩn.
     /// </summary>
     public class ModelDotSpawner : MonoBehaviour
     {
@@ -16,12 +19,18 @@ namespace FruitSort
         public Dot dotPrefab;
         [Tooltip("Để trống = tự dùng FallingPixelManager.Instance.")]
         public FallingPixelManager fallingManager;
-        [Tooltip("Camera dùng để raycast click. Để trống = Camera.main.")]
+        [Tooltip("Camera dùng để quy đổi vị trí click. Để trống = Camera.main.")]
         public Camera cam;
-        [Tooltip("Collider của model để nhận click. Để trống = lấy Collider trên chính object này.")]
-        public Collider modelCollider;
+        [Tooltip("Sprite của GÓI (sẽ vơi dần). Để trống = tự lấy SpriteRenderer trên object này.")]
+        public SpriteRenderer packageSprite;
 
-        [Header("Cấu hình spawn")]
+        [Header("Gói (package)")]
+        [Tooltip("Số lần click để gói rỗng hẳn.")]
+        [Min(1)] public int totalClicks = 5;
+        [Tooltip("Số click còn lại (chỉ đọc tham khảo lúc play).")]
+        public int clicksLeftDebug;
+
+        [Header("Cấu hình spawn (mỗi lần click)")]
         [Tooltip("SỐ LƯỢNG dot sinh ra mỗi lần click.")]
         [Min(1)] public int spawnCount = 10;
         [Tooltip("Điểm gốc spawn. Để trống = vị trí của object này.")]
@@ -40,6 +49,12 @@ namespace FruitSort
         public bool overrideEntry = false;
         [Range(0f, 1f)] public float entryProgress = 0f;
 
+        [Header("Khi gói rỗng")]
+        [Tooltip("Hàm chạy khi click hết gói (kéo-thả trong Inspector).")]
+        public UnityEvent onDepleted;
+        [Tooltip("Thời gian fade out trước khi ẩn gói.")]
+        public float fadeOutDuration = 0.35f;
+
         [Header("Màu")]
         [Tooltip("Bảng màu. Index = colorId (khớp với colorId của Bucket).")]
         public Color[] palette = new Color[]
@@ -52,18 +67,31 @@ namespace FruitSort
         [Tooltip("Cố định 1 colorId (>=0) cho mọi dot. -1 = random theo palette.")]
         public int fixedColorId = -1;
 
+        // ---- runtime ----
+        int _clicksLeft;
+        bool _depleted;
         bool _wasPressed;
+        MaterialPropertyBlock _mpb;
+        static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
 
         void Awake()
         {
             if (cam == null) cam = Camera.main;
-            if (modelCollider == null) modelCollider = GetComponent<Collider>();
+            if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
             if (fallingManager == null) fallingManager = FallingPixelManager.Instance;
+        }
+
+        void OnEnable()
+        {
+            _clicksLeft = Mathf.Max(1, totalClicks);
+            _depleted = false;
+            clicksLeftDebug = _clicksLeft;
+            UpdateFillVisual();
         }
 
         void Update()
         {
-            if (Mouse.current == null) return;
+            if (_depleted || Mouse.current == null) return;
 
             bool pressed = Mouse.current.leftButton.isPressed;
             // Chỉ kích hoạt ở frame NHẤN XUỐNG (edge), tránh spawn liên tục khi giữ chuột.
@@ -74,23 +102,65 @@ namespace FruitSort
         void TryClick()
         {
             if (cam == null) cam = Camera.main;
-            if (cam == null) return;
+            if (cam == null || packageSprite == null) return;
 
+            // Quy đổi vị trí chuột về mặt phẳng z của sprite, rồi kiểm tra bounds (không cần collider).
             Vector3 mp = Mouse.current.position.ReadValue();
             Ray ray = cam.ScreenPointToRay(mp);
+            float zPlane = packageSprite.transform.position.z;
 
-            // Có collider riêng -> chỉ test collider đó (chính xác, không vướng object khác).
-            if (modelCollider != null)
+            Vector3 world;
+            if (Mathf.Abs(ray.direction.z) < 1e-6f) world = ray.origin;
+            else world = ray.origin + ray.direction * ((zPlane - ray.origin.z) / ray.direction.z);
+
+            Bounds b = packageSprite.bounds;
+            if (world.x >= b.min.x && world.x <= b.max.x && world.y >= b.min.y && world.y <= b.max.y)
+                DoClick();
+        }
+
+        /// <summary>1 lần click vào gói: spawn dot + vơi sprite. Có thể gọi từ UI button nếu muốn.</summary>
+        public void DoClick()
+        {
+            if (_depleted) return;
+
+            Spawn();
+
+            _clicksLeft = Mathf.Max(0, _clicksLeft - 1);
+            clicksLeftDebug = _clicksLeft;
+            UpdateFillVisual();
+
+            if (_clicksLeft <= 0) Deplete();
+        }
+
+        void Deplete()
+        {
+            _depleted = true;
+            onDepleted?.Invoke();
+
+            // Fade out rồi ẩn.
+            if (packageSprite != null && fadeOutDuration > 0f)
             {
-                if (modelCollider.Raycast(ray, out _, 1000f)) Spawn();
+                packageSprite.DOFade(0f, fadeOutDuration)
+                             .OnComplete(() => gameObject.SetActive(false));
             }
-            else if (Physics.Raycast(ray, out RaycastHit hit, 1000f) && hit.transform == transform)
+            else
             {
-                Spawn();
+                gameObject.SetActive(false);
             }
         }
 
-        /// <summary>Sinh loạt dot (có thể gọi từ code/UI button khác nếu muốn).</summary>
+        void UpdateFillVisual()
+        {
+            if (packageSprite == null) return;
+            float fill = totalClicks > 0 ? Mathf.Clamp01(_clicksLeft / (float)totalClicks) : 0f;
+
+            if (_mpb == null) _mpb = new MaterialPropertyBlock();
+            packageSprite.GetPropertyBlock(_mpb);
+            _mpb.SetFloat(FillAmountID, fill);
+            packageSprite.SetPropertyBlock(_mpb);
+        }
+
+        /// <summary>Sinh loạt dot (1 lần click).</summary>
         public void Spawn()
         {
             if (spawnInterval <= 0f)

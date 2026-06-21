@@ -61,7 +61,6 @@ namespace FruitSort
         readonly List<Vector2> _push = new List<Vector2>(512);
 
         float _cellSize = 0.6f;
-        float _splineLength = 1f;
 
         public int ActiveCount => _dots.Count;
 
@@ -74,7 +73,6 @@ namespace FruitSort
         void Start()
         {
             _cellSize = Mathf.Max(0.01f, dotSize * cellSizeMultiplier);
-            if (conveyor != null) _splineLength = conveyor.GetSplineLength();
         }
 
         // ---- Đăng ký bucket (Bucket tự gọi khi bật/tắt) ----
@@ -136,7 +134,6 @@ namespace FruitSort
             if (dt <= 0f || _dots.Count == 0) return;
 
             _cellSize = Mathf.Max(0.01f, dotSize * cellSizeMultiplier);
-            if (conveyor != null) _splineLength = conveyor.GetSplineLength();
 
             BuildGrid();          // 1) dựng lưới không gian
             ComputeSeparation();  // 2) tính lực đẩy tách cho từng dot
@@ -225,8 +222,6 @@ namespace FruitSort
 
         void MoveDots(float dt)
         {
-            float half = (conveyor != null) ? conveyor.HalfWidth - dotSize * 0.5f : 0f;
-
             for (int i = 0; i < _dots.Count; i++)
             {
                 Dot d = _dots[i];
@@ -241,7 +236,7 @@ namespace FruitSort
                         StepFalling(d, sep, dt);
                         break;
                     case DotState.OnBelt:
-                        StepOnBelt(d, sep, half, dt);
+                        StepOnBelt(d, sep, dt);
                         break;
                     case DotState.Attracting:
                         StepAttracting(d, dt);
@@ -270,6 +265,7 @@ namespace FruitSort
                 if (conveyor != null)
                 {
                     d.state = DotState.OnBelt;
+                    d.conveyor = conveyor;
                     d.beltProgress = d.beltEntryProgress;
                     d.lateralOffset = d.entryLateral;
                     d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
@@ -297,6 +293,7 @@ namespace FruitSort
                 {
                     // Lên băng chuyền tại vị trí ngang RANDOM trong bề rộng.
                     d.state = DotState.OnBelt;
+                    d.conveyor = conveyor;
                     d.beltProgress = 0f;
                     d.lateralOffset = Random.Range(-conveyor.HalfWidth, conveyor.HalfWidth);
                     d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
@@ -309,23 +306,32 @@ namespace FruitSort
             }
         }
 
-        void StepOnBelt(Dot d, Vector2 sep, float half, float dt)
+        void StepOnBelt(Dot d, Vector2 sep, float dt)
         {
-            if (conveyor == null) { d.markedForRemoval = true; return; }
+            if (d.conveyor == null) d.conveyor = conveyor;
+            if (d.conveyor == null) { d.markedForRemoval = true; return; }
+
+            float length = Mathf.Max(0.01f, d.conveyor.GetSplineLength());
+            float half = d.conveyor.HalfWidth - dotSize * 0.5f;
 
             // Tiến dọc spline theo tốc độ riêng.
-            d.beltProgress += (beltSpeed * d.beltSpeedFactor / _splineLength) * dt;
-            if (d.beltProgress >= 1f) { d.markedForRemoval = true; return; } // hết băng -> xoá
+            d.beltProgress += (beltSpeed * d.beltSpeedFactor / length) * dt;
+            if (d.beltProgress >= 1f)
+            {
+                // Hết băng: đi tiếp sang băng được nối (nếu có), nếu không thì xoá.
+                if (!AdvanceToNext(d)) { d.markedForRemoval = true; }
+                return;
+            }
 
             // MỘT lần lấy mẫu spline (LUT): vị trí tâm + tiếp tuyến tại progress hiện tại.
             // Thay cho 2 lần Container.Evaluate trước đây (GetTangent + GetPositionOnSpline).
-            if (!conveyor.TrySampleCenterline(d.beltProgress, out Vector3 center, out Vector3 tan))
+            if (!d.conveyor.TrySampleCenterline(d.beltProgress, out Vector3 center, out Vector3 tan))
             { d.markedForRemoval = true; return; }
             Vector3 nrm = new Vector3(-tan.y, tan.x, 0f);
 
             // Phân tích lực đẩy tách thành: dọc spline (theo tiếp tuyến) và ngang (theo pháp tuyến).
             float along = Vector2.Dot(sep, (Vector2)tan);             // world unit, theo hướng đi
-            d.beltProgress += along / _splineLength;                  // ghi nhận vào progress
+            d.beltProgress += along / length;                        // ghi nhận vào progress
             d.lateralOffset += Vector2.Dot(sep, (Vector2)nrm);
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -half, half); // clamp trong bề rộng
 
@@ -334,6 +340,35 @@ namespace FruitSort
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
             TryAttract(d);
+        }
+
+        /// <summary>
+        /// Khi dot chạy hết băng hiện tại: chuyển sang băng được nối qua <see cref="ConveyorConnections"/>.
+        /// Nhiều nhánh (splitter) -> chọn ngẫu nhiên. Trả về false nếu không có băng kế (đích cuối).
+        /// </summary>
+        bool AdvanceToNext(Dot d)
+        {
+            if (d.conveyor == null) return false;
+            var conn = d.conveyor.GetComponent<ConveyorConnections>();
+            if (conn == null || conn.next == null || conn.next.Count == 0) return false;
+
+            // Lọc nhánh hợp lệ rồi chọn ngẫu nhiên.
+            ConveyorSpline pick = null;
+            int valid = 0;
+            for (int i = 0; i < conn.next.Count; i++)
+            {
+                var nx = conn.next[i];
+                if (nx == null) continue;
+                valid++;
+                if (Random.Range(0, valid) == 0) pick = nx; // reservoir sampling -> phân bố đều
+            }
+            if (pick == null) return false;
+
+            d.conveyor = pick;
+            d.beltProgress = 0f;
+            d.lateralOffset = Mathf.Clamp(d.lateralOffset, -pick.HalfWidth, pick.HalfWidth);
+            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+            return true;
         }
 
         void StepAttracting(Dot d, float dt)
@@ -360,7 +395,8 @@ namespace FruitSort
             {
                 Bucket b = _buckets[i];
                 if (b == null || !b.IsActive || b.colorId != d.colorId) continue;
-                if (Vector3.Distance(d.transform.position, b.MouthPosition) <= b.attractRadius)
+                // Phát hiện theo VÙNG VA CHẠM (Collider2D) của bucket, fallback bán kính nếu chưa gán zone.
+                if (b.Contains(d.transform.position))
                 {
                     d.state = DotState.Attracting;
                     d.targetBucket = b;
