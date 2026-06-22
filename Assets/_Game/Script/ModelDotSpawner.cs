@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem; // Project dùng Input System (New)
@@ -71,8 +72,20 @@ namespace FruitSort
         int _clicksLeft;
         bool _depleted;
         bool _wasPressed;
+
+        /// <summary>Spawner đã rỗng gói chưa.</summary>
+        public bool IsDepleted => _depleted;
+
+        /// <summary>Bật khi spawner được 1 ModelDotSpawnerColumn quản lý: nó sẽ KHÔNG tự xử lý
+        /// click nữa (cột sẽ gọi DoClick thay).</summary>
+        [System.NonSerialized] public bool managedExternally;
         MaterialPropertyBlock _mpb;
         static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
+
+        // Mọi spawner đang bật. Click được xử lý TẬP TRUNG (1 lần/frame) để khi nhiều
+        // spawner chồng nhau, CHỈ cái trên cùng (theo sorting order của sprite) spawn.
+        static readonly List<ModelDotSpawner> s_all = new List<ModelDotSpawner>();
+        static int s_lastClickFrame = -1;
 
         void Awake()
         {
@@ -87,26 +100,61 @@ namespace FruitSort
             _depleted = false;
             clicksLeftDebug = _clicksLeft;
             UpdateFillVisual();
+            if (!s_all.Contains(this)) s_all.Add(this);
+        }
+
+        void OnDisable()
+        {
+            s_all.Remove(this);
         }
 
         void Update()
         {
-            if (_depleted || Mouse.current == null) return;
+            // Cột quản lý -> không tự xử lý click.
+            if (managedExternally) return;
+            if (Mouse.current == null) return;
 
             bool pressed = Mouse.current.leftButton.isPressed;
             // Chỉ kích hoạt ở frame NHẤN XUỐNG (edge), tránh spawn liên tục khi giữ chuột.
-            if (pressed && !_wasPressed) TryClick();
+            // Xử lý TẬP TRUNG: bất kỳ instance nào phát hiện edge cũng gọi handler chung,
+            // handler tự bảo đảm chỉ chạy 1 lần/frame.
+            if (pressed && !_wasPressed) HandleGlobalClick();
             _wasPressed = pressed;
         }
 
-        void TryClick()
+        /// <summary>
+        /// Xử lý 1 cú click (1 lần/frame cho mọi spawner): tìm spawner TRÊN CÙNG mà con trỏ
+        /// nằm trong bounds rồi chỉ gọi DoClick() cho nó. "Trên cùng" = sortingLayer cao hơn,
+        /// rồi sortingOrder cao hơn, rồi z nhỏ hơn (gần camera).
+        /// </summary>
+        static void HandleGlobalClick()
+        {
+            if (s_lastClickFrame == Time.frameCount) return; // đã xử lý frame này rồi
+            s_lastClickFrame = Time.frameCount;
+
+            if (Mouse.current == null) return;
+            Vector3 screenPos = Mouse.current.position.ReadValue();
+
+            ModelDotSpawner best = null;
+            for (int i = 0; i < s_all.Count; i++)
+            {
+                var s = s_all[i];
+                if (s == null || s._depleted || s.managedExternally || !s.isActiveAndEnabled) continue;
+                if (!s.HitTest(screenPos)) continue;
+                if (best == null || s.IsAbove(best)) best = s;
+            }
+
+            if (best != null) best.DoClick();
+        }
+
+        /// <summary>Con trỏ (screen) có nằm trong bounds sprite của gói này không?</summary>
+        public bool HitTest(Vector3 screenPos)
         {
             if (cam == null) cam = Camera.main;
-            if (cam == null || packageSprite == null) return;
+            if (cam == null || packageSprite == null) return false;
 
             // Quy đổi vị trí chuột về mặt phẳng z của sprite, rồi kiểm tra bounds (không cần collider).
-            Vector3 mp = Mouse.current.position.ReadValue();
-            Ray ray = cam.ScreenPointToRay(mp);
+            Ray ray = cam.ScreenPointToRay(screenPos);
             float zPlane = packageSprite.transform.position.z;
 
             Vector3 world;
@@ -114,8 +162,24 @@ namespace FruitSort
             else world = ray.origin + ray.direction * ((zPlane - ray.origin.z) / ray.direction.z);
 
             Bounds b = packageSprite.bounds;
-            if (world.x >= b.min.x && world.x <= b.max.x && world.y >= b.min.y && world.y <= b.max.y)
-                DoClick();
+            return world.x >= b.min.x && world.x <= b.max.x && world.y >= b.min.y && world.y <= b.max.y;
+        }
+
+        /// <summary>Gói này có nằm TRÊN gói 'other' theo thứ tự vẽ 2D không?</summary>
+        bool IsAbove(ModelDotSpawner other)
+        {
+            if (other == null || other.packageSprite == null) return true;
+            if (packageSprite == null) return false;
+
+            int la = SortingLayer.GetLayerValueFromID(packageSprite.sortingLayerID);
+            int lb = SortingLayer.GetLayerValueFromID(other.packageSprite.sortingLayerID);
+            if (la != lb) return la > lb;
+
+            if (packageSprite.sortingOrder != other.packageSprite.sortingOrder)
+                return packageSprite.sortingOrder > other.packageSprite.sortingOrder;
+
+            // Hoà sorting -> z nhỏ hơn (gần camera hơn) coi như ở trên.
+            return packageSprite.transform.position.z < other.packageSprite.transform.position.z;
         }
 
         /// <summary>1 lần click vào gói: spawn dot + vơi sprite. Có thể gọi từ UI button nếu muốn.</summary>

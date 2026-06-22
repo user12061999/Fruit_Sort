@@ -18,8 +18,8 @@ namespace FruitSort
         public ConveyorSpline conveyor;
 
         [Header("Sức chứa & kích thước")]
-        [Tooltip("Số dot tối đa xử lý đồng thời. Vượt trần sẽ bỏ bớt dot mới.")]
-        public int maxDots = 500;
+        [Tooltip("Số dot tối đa xử lý đồng thời. Vượt trần sẽ bỏ bớt dot mới. <= 0 = KHÔNG giới hạn.")]
+        public int maxDots = 0;
         [Tooltip("Kích thước 1 dot (world). Dùng cho cell size của grid & khoảng cách tách.")]
         public float dotSize = 0.5f;
 
@@ -83,7 +83,7 @@ namespace FruitSort
         public void AddDot(Dot d)
         {
             if (d == null) return;
-            if (_dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
+            if (maxDots > 0 && _dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
 
             d.state = DotState.Falling;
             d.fallSpeed = 0f;
@@ -105,7 +105,7 @@ namespace FruitSort
         public void AddDotApproaching(Dot d, float entryProgress = float.NaN, float lateral = float.NaN)
         {
             if (d == null) return;
-            if (_dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
+            if (maxDots > 0 && _dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
 
             float t = float.IsNaN(entryProgress) ? spawnEntryProgress : Mathf.Clamp01(entryProgress);
             float lat = float.IsNaN(lateral)
@@ -253,14 +253,20 @@ namespace FruitSort
                 d.approachTarget = conveyor.GetPositionOnSpline(d.beltEntryProgress, d.entryLateral);
 
             Vector3 pos = d.transform.position;
-            pos = Vector3.MoveTowards(pos, d.approachTarget, approachSpeed * dt);
-            // Tách nhẹ để các dot không chồng khít lên nhau khi bay theo bầy.
-            pos.x += sep.x;
-            pos.y += sep.y;
-            d.transform.position = pos;
+            Vector3 moved = Vector3.MoveTowards(pos, d.approachTarget, approachSpeed * dt);
+            float dMoved = Vector3.Distance(moved, d.approachTarget);
+
+            // Tách nhẹ để các dot không chồng khít khi bay theo bầy, NHƯNG không cho tách đẩy
+            // dot ra XA target hơn 'moved'. Nhờ vậy khoảng cách tới đích giảm đều mỗi frame
+            // (luôn tiến tới và CHẮC CHẮN tới nơi) -> không còn dot kẹt lởn vởn ở cửa vào.
+            Vector3 withSep = moved + new Vector3(sep.x, sep.y, 0f);
+            if (dMoved > 1e-4f && Vector3.Distance(withSep, d.approachTarget) > dMoved)
+                withSep = d.approachTarget + (withSep - d.approachTarget).normalized * dMoved;
+
+            d.transform.position = withSep;
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
-            if (Vector3.Distance(pos, d.approachTarget) <= dotSize * 0.5f)
+            if (dMoved <= dotSize * 0.5f)
             {
                 if (conveyor != null)
                 {
@@ -330,7 +336,10 @@ namespace FruitSort
             Vector3 nrm = new Vector3(-tan.y, tan.x, 0f);
 
             // Phân tích lực đẩy tách thành: dọc spline (theo tiếp tuyến) và ngang (theo pháp tuyến).
-            float along = Vector2.Dot(sep, (Vector2)tan);             // world unit, theo hướng đi
+            // CHẶN tách dọc đẩy NGƯỢC chiều đi (along < 0): nếu cho âm, dot bị các dot phía trước
+            // đẩy lùi -> beltProgress gần như đứng yên -> "di chuyển rất chậm" khi đông. Chỉ cho
+            // tách dọc đẩy TIẾN (along > 0, giúp giãn đám về phía trước); tách NGANG giữ nguyên.
+            float along = Mathf.Max(0f, Vector2.Dot(sep, (Vector2)tan)); // world unit, theo hướng đi
             d.beltProgress += along / length;                        // ghi nhận vào progress
             d.lateralOffset += Vector2.Dot(sep, (Vector2)nrm);
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -half, half); // clamp trong bề rộng
