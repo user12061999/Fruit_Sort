@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace FruitSort
 {
@@ -53,6 +56,18 @@ namespace FruitSort
         {
             EnsureComponents();
             BuildMesh();
+        }
+
+        void OnValidate()
+        {
+            // Rebuild mesh khi sửa field trên Inspector (segments, zOffset, tilesAcrossWidth...)
+            if (this == null || !Application.isPlaying)
+            {
+                BuildMesh();
+#if UNITY_EDITOR
+                SceneView.RepaintAll();
+#endif
+            }
         }
 
         void OnDisable()

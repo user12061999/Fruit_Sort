@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.coplaydev.unity-mcp": "file:C:/Users/user1/OneDrive/Máy tính/unity-mcp-beta/unity-mcp-beta/MCPForUnity",
+    "com.coplaydev.unity-mcp": "file:D:/unity-mcp-beta/MCPForUnity",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.collab-proxy": "2.12.4",

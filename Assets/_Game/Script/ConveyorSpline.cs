@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace FruitSort
 {
@@ -18,6 +21,7 @@ namespace FruitSort
     /// CHỈ bo cong (fillet) tại các góc với bán kính cornerRadius. Tắt straightEdges để dùng
     /// đường cong Bezier gốc của spline.
     /// </summary>
+    [ExecuteAlways]
     [RequireComponent(typeof(SplineContainer))]
     public class ConveyorSpline : MonoBehaviour
     {
@@ -67,6 +71,18 @@ namespace FruitSort
         void Awake() { Bake(); }
 
         void OnEnable() { Bake(); }
+
+        void OnValidate()
+        {
+            // Re-bake khi sửa field trên Inspector (beltWidth, bakeResolution, cornerRadius...)
+            if (this == null || !Application.isPlaying)
+            {
+                Bake();
+#if UNITY_EDITOR
+                SceneView.RepaintAll();
+#endif
+            }
+        }
 
         void Update()
         {

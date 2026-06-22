@@ -47,7 +47,7 @@ namespace FruitSort
         [Tooltip("Số neighbor tối đa xét cho mỗi dot (cắt sớm để tránh ô quá đông).")]
         public int maxNeighbors = 8;
         [Tooltip("Cường độ lực đẩy tách (world unit/giây).")]
-        public float separationStrength = 3f;
+        public float separationStrength = 1f;
 
         // ---- runtime ----
         readonly List<Dot> _dots = new List<Dot>(512);
@@ -59,6 +59,10 @@ namespace FruitSort
         readonly Stack<List<int>> _listPool = new Stack<List<int>>(1024);
         // Lực đẩy tách tính trước cho từng dot (song song với _dots).
         readonly List<Vector2> _push = new List<Vector2>(512);
+
+        // CACHE vị trí để tránh đọc/ghi Transform.position nhiều lần mỗi frame.
+        // Transform access trong Unity rất chậm khi có hàng trăm dot.
+        Vector3[] _posCache = new Vector3[512];
 
         float _cellSize = 0.6f;
 
@@ -135,9 +139,37 @@ namespace FruitSort
 
             _cellSize = Mathf.Max(0.01f, dotSize * cellSizeMultiplier);
 
-            BuildGrid();          // 1) dựng lưới không gian
-            ComputeSeparation();  // 2) tính lực đẩy tách cho từng dot
-            MoveDots(dt);         // 3) tích phân chuyển động + áp lực đẩy
+            // Đảm bảo cache đủ kích thước.
+            int n = _dots.Count;
+            if (_posCache.Length < n) _posCache = new Vector3[Mathf.Max(n, _posCache.Length * 2)];
+
+            // Đọc TẤT CẢ vị trí 1 lần duy nhất trong frame.
+            for (int i = 0; i < n; i++)
+                _posCache[i] = _dots[i].transform.position;
+
+            bool needSep = separationStrength > 0f && n > 1;
+
+            if (needSep)
+            {
+                BuildGrid();          // 1) dựng lưới không gian
+                ComputeSeparation();  // 2) tính lực đẩy tách cho từng dot
+            }
+            else
+            {
+                // Zero push khi không cần separation.
+                while (_push.Count < n) _push.Add(Vector2.zero);
+                for (int i = 0; i < n; i++) _push[i] = Vector2.zero;
+            }
+
+            MoveDots(dt, n);  // 3) tích phân chuyển động + áp lực đẩy
+
+            // Ghi vị trí đã cập nhật trở lại Transform (1 lần/dot).
+            for (int i = 0; i < n; i++)
+            {
+                if (_dots[i] != null)
+                    _dots[i].transform.position = _posCache[i];
+            }
+
             RemoveDead();         // 4) xoá dot ra khỏi màn (for-loop NGƯỢC)
         }
 
@@ -153,7 +185,7 @@ namespace FruitSort
 
             for (int i = 0; i < _dots.Count; i++)
             {
-                Vector3 p = _dots[i].transform.position;
+                Vector3 p = _posCache[i]; // dùng cache, KHÔNG đọc Transform
                 int cx = Mathf.FloorToInt(p.x / _cellSize);
                 int cy = Mathf.FloorToInt(p.y / _cellSize);
                 long key = CellKey(cx, cy);
@@ -174,7 +206,7 @@ namespace FruitSort
             float minDist = dotSize; // muốn các dot cách nhau >= dotSize
             for (int i = 0; i < _dots.Count; i++)
             {
-                Vector3 p = _dots[i].transform.position;
+                Vector3 p = _posCache[i]; // dùng cache
                 int cx = Mathf.FloorToInt(p.x / _cellSize);
                 int cy = Mathf.FloorToInt(p.y / _cellSize);
 
@@ -192,7 +224,7 @@ namespace FruitSort
                             int j = list[k];
                             if (j == i) continue;
 
-                            Vector3 q = _dots[j].transform.position;
+                            Vector3 q = _posCache[j]; // dùng cache
                             float dx = p.x - q.x, dy = p.y - q.y;
                             float d = Mathf.Sqrt(dx * dx + dy * dy);
 
@@ -220,39 +252,40 @@ namespace FruitSort
 
         // ================= CHUYỂN ĐỘNG =================
 
-        void MoveDots(float dt)
+        void MoveDots(float dt, int n)
         {
-            for (int i = 0; i < _dots.Count; i++)
+            for (int i = 0; i < n; i++)
             {
                 Dot d = _dots[i];
+                if (d == null) continue;
                 Vector2 sep = _push[i] * (separationStrength * dt);
 
                 switch (d.state)
                 {
                     case DotState.Approaching:
-                        StepApproaching(d, sep, dt);
+                        StepApproaching(d, sep, dt, i);
                         break;
                     case DotState.Falling:
-                        StepFalling(d, sep, dt);
+                        StepFalling(d, sep, dt, i);
                         break;
                     case DotState.OnBelt:
-                        StepOnBelt(d, sep, dt);
+                        StepOnBelt(d, sep, dt, i);
                         break;
                     case DotState.Attracting:
-                        StepAttracting(d, dt);
+                        StepAttracting(d, dt, i);
                         break;
                 }
             }
         }
 
         // Bay thẳng tới đích trên spline; tới nơi thì chuyển sang OnBelt.
-        void StepApproaching(Dot d, Vector2 sep, float dt)
+        void StepApproaching(Dot d, Vector2 sep, float dt, int idx)
         {
             // Đích có thể đổi nếu spline di chuyển -> cập nhật lại cho an toàn.
             if (conveyor != null)
                 d.approachTarget = conveyor.GetPositionOnSpline(d.beltEntryProgress, d.entryLateral);
 
-            Vector3 pos = d.transform.position;
+            Vector3 pos = _posCache[idx]; // dùng cache
             Vector3 moved = Vector3.MoveTowards(pos, d.approachTarget, approachSpeed * dt);
             float dMoved = Vector3.Distance(moved, d.approachTarget);
 
@@ -263,7 +296,7 @@ namespace FruitSort
             if (dMoved > 1e-4f && Vector3.Distance(withSep, d.approachTarget) > dMoved)
                 withSep = d.approachTarget + (withSep - d.approachTarget).normalized * dMoved;
 
-            d.transform.position = withSep;
+            _posCache[idx] = withSep; // ghi cache, KHÔNG ghi Transform ngay
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
             if (dMoved <= dotSize * 0.5f)
@@ -283,14 +316,14 @@ namespace FruitSort
             }
         }
 
-        void StepFalling(Dot d, Vector2 sep, float dt)
+        void StepFalling(Dot d, Vector2 sep, float dt, int idx)
         {
             d.fallSpeed += gravity * dt;
-            Vector3 pos = d.transform.position;
+            Vector3 pos = _posCache[idx]; // dùng cache
             pos.y -= d.fallSpeed * dt;
             pos.x += sep.x;
             pos.y += sep.y;
-            d.transform.position = pos;
+            _posCache[idx] = pos; // ghi cache
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
             if (pos.y <= beltEntryY)
@@ -312,7 +345,7 @@ namespace FruitSort
             }
         }
 
-        void StepOnBelt(Dot d, Vector2 sep, float dt)
+        void StepOnBelt(Dot d, Vector2 sep, float dt, int idx)
         {
             if (d.conveyor == null) d.conveyor = conveyor;
             if (d.conveyor == null) { d.markedForRemoval = true; return; }
@@ -339,16 +372,19 @@ namespace FruitSort
             // CHẶN tách dọc đẩy NGƯỢC chiều đi (along < 0): nếu cho âm, dot bị các dot phía trước
             // đẩy lùi -> beltProgress gần như đứng yên -> "di chuyển rất chậm" khi đông. Chỉ cho
             // tách dọc đẩy TIẾN (along > 0, giúp giãn đám về phía trước); tách NGANG giữ nguyên.
-            float along = Mathf.Max(0f, Vector2.Dot(sep, (Vector2)tan)); // world unit, theo hướng đi
+            // GIỚI HẠN along để separation không vượt quá belt movement -> tránh dot nhảy loạn khi đông.
+            float maxSep = beltSpeed * dt * 0.5f; // tối đa 50% quãng đường belt/frame
+            float along = Mathf.Clamp(Vector2.Dot(sep, (Vector2)tan), 0f, maxSep);
             d.beltProgress += along / length;                        // ghi nhận vào progress
-            d.lateralOffset += Vector2.Dot(sep, (Vector2)nrm);
+            float lateralSep = Mathf.Clamp(Vector2.Dot(sep, (Vector2)nrm), -maxSep, maxSep);
+            d.lateralOffset += lateralSep;
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -half, half); // clamp trong bề rộng
 
             // Vị trí = tâm + lệch ngang + nhích dọc (xấp xỉ bậc 1 — sep mỗi frame rất nhỏ nên đủ mượt).
-            d.transform.position = center + nrm * d.lateralOffset + tan * along;
+            _posCache[idx] = center + nrm * d.lateralOffset + tan * along; // ghi cache
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
-            TryAttract(d);
+            TryAttract(d, idx);
         }
 
         /// <summary>
@@ -380,16 +416,16 @@ namespace FruitSort
             return true;
         }
 
-        void StepAttracting(Dot d, float dt)
+        void StepAttracting(Dot d, float dt, int idx)
         {
             Bucket b = d.targetBucket;
             if (b == null || !b.IsActive) { d.state = DotState.OnBelt; d.targetBucket = null; return; }
 
             Vector3 mouth = b.MouthPosition;
-            d.transform.position = Vector3.MoveTowards(d.transform.position, mouth, b.attractSpeed * dt);
+            _posCache[idx] = Vector3.MoveTowards(_posCache[idx], mouth, b.attractSpeed * dt);
             d.transform.Rotate(0f, 0f, d.spin * 2f * dt);
 
-            if (Vector3.Distance(d.transform.position, mouth) < 0.05f)
+            if (Vector3.Distance(_posCache[idx], mouth) < 0.05f)
             {
                 b.AddFill(1);
                 if (GameManager.Instance != null) GameManager.Instance.OnDotSorted(d);
@@ -398,14 +434,14 @@ namespace FruitSort
         }
 
         // Tìm bucket cùng màu trong tầm hút -> chuyển sang trạng thái Attracting.
-        void TryAttract(Dot d)
+        void TryAttract(Dot d, int idx)
         {
             for (int i = 0; i < _buckets.Count; i++)
             {
                 Bucket b = _buckets[i];
                 if (b == null || !b.IsActive || b.colorId != d.colorId) continue;
                 // Phát hiện theo VÙNG VA CHẠM (Collider2D) của bucket, fallback bán kính nếu chưa gán zone.
-                if (b.Contains(d.transform.position))
+                if (b.Contains(_posCache[idx])) // dùng cache
                 {
                     d.state = DotState.Attracting;
                     d.targetBucket = b;
