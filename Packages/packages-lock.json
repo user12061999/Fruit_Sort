@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.coplaydev.unity-mcp": {
-      "version": "file:C:/Users/Towis/Desktop/unity-mcp-beta/unity-mcp-beta/MCPForUnity",
+      "version": "file:C:/Users/user1/OneDrive/Máy tính/unity-mcp-beta/unity-mcp-beta/MCPForUnity",
       "depth": 0,
       "source": "local",
       "dependencies": {
