@@ -50,6 +50,17 @@ namespace FruitSort
         public bool overrideEntry = false;
         [Range(0f, 1f)] public float entryProgress = 0f;
 
+        [Header("Phóng theo hướng cố định")]
+        [Tooltip("Bật: phóng dot theo hướng launchDirection, tự va chạm băng chuyền. " +
+                 "Tắt (mặc định): bay thẳng tới 1 điểm cố định trên băng chuyền.")]
+        public bool useDirectionalLaunch = false;
+        [Tooltip("Hướng phóng (sẽ normalize). Ví dụ: (0,-1) = thẳng xuống, (1,-1) = xuống phải.")]
+        public Vector2 launchDirection = Vector2.down;
+        [Tooltip("Tốc độ phóng ban đầu (world unit/giây).")]
+        [Min(0.1f)] public float launchSpeed = 10f;
+        [Tooltip("Độ tản hướng ngẫu nhiên (±độ). 0 = tất cả dot đi thẳng một hướng.")]
+        [Range(0f, 45f)] public float launchSpread = 3f;
+
         [Header("Khi gói rỗng")]
         [Tooltip("Hàm chạy khi click hết gói (kéo-thả trong Inspector).")]
         public UnityEvent onDepleted;
@@ -269,8 +280,28 @@ namespace FruitSort
             d.transform.localScale = Vector3.one * dotScale;
             d.Init(colorId, c, dotHP, new Vector2Int(-1, -1));
 
-            float t = overrideEntry ? entryProgress : float.NaN;
-            fm.AddDotApproaching(d, t);
+            if (useDirectionalLaunch)
+            {
+                Vector2 dir = launchDirection.sqrMagnitude > 0.001f
+                    ? launchDirection.normalized
+                    : Vector2.down;
+
+                // Xoay hướng ngẫu nhiên trong ±launchSpread độ.
+                float spreadRad = launchSpread * Mathf.Deg2Rad;
+                float angle = Random.Range(-spreadRad, spreadRad);
+                float cos = Mathf.Cos(angle), sin = Mathf.Sin(angle);
+                Vector2 vel = new Vector2(
+                    dir.x * cos - dir.y * sin,
+                    dir.x * sin + dir.y * cos
+                ) * launchSpeed;
+
+                fm.AddDotLaunched(d, vel);
+            }
+            else
+            {
+                float t = overrideEntry ? entryProgress : float.NaN;
+                fm.AddDotApproaching(d, t);
+            }
         }
     }
 }

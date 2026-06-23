@@ -15,6 +15,7 @@ namespace FruitSort
         public static FallingPixelManager Instance { get; private set; }
 
         [Header("Refs")]
+        [Tooltip("Băng chuyền mặc định (dùng cho Falling và Approaching). Để trống = tự tìm băng đầu tiên.")]
         public ConveyorSpline conveyor;
 
         [Header("Sức chứa & kích thước")]
@@ -52,6 +53,7 @@ namespace FruitSort
         // ---- runtime ----
         readonly List<Dot> _dots = new List<Dot>(512);
         readonly List<Bucket> _buckets = new List<Bucket>(16);
+        readonly List<ConveyorSpline> _allConveyors = new List<ConveyorSpline>(8);
 
         // Spatial grid: key (ô) -> list index của dot trong _dots.
         readonly Dictionary<long, List<int>> _grid = new Dictionary<long, List<int>>(1024);
@@ -77,11 +79,23 @@ namespace FruitSort
         void Start()
         {
             _cellSize = Mathf.Max(0.01f, dotSize * cellSizeMultiplier);
+            // Đăng ký tất cả băng chuyền đã có trong scene
+            foreach (var c in FindObjectsByType<ConveyorSpline>(FindObjectsSortMode.None))
+                RegisterConveyor(c);
+            if (conveyor == null && _allConveyors.Count > 0)
+                conveyor = _allConveyors[0];
         }
 
         // ---- Đăng ký bucket (Bucket tự gọi khi bật/tắt) ----
         public void RegisterBucket(Bucket b) { if (b != null && !_buckets.Contains(b)) _buckets.Add(b); }
         public void UnregisterBucket(Bucket b) { _buckets.Remove(b); }
+
+        // ---- Đăng ký băng chuyền (ConveyorSpline tự gọi khi bật/tắt lúc play) ----
+        public void RegisterConveyor(ConveyorSpline c)
+        {
+            if (c != null && !_allConveyors.Contains(c)) _allConveyors.Add(c);
+        }
+        public void UnregisterConveyor(ConveyorSpline c) { _allConveyors.Remove(c); }
 
         /// <summary>Thêm 1 dot vừa vỡ vào hệ thống (bắt đầu rơi tự do).</summary>
         public void AddDot(Dot d)
@@ -90,6 +104,27 @@ namespace FruitSort
             if (maxDots > 0 && _dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
 
             d.state = DotState.Falling;
+            d.fallSpeed = 0f;
+            d.targetBucket = null;
+            d.markedForRemoval = false;
+            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+            d.spin = Random.Range(-maxSpin, maxSpin);
+            d.ApplyColor();
+            d.transform.SetParent(transform, true);
+            _dots.Add(d);
+        }
+
+        /// <summary>
+        /// Thêm 1 dot phóng theo hướng cố định. Dot tự phát hiện và lên băng chuyền đầu tiên nó chạm.
+        /// Dùng cho ModelDotSpawner với useDirectionalLaunch = true.
+        /// </summary>
+        public void AddDotLaunched(Dot d, Vector2 velocity)
+        {
+            if (d == null) return;
+            if (maxDots > 0 && _dots.Count >= maxDots) { Destroy(d.gameObject); return; }
+
+            d.state = DotState.Launched;
+            d.launchVelocity = velocity;
             d.fallSpeed = 0f;
             d.targetBucket = null;
             d.markedForRemoval = false;
@@ -262,6 +297,9 @@ namespace FruitSort
 
                 switch (d.state)
                 {
+                    case DotState.Launched:
+                        StepLaunched(d, sep, dt, i);
+                        break;
                     case DotState.Approaching:
                         StepApproaching(d, sep, dt, i);
                         break;
@@ -276,6 +314,46 @@ namespace FruitSort
                         break;
                 }
             }
+        }
+
+        // Phóng theo hướng cố định; khi chạm bất kỳ băng chuyền nào thì lên belt đó.
+        void StepLaunched(Dot d, Vector2 sep, float dt, int idx)
+        {
+            Vector3 pos = _posCache[idx];
+            pos.x += d.launchVelocity.x * dt + sep.x;
+            pos.y += d.launchVelocity.y * dt + sep.y;
+            d.transform.Rotate(0f, 0f, d.spin * dt);
+
+            // Kiểm tra va chạm với từng băng chuyền đã đăng ký.
+            float threshold = dotSize * 0.5f;
+            for (int i = 0; i < _allConveyors.Count; i++)
+            {
+                var belt = _allConveyors[i];
+                if (belt == null || !belt.isActiveAndEnabled) continue;
+
+                float t = belt.FindClosestProgress(pos, out float dist);
+                if (dist > belt.HalfWidth + threshold) continue;
+
+                // Tính lateral offset thực tế (dương/âm theo pháp tuyến).
+                belt.TrySampleCenterline(t, out Vector3 center, out Vector3 tan);
+                Vector3 nrm = new Vector3(-tan.y, tan.x, 0f);
+                float lat = Mathf.Clamp(Vector3.Dot(pos - center, nrm),
+                                        -belt.HalfWidth, belt.HalfWidth);
+
+                d.state = DotState.OnBelt;
+                d.conveyor = belt;
+                d.beltProgress = t;
+                d.lateralOffset = lat;
+                d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+                _posCache[idx] = pos;
+                return;
+            }
+
+            // Xoá nếu bay quá xa màn hình.
+            if (pos.y < beltEntryY - 10f || Mathf.Abs(pos.x) > 30f || pos.y > 30f)
+                d.markedForRemoval = true;
+
+            _posCache[idx] = pos;
         }
 
         // Bay thẳng tới đích trên spline; tới nơi thì chuyển sang OnBelt.
@@ -357,8 +435,15 @@ namespace FruitSort
             d.beltProgress += (beltSpeed * d.beltSpeedFactor / length) * dt;
             if (d.beltProgress >= 1f)
             {
-                // Hết băng: đi tiếp sang băng được nối (nếu có), nếu không thì xoá.
-                if (!AdvanceToNext(d)) { d.markedForRemoval = true; }
+                if (d.conveyor.IsClosed)
+                {
+                    // Spline khép vòng → quay lại đầu thay vì xoá.
+                    d.beltProgress -= 1f;
+                }
+                else if (!AdvanceToNext(d))
+                {
+                    d.markedForRemoval = true;
+                }
                 return;
             }
 

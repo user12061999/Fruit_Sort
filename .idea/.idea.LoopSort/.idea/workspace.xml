@@ -10,14 +10,22 @@
     <configurations />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="37a0f35e-74ce-4a1a-91d1-042b7b429311" name="Changes" comment="" />
+    <list default="true" id="37a0f35e-74ce-4a1a-91d1-042b7b429311" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Dot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Dot.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="10" />
+    <option name="cachedIndexableFilesCount" value="4" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -31,23 +39,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0" />
-      <entry key="S30" value="1.0" />
-      <entry key="S60" value="1.0" />
-      <entry key="M2" value="1.0" />
-      <entry key="M5" value="1.0" />
-      <entry key="M10" value="1.0" />
-      <entry key="M15" value="1.0" />
-      <entry key="M30" value="1.0" />
-      <entry key="H1" value="1.0" />
-      <entry key="H2" value="1.0" />
-      <entry key="H4" value="1.0" />
-      <entry key="D1" value="1.0" />
-      <entry key="W1" value="1.0" />
+      <entry key="MS100" value="1.5798404790457867" />
+      <entry key="MS500" value="3.830707986138807" />
+      <entry key="S2" value="5.289887422059952" />
+      <entry key="S5" value="5.698337921352414" />
+      <entry key="S10" value="5.846034636807948" />
+      <entry key="S30" value="5.9479621403697385" />
+      <entry key="S60" value="5.973890328797664" />
+      <entry key="M2" value="5.987213536224409" />
+      <entry key="M5" value="6.083253270047365" />
+      <entry key="M10" value="6.592325444475482" />
+      <entry key="M15" value="7.1211448794961205" />
+      <entry key="M30" value="8.118457919350636" />
+      <entry key="H1" value="8.911147904614879" />
+      <entry key="H2" value="9.412454843484486" />
+      <entry key="H4" value="9.694575216182422" />
+      <entry key="D1" value="9.947397682326507" />
+      <entry key="W1" value="9.99244271268408" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -69,23 +77,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="3.120048746329428E-6" />
-      <entry key="MS500" value="0.07921953262715153" />
-      <entry key="S2" value="0.5305277057177982" />
-      <entry key="S5" value="0.7760384285879569" />
-      <entry key="S10" value="0.8809304334554215" />
-      <entry key="S30" value="0.9586215870987822" />
-      <entry key="S60" value="0.9790922260434827" />
-      <entry key="M2" value="0.989490892349941" />
-      <entry key="M5" value="0.9957830291865085" />
-      <entry key="M10" value="0.9978892870386517" />
-      <entry key="M15" value="0.9985923625486931" />
-      <entry key="M30" value="0.9992959334194716" />
-      <entry key="H1" value="0.9996479047241942" />
-      <entry key="H2" value="0.999823936862983" />
-      <entry key="H4" value="0.9999119645563719" />
-      <entry key="D1" value="0.9999853268878219" />
-      <entry key="W1" value="0.9999979038279356" />
+      <entry key="MS100" value="1.5237918373808386" />
+      <entry key="MS500" value="3.8014186777261614" />
+      <entry key="S2" value="5.279571152803671" />
+      <entry key="S5" value="5.693874097230856" />
+      <entry key="S10" value="5.843741649639235" />
+      <entry key="S30" value="5.947183753291043" />
+      <entry key="S60" value="5.97349934656375" />
+      <entry key="M2" value="5.987016684842985" />
+      <entry key="M5" value="6.083063548920294" />
+      <entry key="M10" value="6.591911666025829" />
+      <entry key="M15" value="7.1206472183245" />
+      <entry key="M30" value="8.117999662924953" />
+      <entry key="H1" value="8.910835490636707" />
+      <entry key="H2" value="9.41227229305956" />
+      <entry key="H4" value="9.694476527262466" />
+      <entry key="D1" value="9.947380126777917" />
+      <entry key="W1" value="9.992440176561153" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -109,7 +117,7 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "cidr.known.project.marker": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "Claude",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -121,7 +129,7 @@
 }]]></component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
-      <option name="EXE_PATH" value="D:\Hub\6000.0.30f1\Editor\Unity.exe" />
+      <option name="EXE_PATH" value="D:\Hub\6000.4.12f1\Editor\Unity.exe" />
       <option name="PROGRAM_PARAMETERS" value="-projectPath D:\Project_Unity\LoopSort -debugCodeOptimization" />
       <option name="WORKING_DIRECTORY" value="D:\Project_Unity\LoopSort" />
       <option name="PASS_PARENT_ENVS" value="1" />
@@ -131,7 +139,7 @@
       <method v="2" />
     </configuration>
     <configuration name="Unit Tests (batch mode)" type="RunUnityExe" factoryName="Unity Executable">
-      <option name="EXE_PATH" value="D:\Hub\6000.0.30f1\Editor\Unity.exe" />
+      <option name="EXE_PATH" value="D:\Hub\6000.4.12f1\Editor\Unity.exe" />
       <option name="PROGRAM_PARAMETERS" value="-runTests -batchmode -projectPath D:\Project_Unity\LoopSort -testResults Logs/results.xml -logFile Logs/Editor.log -testPlatform EditMode -debugCodeOptimization" />
       <option name="WORKING_DIRECTORY" value="D:\Project_Unity\LoopSort" />
       <option name="PASS_PARENT_ENVS" value="1" />
@@ -166,6 +174,7 @@
       <updated>1781710448693</updated>
       <workItem from="1781710452593" duration="1580000" />
       <workItem from="1781714348213" duration="739000" />
+      <workItem from="1782227642691" duration="5342000" />
     </task>
     <servers />
   </component>

@@ -9,7 +9,8 @@ namespace FruitSort
         Falling = 1,    // Đã vỡ, đang rơi tự do xuống băng chuyền
         OnBelt = 2,     // Đang chạy dọc băng chuyền (spline)
         Attracting = 3, // Đang bị một bucket hút vào
-        Approaching = 4 // Bay THẲNG từ điểm spawn tới miệng băng chuyền (spawn từ model 3D)
+        Approaching = 4, // Bay THẲNG từ điểm spawn tới miệng băng chuyền (spawn từ model 3D)
+        Launched = 5    // Phóng theo hướng cố định, tự phát hiện và lên băng chuyền khi chạm
     }
 
     /// <summary>
@@ -43,6 +44,9 @@ namespace FruitSort
         [System.NonSerialized] public Vector3 approachTarget;     // điểm đích trên spline cần bay tới
         [System.NonSerialized] public float beltEntryProgress;    // progress (t) sẽ vào belt khi tới đích
         [System.NonSerialized] public float entryLateral;         // lệch ngang khi vào belt
+
+        // ---- Phóng theo hướng (state Launched). Không serialize. ----
+        [System.NonSerialized] public Vector2 launchVelocity;     // vận tốc hiện tại (world unit/giây)
 
         // Băng chuyền dot đang chạy trên đó (đổi khi đi qua liên kết sang băng kế). Không serialize.
         [System.NonSerialized] public ConveyorSpline conveyor;

@@ -55,6 +55,7 @@ namespace FruitSort
         }
 
         public float HalfWidth => beltWidth * 0.5f;
+        public bool IsClosed => HasSpline && Container.Spline.Closed;
 
         bool HasSpline => Container != null && Container.Spline != null && Container.Spline.Count > 1;
 
@@ -70,7 +71,18 @@ namespace FruitSort
 
         void Awake() { Bake(); }
 
-        void OnEnable() { Bake(); }
+        void OnEnable()
+        {
+            Bake();
+            if (Application.isPlaying && FallingPixelManager.Instance != null)
+                FallingPixelManager.Instance.RegisterConveyor(this);
+        }
+
+        void OnDisable()
+        {
+            if (Application.isPlaying && FallingPixelManager.Instance != null)
+                FallingPixelManager.Instance.UnregisterConveyor(this);
+        }
 
         void OnValidate()
         {
@@ -312,6 +324,33 @@ namespace FruitSort
             if (!TrySampleCenterline(t, out Vector3 pos, out Vector3 tan)) return transform.position;
             Vector3 normal = new Vector3(-tan.y, tan.x, 0f);
             return pos + normal * lateralOffset;
+        }
+
+        /// <summary>
+        /// Tìm progress t trên spline gần worldPos nhất (dùng LUT, O(n)).
+        /// Trả về closestDist = khoảng cách thực tới đường tâm tại t đó.
+        /// </summary>
+        public float FindClosestProgress(Vector3 worldPos, out float closestDist)
+        {
+            EnsureBaked();
+            if (!_baked || _lutPos == null || _bakedRes <= 0)
+            {
+                closestDist = float.MaxValue;
+                return 0f;
+            }
+
+            float bestDistSq = float.MaxValue;
+            int bestIdx = 0;
+            for (int i = 0; i <= _bakedRes; i++)
+            {
+                float dx = _lutPos[i].x - worldPos.x;
+                float dy = _lutPos[i].y - worldPos.y;
+                float dSq = dx * dx + dy * dy;
+                if (dSq < bestDistSq) { bestDistSq = dSq; bestIdx = i; }
+            }
+
+            closestDist = Mathf.Sqrt(bestDistSq);
+            return bestIdx / (float)_bakedRes;
         }
 
         /// <summary>Hướng đi (tangent) đã chuẩn hoá tại t, trong mặt phẳng XY.</summary>

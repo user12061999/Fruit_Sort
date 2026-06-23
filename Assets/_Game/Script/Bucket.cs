@@ -58,6 +58,8 @@ namespace FruitSort
         public bool IsActive => isActiveAndEnabled && !_full && currentFill < maxFill;
         public float FillRatio => maxFill > 0 ? Mathf.Clamp01(currentFill / (float)maxFill) : 1f;
         public Vector3 MouthPosition => mouth != null ? mouth.position : transform.position;
+        public bool IsReadyForPickup { get; private set; }
+        public static event System.Action<Bucket> OnBucketFull;
 
         void OnEnable()
         {
@@ -108,11 +110,20 @@ namespace FruitSort
             if (GameManager.Instance != null) GameManager.Instance.OnBucketFilled(this);
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
 
-            // Hành động: punch scale rồi destroy.
+            OnBucketFull?.Invoke(this);
+
+            // Punch scale; worker sẽ nhặt và destroy sau.
             transform.DOKill();
             transform.DOPunchScale(Vector3.one * punchScale, punchDuration, 8, 0.8f)
                      .SetUpdate(false)
-                     .OnComplete(() => Destroy(gameObject));
+                     .OnComplete(() => IsReadyForPickup = true);
+        }
+
+        /// <summary>Gọi khi BucketWorker bắt đầu nhặt thùng.</summary>
+        public void BePickedUp()
+        {
+            IsReadyForPickup = false;
+            if (zone != null) zone.enabled = false;
         }
 
         void ApplyVisual()
