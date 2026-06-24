@@ -201,7 +201,8 @@ namespace FruitSort
             // Ghi vị trí đã cập nhật trở lại Transform (1 lần/dot).
             for (int i = 0; i < n; i++)
             {
-                if (_dots[i] != null)
+                // Dot đã được bucket nhận nuôi do DOTween điều khiển -> không ghi đè vị trí.
+                if (_dots[i] != null && !_dots[i].capturedByBucket)
                     _dots[i].transform.position = _posCache[i];
             }
 
@@ -512,8 +513,12 @@ namespace FruitSort
 
             if (Vector3.Distance(_posCache[idx], mouth) < 0.05f)
             {
-                b.AddFill(1);
+                // Ghi vị trí cache cuối cùng vào Transform trước khi bucket nhận nuôi (DOTween sẽ
+                // điều khiển từ đây) — nếu không, vòng write-back sau MoveDots vẫn dùng vị trí cũ.
+                d.transform.position = _posCache[idx];
+                b.ReceiveDot(d);             // dot bay vào & nằm trong giỏ (KHÔNG destroy)
                 if (GameManager.Instance != null) GameManager.Instance.OnDotSorted(d);
+                d.capturedByBucket = true;
                 d.markedForRemoval = true;
             }
         }
@@ -547,7 +552,9 @@ namespace FruitSort
                 if (d.markedForRemoval)
                 {
                     _dots.RemoveAt(i);
-                    Destroy(d.gameObject);
+                    // Đã vào giỏ -> bucket sở hữu, KHÔNG destroy (sẽ đi theo giỏ khi worker mang đi).
+                    if (!d.capturedByBucket)
+                        Destroy(d.gameObject);
                 }
             }
         }

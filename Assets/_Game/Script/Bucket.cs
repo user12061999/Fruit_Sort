@@ -50,7 +50,24 @@ namespace FruitSort
         [Tooltip("Thời lượng punch trước khi destroy.")]
         public float punchDuration = 0.4f;
 
+        [Header("Xếp dot vào giỏ (như xếp hoa quả)")]
+        [Tooltip("Gốc để xếp dot (đáy giỏ). Để trống = dùng transform của bucket.")]
+        public Transform contentRoot;
+        [Tooltip("Offset của ô đầu tiên so với contentRoot (local).")]
+        public Vector2 slotAreaOffset = Vector2.zero;
+        [Tooltip("Số dot mỗi hàng trong giỏ.")]
+        [Min(1)] public int slotColumns = 3;
+        [Tooltip("Khoảng cách giữa các ô (local).")]
+        public float slotSpacing = 0.3f;
+        [Tooltip("Scale của dot khi đã nằm trong giỏ.")]
+        public float dotScaleInBucket = 0.35f;
+        [Tooltip("Độ cao cú nảy khi dot bay vào giỏ (hiệu ứng ném vào).")]
+        public float jumpPower = 0.7f;
+        [Tooltip("Thời lượng dot bay vào ô của nó.")]
+        public float dropDuration = 0.35f;
+
         // ---- runtime ----
+        readonly System.Collections.Generic.List<Dot> _contained = new System.Collections.Generic.List<Dot>();
         MaterialPropertyBlock _mpb;
         static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
         bool _full;
@@ -92,6 +109,50 @@ namespace FruitSort
             float dx = worldPos.x - MouthPosition.x;
             float dy = worldPos.y - MouthPosition.y;
             return dx * dx + dy * dy <= attractRadius * attractRadius;
+        }
+
+        /// <summary>
+        /// Bucket "nhận nuôi" 1 dot: parent vào giỏ, ném dot vào ô của nó (hiệu ứng xếp hoa quả),
+        /// rồi tăng fill. Dot sẽ đi theo giỏ khi worker mang đi.
+        /// </summary>
+        public void ReceiveDot(Dot d)
+        {
+            if (d == null) return;
+            Transform root = contentRoot != null ? contentRoot : transform;
+            int slot = _contained.Count;
+            _contained.Add(d);
+
+            // Gỡ mọi điều khiển chuyển động cũ, parent vào giỏ (giữ vị trí world để bay vào mượt).
+            d.transform.DOKill();
+            d.transform.SetParent(root, true);
+
+            // Đảm bảo dot vẽ ĐÈ lên thân giỏ và xếp lớp theo thứ tự vào.
+            if (d.Sr != null)
+            {
+                if (body != null)
+                {
+                    d.Sr.sortingLayerID = body.sortingLayerID;
+                    d.Sr.sortingOrder = body.sortingOrder + 1 + slot;
+                }
+            }
+
+            Vector3 targetLocal = SlotLocalPosition(slot);
+            d.transform.DOLocalJump(targetLocal, jumpPower, 1, dropDuration).SetEase(Ease.OutQuad);
+            d.transform.DOScale(Vector3.one * dotScaleInBucket, dropDuration);
+            d.transform.DOLocalRotate(Vector3.zero, dropDuration);
+
+            AddFill(1);
+        }
+
+        /// <summary>Vị trí (local so với contentRoot) của ô thứ index trong giỏ — xếp theo hàng từ dưới lên.</summary>
+        Vector3 SlotLocalPosition(int index)
+        {
+            int cols = Mathf.Max(1, slotColumns);
+            int col = index % cols;
+            int row = index / cols;
+            float x = (col - (cols - 1) * 0.5f) * slotSpacing;
+            float y = row * slotSpacing;
+            return new Vector3(slotAreaOffset.x + x, slotAreaOffset.y + y, 0f);
         }
 
         /// <summary>Tăng fill. Đầy -> punch scale rồi Destroy.</summary>

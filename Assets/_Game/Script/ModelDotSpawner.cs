@@ -20,6 +20,8 @@ namespace FruitSort
         public Dot dotPrefab;
         [Tooltip("Để trống = tự dùng FallingPixelManager.Instance.")]
         public FallingPixelManager fallingManager;
+        [Tooltip("Để tra sprite theo colorId. Gán -> dot đổi sprite thành art của màu tương ứng.")]
+        public FruitDatabase fruitDatabase;
         [Tooltip("Camera dùng để quy đổi vị trí click. Để trống = Camera.main.")]
         public Camera cam;
         [Tooltip("Sprite của GÓI (sẽ vơi dần). Để trống = tự lấy SpriteRenderer trên object này.")]
@@ -278,7 +280,8 @@ namespace FruitSort
 
             Dot d = Instantiate(dotPrefab, pos, Quaternion.identity);
             d.transform.localScale = Vector3.one * dotScale;
-            d.Init(colorId, c, dotHP, new Vector2Int(-1, -1));
+            Sprite spr = fruitDatabase != null ? fruitDatabase.GetById(colorId)?.sprite : null;
+            d.Init(colorId, c, dotHP, new Vector2Int(-1, -1), spr);
 
             if (useDirectionalLaunch)
             {

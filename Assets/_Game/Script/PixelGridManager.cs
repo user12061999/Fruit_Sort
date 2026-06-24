@@ -13,6 +13,8 @@ namespace FruitSort
         public Dot dotPrefab;
         [Tooltip("Để trống sẽ tự dùng FallingPixelManager.Instance.")]
         public FallingPixelManager fallingManager;
+        [Tooltip("Để tra sprite theo colorId. Gán -> dot đổi sprite thành art của màu tương ứng.")]
+        public FruitDatabase fruitDatabase;
         [Tooltip("Góc dưới-trái của lưới. Để trống thì dùng vị trí của object này.")]
         public Transform gridOrigin;
 
@@ -80,7 +82,8 @@ namespace FruitSort
 
                     Dot d = Instantiate(dotPrefab, pos, Quaternion.identity, transform);
                     d.transform.localScale = Vector3.one * dotScale;
-                    d.Init(colorId, c, dotHP, new Vector2Int(x, y));
+                    Sprite spr = fruitDatabase != null ? fruitDatabase.GetById(colorId)?.sprite : null;
+                    d.Init(colorId, c, dotHP, new Vector2Int(x, y), spr);
                     _dots.Add(d);
                 }
             }
