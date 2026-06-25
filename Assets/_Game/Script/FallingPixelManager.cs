@@ -70,6 +70,9 @@ namespace FruitSort
 
         public int ActiveCount => _dots.Count;
 
+        /// <summary>Danh sách dot đang hoạt động (chỉ đọc). Dùng cho module poll dot trên băng (vd BlenderSlot).</summary>
+        public IReadOnlyList<Dot> ActiveDots => _dots;
+
         void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(this); return; }

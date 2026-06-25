@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: FruitData_New 4
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.FruitData
   colorId: 4
-  fruitName: "Qu\u1EA3 M\u1EDBi"
-  color: {r: 1, g: 0.43300706, b: 0, a: 1}
+  fruitName: Dua
+  color: {r: 1, g: 1, b: 1, a: 1}
   sprite: {fileID: 6196914217481811602, guid: 958fd550b81fb5548a7f15a72cc7782c, type: 3}
+  colorType: 4
+  cmyVector: {x: 0, y: 0, z: 0}

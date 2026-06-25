@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: FruitData_New 3
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.FruitData
   colorId: 3
-  fruitName: "Qu\u1EA3 M\u1EDBi"
-  color: {r: 0.7616087, g: 0, b: 1, a: 1}
+  fruitName: Nho Den
+  color: {r: 0.1, g: 0.05, b: 0.1, a: 1}
   sprite: {fileID: -1935673081980326314, guid: 958fd550b81fb5548a7f15a72cc7782c, type: 3}
+  colorType: 3
+  cmyVector: {x: 1, y: 1, z: 1}

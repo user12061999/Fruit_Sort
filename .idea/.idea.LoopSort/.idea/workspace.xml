@@ -12,12 +12,6 @@
   <component name="ChangeListManager">
     <list default="true" id="37a0f35e-74ce-4a1a-91d1-042b7b429311" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SampleScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Dot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Dot.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -174,7 +168,7 @@
       <updated>1781710448693</updated>
       <workItem from="1781710452593" duration="1580000" />
       <workItem from="1781714348213" duration="739000" />
-      <workItem from="1782227642691" duration="5342000" />
+      <workItem from="1782227642691" duration="6745000" />
     </task>
     <servers />
   </component>

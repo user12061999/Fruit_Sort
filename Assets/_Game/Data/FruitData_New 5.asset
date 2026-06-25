@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: FruitData_New 5
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.FruitData
   colorId: 5
-  fruitName: "Qu\u1EA3 M\u1EDBi"
-  color: {r: 0.007145703, g: 1, b: 0, a: 1}
+  fruitName: Oi
+  color: {r: 0.5, g: 0.9, b: 0.3, a: 1}
   sprite: {fileID: -7222460845103332548, guid: 958fd550b81fb5548a7f15a72cc7782c, type: 3}
+  colorType: 5
+  cmyVector: {x: 1, y: 1, z: 1}
