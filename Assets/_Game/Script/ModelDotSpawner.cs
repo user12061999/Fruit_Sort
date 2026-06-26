@@ -28,7 +28,9 @@ namespace FruitSort
         public SpriteRenderer packageSprite;
 
         [Header("Gói (package)")]
-        [Tooltip("Số lần click để gói rỗng hẳn.")]
+        [Tooltip("Gói VÔ HẠN: bấm bao nhiêu cũng được, không vơi, không cạn (luôn sẵn để chọn màu).")]
+        public bool infinite = false;
+        [Tooltip("Số lần click để gói rỗng hẳn (bỏ qua nếu infinite).")]
         [Min(1)] public int totalClicks = 5;
         [Tooltip("Số click còn lại (chỉ đọc tham khảo lúc play).")]
         public int clicksLeftDebug;
@@ -201,6 +203,8 @@ namespace FruitSort
             if (_depleted) return;
 
             Spawn();
+
+            if (infinite) return; // gói vô hạn: không vơi, không cạn
 
             _clicksLeft = Mathf.Max(0, _clicksLeft - 1);
             clicksLeftDebug = _clicksLeft;

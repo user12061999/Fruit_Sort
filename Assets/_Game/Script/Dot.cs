@@ -21,7 +21,7 @@ namespace FruitSort
     public class Dot : MonoBehaviour
     {
         [Header("Identity")]
-        [Tooltip("ID màu, trùng với index trong Palette của PixelGridManager và colorId của Bucket.")]
+        [Tooltip("ID màu, trùng với colorId của Bucket và FruitData.")]
         public int colorId = 0;
         public Color color = Color.white;
 

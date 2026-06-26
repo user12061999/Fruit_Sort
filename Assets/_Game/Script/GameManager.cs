@@ -11,7 +11,6 @@ namespace FruitSort
         public static GameManager Instance { get; private set; }
 
         [Header("Refs")]
-        public PixelGridManager gridManager;
         public FallingPixelManager fallingManager;
 
         [Header("Điểm")]
@@ -21,7 +20,6 @@ namespace FruitSort
 
         [Header("UI (tuỳ chọn)")]
         public Text scoreText;
-        public Text dotsLeftText;
         public Text onBeltText;
 
         void Awake()
@@ -32,13 +30,12 @@ namespace FruitSort
 
         void Start()
         {
-            if (gridManager == null) gridManager = FindFirstObjectByType<PixelGridManager>();
             if (fallingManager == null) fallingManager = FallingPixelManager.Instance;
             RefreshUI();
         }
 
         // Cache để chỉ ghi .text khi giá trị đổi (tránh GC chuỗi + Canvas rebuild mỗi frame).
-        int _lastScore = int.MinValue, _lastDotsLeft = int.MinValue, _lastOnBelt = int.MinValue;
+        int _lastScore = int.MinValue, _lastOnBelt = int.MinValue;
 
         void Update()
         {
@@ -63,11 +60,6 @@ namespace FruitSort
             {
                 scoreText.text = $"Score: {score}";
                 _lastScore = score;
-            }
-            if (dotsLeftText != null && gridManager != null)
-            {
-                int v = gridManager.AliveCount;
-                if (v != _lastDotsLeft) { dotsLeftText.text = $"Dots: {v}"; _lastDotsLeft = v; }
             }
             if (onBeltText != null && fallingManager != null)
             {

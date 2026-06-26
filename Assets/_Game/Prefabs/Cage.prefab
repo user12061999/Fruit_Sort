@@ -472,7 +472,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.Bucket
   colorId: 0
   color: {r: 0.93, g: 0.26, b: 0.21, a: 1}
-  maxFill: 30
+  maxFill: 10
   currentFill: 0
   zone: {fileID: 5829619695414040885}
   attractRadius: 1.4

@@ -67,6 +67,8 @@ namespace FruitSort
         public float dropDuration = 0.35f;
 
         // ---- runtime ----
+        [System.NonSerialized] public BucketSpawner spawner;     // ai sinh ra bucket này
+        [System.NonSerialized] public int spawnerSlotIndex = -1; // ô tương ứng để tái sinh
         readonly System.Collections.Generic.List<Dot> _contained = new System.Collections.Generic.List<Dot>();
         MaterialPropertyBlock _mpb;
         static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
@@ -185,6 +187,16 @@ namespace FruitSort
         {
             IsReadyForPickup = false;
             if (zone != null) zone.enabled = false;
+            // Worker vừa nhấc bucket khỏi ô -> tái sinh ngay 1 bucket rỗng cùng màu để không gián đoạn.
+            if (spawner != null) spawner.RespawnSlot(spawnerSlotIndex);
+        }
+
+        /// <summary>Đặt màu/ID cho bucket (gọi bởi BucketSpawner khi sinh) và cập nhật hiển thị.</summary>
+        public void Configure(int newColorId, Color newColor)
+        {
+            colorId = newColorId;
+            color = newColor;
+            ApplyVisual();
         }
 
         void ApplyVisual()

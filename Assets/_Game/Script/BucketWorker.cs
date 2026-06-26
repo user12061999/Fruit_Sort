@@ -14,6 +14,11 @@ namespace FruitSort
         public Transform idlePoint;
         public Transform dropZone;
 
+        [Header("Máy xay")]
+        [Tooltip("Máy xay để giao bucket. Để trống = tự tìm GrinderMachine.Instance. " +
+                 "Nếu không có máy xay, bucket bị hủy như cũ.")]
+        public GrinderMachine grinder;
+
         [Header("Di chuyển")]
         public float moveSpeed = 4f;
 
@@ -107,8 +112,19 @@ namespace FruitSort
                 _target.transform.SetParent(null);
                 Bucket b = _target;
                 _target = null;
-                b.transform.DOScale(Vector3.zero, 0.25f)
-                    .OnComplete(() => { if (b != null) Destroy(b.gameObject); });
+
+                GrinderMachine g = grinder != null ? grinder : GrinderMachine.Instance;
+                if (g != null)
+                {
+                    // Giao bucket cho máy xay; máy xay sẽ xay rồi rót ra bình màu và hủy bucket.
+                    g.ProcessBucket(b);
+                }
+                else
+                {
+                    // Không có máy xay: hủy như cũ.
+                    b.transform.DOScale(Vector3.zero, 0.25f)
+                        .OnComplete(() => { if (b != null) Destroy(b.gameObject); });
+                }
             }
             ReturnToIdle();
         }
