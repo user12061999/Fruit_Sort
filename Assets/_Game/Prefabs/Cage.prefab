@@ -375,6 +375,7 @@ GameObject:
   - component: {fileID: 1104889112990266866}
   - component: {fileID: 7455142578848105332}
   - component: {fileID: 1082843001465464654}
+  - component: {fileID: 5024784817660157682}
   m_Layer: 0
   m_Name: Cage
   m_TagString: Untagged
@@ -425,7 +426,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0cfc58e8060355b4188e2815cadb8895, type: 2}
+  - {fileID: 2100000, guid: 3322f08d9c0f6d04b91e16d8a239d277, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -480,16 +481,30 @@ MonoBehaviour:
   mouth: {fileID: 0}
   attractSpeed: 7
   body: {fileID: 7455142578848105332}
-  fillBar: {fileID: 0}
+  gridFill: {fileID: 5024784817660157682}
+  gridColumns: 5
+  cellGap: 0.02
   punchScale: 0.35
   punchDuration: 0.4
   contentRoot: {fileID: 0}
-  slotAreaOffset: {x: 0, y: 0}
-  slotColumns: 3
-  slotSpacing: 0.3
-  dotScaleInBucket: 0.2
   jumpPower: 0.7
   dropDuration: 0.35
+--- !u!114 &5024784817660157682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1194603293306753741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119f1c43deba6bb4c8179c38bcae4249, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteGridFill
+  columns: 5
+  rows: 6
+  fillAmount: 0
+  cellGap: 0.02
 --- !u!1 &1763132566618255579
 GameObject:
   m_ObjectHideFlags: 0

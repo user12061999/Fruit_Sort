@@ -82,7 +82,7 @@ namespace FruitSort
 
                     Dot d = Instantiate(dotPrefab, pos, Quaternion.identity, transform);
                     d.transform.localScale = Vector3.one * dotScale;
-                    Sprite spr = fruitDatabase != null ? fruitDatabase.GetById(colorId)?.sprite : null;
+                    Sprite spr = fruitDatabase != null ? fruitDatabase.GetById(colorId)?.dotSprite : null;
                     d.Init(colorId, c, dotHP, new Vector2Int(x, y), spr);
                     _dots.Add(d);
                 }

@@ -8,10 +8,7 @@ using DG.Tweening;
 namespace FruitSort
 {
     /// <summary>
-    /// "GÓI" (package) hiển thị bằng 1 SpriteRenderer. Mỗi lần click vào sprite:
-    /// - Sinh ra spawnCount dot bay vào băng chuyền (như cũ).
-    /// - Sprite VƠI đi 1 phần (qua shader FruitSort/SpriteFill, _FillAmount giảm dần 1 -> 0).
-    /// Click đủ totalClicks lần -> gói rỗng -> gọi onDepleted (UnityEvent) -> fade out -> ẩn.
+    /// Sprite package dùng shader grid fill. Mỗi dot spawn làm giảm Fill Amount đúng một dot.
     /// </summary>
     public class ModelDotSpawner : MonoBehaviour
     {
@@ -24,14 +21,24 @@ namespace FruitSort
         public FruitDatabase fruitDatabase;
         [Tooltip("Camera dùng để quy đổi vị trí click. Để trống = Camera.main.")]
         public Camera cam;
-        [Tooltip("Sprite của GÓI (sẽ vơi dần). Để trống = tự lấy SpriteRenderer trên object này.")]
+        [Tooltip("Sprite dùng làm khuôn chia grid. Để trống = tự lấy SpriteRenderer trên object này.")]
         public SpriteRenderer packageSprite;
 
         [Header("Gói (package)")]
-        [Tooltip("Số lần click để gói rỗng hẳn.")]
-        [Min(1)] public int totalClicks = 5;
-        [Tooltip("Số click còn lại (chỉ đọc tham khảo lúc play).")]
+        [Tooltip("Tổng số dot tương ứng với một sprite đầy. Mỗi dot spawn làm sprite vơi đúng 1/n giá trị này.")]
+        [InspectorName("Dots For Full Sprite")]
+        [Min(1)] public int totalClicks = 50;
+        [Tooltip("Số dot còn lại trong sprite (chỉ đọc tham khảo lúc play).")]
+        [InspectorName("Dots Left Debug")]
         public int clicksLeftDebug;
+
+        [Header("Sprite Grid")]
+        [Tooltip("Component điều khiển shader grid fill trên Package Sprite.")]
+        public SpriteGridFill gridFill;
+        [Tooltip("Số ô mỗi hàng; số hàng tự tính từ Dots For Full Sprite.")]
+        [Min(1)] public int gridColumns = 16;
+        [Tooltip("Khoảng trong suốt giữa các ô.")]
+        [Range(0f, 0.45f)] public float cellGap = 0.02f;
 
         [Header("Cấu hình spawn (mỗi lần click)")]
         [Tooltip("SỐ LƯỢNG dot sinh ra mỗi lần click.")]
@@ -82,7 +89,8 @@ namespace FruitSort
         public int fixedColorId = -1;
 
         // ---- runtime ----
-        int _clicksLeft;
+        int _dotsLeft;
+        int _reservedDots;
         bool _depleted;
         bool _wasPressed;
 
@@ -92,8 +100,6 @@ namespace FruitSort
         /// <summary>Bật khi spawner được 1 ModelDotSpawnerColumn quản lý: nó sẽ KHÔNG tự xử lý
         /// click nữa (cột sẽ gọi DoClick thay).</summary>
         [System.NonSerialized] public bool managedExternally;
-        MaterialPropertyBlock _mpb;
-        static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
 
         // Mọi spawner đang bật. Click được xử lý TẬP TRUNG (1 lần/frame) để khi nhiều
         // spawner chồng nhau, CHỈ cái trên cùng (theo sorting order của sprite) spawn.
@@ -105,13 +111,15 @@ namespace FruitSort
             if (cam == null) cam = Camera.main;
             if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
             if (fallingManager == null) fallingManager = FallingPixelManager.Instance;
+            if (packageSprite != null && gridFill == null) gridFill = packageSprite.GetComponent<SpriteGridFill>();
         }
 
         void OnEnable()
         {
-            _clicksLeft = Mathf.Max(1, totalClicks);
+            _dotsLeft = Mathf.Max(1, totalClicks);
+            _reservedDots = 0;
             _depleted = false;
-            clicksLeftDebug = _clicksLeft;
+            clicksLeftDebug = _dotsLeft;
             UpdateFillVisual();
             if (!s_all.Contains(this)) s_all.Add(this);
         }
@@ -195,18 +203,24 @@ namespace FruitSort
             return packageSprite.transform.position.z < other.packageSprite.transform.position.z;
         }
 
-        /// <summary>1 lần click vào gói: spawn dot + vơi sprite. Có thể gọi từ UI button nếu muốn.</summary>
+        /// <summary>Spawn một loạt dot từ các ô grid đang đầy.</summary>
         public void DoClick()
         {
             if (_depleted) return;
 
-            Spawn();
+            int available = Mathf.Max(0, _dotsLeft - _reservedDots);
+            int count = Mathf.Min(Mathf.Max(1, spawnCount), available);
+            if (count <= 0) return;
 
-            _clicksLeft = Mathf.Max(0, _clicksLeft - 1);
-            clicksLeftDebug = _clicksLeft;
-            UpdateFillVisual();
-
-            if (_clicksLeft <= 0) Deplete();
+            _reservedDots += count;
+            if (spawnInterval <= 0f)
+            {
+                for (int i = 0; i < count; i++) SpawnOneAndConsume();
+            }
+            else
+            {
+                StartCoroutine(SpawnAndConsumeRoutine(count));
+            }
         }
 
         void Deplete()
@@ -228,13 +242,15 @@ namespace FruitSort
 
         void UpdateFillVisual()
         {
-            if (packageSprite == null) return;
-            float fill = totalClicks > 0 ? Mathf.Clamp01(_clicksLeft / (float)totalClicks) : 0f;
+            if (gridFill == null && packageSprite != null)
+                gridFill = packageSprite.GetComponent<SpriteGridFill>();
+            if (gridFill == null) return;
 
-            if (_mpb == null) _mpb = new MaterialPropertyBlock();
-            packageSprite.GetPropertyBlock(_mpb);
-            _mpb.SetFloat(FillAmountID, fill);
-            packageSprite.SetPropertyBlock(_mpb);
+            int columns = Mathf.Max(1, gridColumns);
+            int rows = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(1, totalClicks) / (float)columns));
+            gridFill.SetGrid(columns, rows);
+            gridFill.CellGap = cellGap;
+            gridFill.FillAmount = Mathf.Clamp01(_dotsLeft / (float)Mathf.Max(1, totalClicks));
         }
 
         /// <summary>Sinh loạt dot (1 lần click).</summary>
@@ -250,6 +266,33 @@ namespace FruitSort
             }
         }
 
+        IEnumerator SpawnAndConsumeRoutine(int count)
+        {
+            var wait = new WaitForSeconds(spawnInterval);
+            for (int i = 0; i < count; i++)
+            {
+                SpawnOneAndConsume();
+                if (i + 1 < count) yield return wait;
+            }
+        }
+
+        void SpawnOneAndConsume()
+        {
+            bool spawned = SpawnOne();
+            _reservedDots = Mathf.Max(0, _reservedDots - 1);
+
+            if (spawned)
+            {
+                _dotsLeft = Mathf.Max(0, _dotsLeft - 1);
+            }
+            clicksLeftDebug = _dotsLeft;
+            UpdateFillVisual();
+
+            // Chỉ ẩn sau khi dot cuối của mọi loạt đang chờ đã thực sự được sinh.
+            if (_dotsLeft <= 0 && _reservedDots <= 0) Deplete();
+        }
+
+
         IEnumerator SpawnRoutine()
         {
             var wait = new WaitForSeconds(spawnInterval);
@@ -260,12 +303,12 @@ namespace FruitSort
             }
         }
 
-        void SpawnOne()
+        bool SpawnOne()
         {
-            if (dotPrefab == null) { Debug.LogError("[ModelDotSpawner] Chưa gán dotPrefab."); return; }
+            if (dotPrefab == null) { Debug.LogError("[ModelDotSpawner] Chưa gán dotPrefab."); return false; }
 
             FallingPixelManager fm = fallingManager != null ? fallingManager : FallingPixelManager.Instance;
-            if (fm == null) { Debug.LogError("[ModelDotSpawner] Không tìm thấy FallingPixelManager."); return; }
+            if (fm == null) { Debug.LogError("[ModelDotSpawner] Không tìm thấy FallingPixelManager."); return false; }
 
             Vector3 baseP = spawnOrigin != null ? spawnOrigin.position : transform.position;
             Vector2 r = Random.insideUnitCircle * spawnSpread;
@@ -280,7 +323,7 @@ namespace FruitSort
 
             Dot d = Instantiate(dotPrefab, pos, Quaternion.identity);
             d.transform.localScale = Vector3.one * dotScale;
-            Sprite spr = fruitDatabase != null ? fruitDatabase.GetById(colorId)?.sprite : null;
+            Sprite spr = fruitDatabase != null ? fruitDatabase.GetById(colorId)?.dotSprite : null;
             d.Init(colorId, c, dotHP, new Vector2Int(-1, -1), spr);
 
             if (useDirectionalLaunch)
@@ -305,6 +348,16 @@ namespace FruitSort
                 float t = overrideEntry ? entryProgress : float.NaN;
                 fm.AddDotApproaching(d, t);
             }
+            return true;
+        }
+
+        void OnValidate()
+        {
+            totalClicks = Mathf.Max(1, totalClicks);
+            gridColumns = Mathf.Max(1, gridColumns);
+            cellGap = Mathf.Clamp(cellGap, 0f, 0.45f);
+            if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
+            if (packageSprite != null && gridFill == null) gridFill = packageSprite.GetComponent<SpriteGridFill>();
         }
     }
 }

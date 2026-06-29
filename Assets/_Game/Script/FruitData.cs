@@ -18,7 +18,11 @@ namespace FruitSort
         [Tooltip("Màu đại diện — dùng để tint dot và bucket.")]
         public Color color = Color.white;
 
-        [Tooltip("Sprite đại diện cho loại quả này.")]
+        [Tooltip("Sprite hình/model lớn, dùng làm hình đại diện hoặc khuôn.")]
         public Sprite sprite;
+
+        [Tooltip("Sprite dành riêng cho Dot trong grid/băng chuyền (thường là ô vuông). " +
+                 "Để trống sẽ dùng sprite mặc định của Dot prefab và tint theo color.")]
+        public Sprite dotSprite;
     }
 }

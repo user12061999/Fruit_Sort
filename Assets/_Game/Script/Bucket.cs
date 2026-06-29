@@ -4,9 +4,9 @@ using DG.Tweening;
 namespace FruitSort
 {
     /// <summary>
-    /// Thùng phân loại: có ID màu và tỉ lệ Fill (cần maxFill dot để đầy).
+    /// Cage/Bucket dùng SpriteGridFill: mỗi dot nhảy vào một ô rồi tăng fill của shader.
     /// Dot CÙNG MÀU đi vào VÙNG VA CHẠM (Collider2D chỉnh trong editor) sẽ bị hút vào và
-    /// fill dần SPRITE chính của thùng (qua shader FruitSort/SpriteFill, _FillAmount).
+    /// Không scale sprite và không tạo một SpriteRenderer cho từng ô.
     /// Đầy 100% -> punch scale (DOTween) -> Destroy. Cho phép nhiều bucket cùng màu.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
@@ -17,9 +17,12 @@ namespace FruitSort
         public int colorId = 0;
         public Color color = Color.white;
 
-        [Header("Fill")]
-        [Tooltip("Số dot cần để đầy.")]
-        public int maxFill = 5;
+        [Header("Fill theo từng dot")]
+        [Tooltip("Số dot cần để fill kín toàn bộ sprite. Mỗi dot nhận vào tăng đúng 1/n.")]
+        [InspectorName("Dots For Full Sprite")]
+        [Min(1)] public int maxFill = 5;
+        [Tooltip("Số dot đã fill vào sprite (chỉ đọc tham khảo lúc play).")]
+        [InspectorName("Filled Dots Debug")]
         public int currentFill = 0;
 
         [Header("Vùng va chạm (chỉnh trong editor)")]
@@ -38,11 +41,15 @@ namespace FruitSort
         [Tooltip("Tốc độ kéo dot vào (world unit/giây).")]
         public float attractSpeed = 6f;
 
-        [Header("Hiển thị")]
-        [Tooltip("Sprite chính của bucket (sẽ fill dần). Để trống sẽ tự lấy SpriteRenderer.")]
+        [Header("Sprite Grid")]
+        [Tooltip("SpriteRenderer hiển thị grid fill.")]
         public SpriteRenderer body;
-        [Tooltip("Thanh fill phụ (tuỳ chọn): scale Y theo % đầy.")]
-        public Transform fillBar;
+        [Tooltip("Component điều khiển shader grid fill trên cùng object với Body.")]
+        public SpriteGridFill gridFill;
+        [Tooltip("Số ô mỗi hàng; số hàng tự tính từ Dots For Full Sprite.")]
+        [Min(1)] public int gridColumns = 5;
+        [Tooltip("Khoảng trong suốt giữa các ô.")]
+        [Range(0f, 0.45f)] public float cellGap = 0.02f;
 
         [Header("Hành động khi đầy")]
         [Tooltip("Cường độ punch scale khi đầy.")]
@@ -53,14 +60,6 @@ namespace FruitSort
         [Header("Xếp dot vào giỏ (như xếp hoa quả)")]
         [Tooltip("Gốc để xếp dot (đáy giỏ). Để trống = dùng transform của bucket.")]
         public Transform contentRoot;
-        [Tooltip("Offset của ô đầu tiên so với contentRoot (local).")]
-        public Vector2 slotAreaOffset = Vector2.zero;
-        [Tooltip("Số dot mỗi hàng trong giỏ.")]
-        [Min(1)] public int slotColumns = 3;
-        [Tooltip("Khoảng cách giữa các ô (local).")]
-        public float slotSpacing = 0.3f;
-        [Tooltip("Scale của dot khi đã nằm trong giỏ.")]
-        public float dotScaleInBucket = 0.35f;
         [Tooltip("Độ cao cú nảy khi dot bay vào giỏ (hiệu ứng ném vào).")]
         public float jumpPower = 0.7f;
         [Tooltip("Thời lượng dot bay vào ô của nó.")]
@@ -68,8 +67,7 @@ namespace FruitSort
 
         // ---- runtime ----
         readonly System.Collections.Generic.List<Dot> _contained = new System.Collections.Generic.List<Dot>();
-        MaterialPropertyBlock _mpb;
-        static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
+        int _visibleFill;
         bool _full;
 
         public bool IsActive => isActiveAndEnabled && !_full && currentFill < maxFill;
@@ -80,6 +78,7 @@ namespace FruitSort
 
         void OnEnable()
         {
+            _visibleFill = Mathf.Clamp(currentFill, 0, Mathf.Max(1, maxFill));
             ApplyVisual();
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.RegisterBucket(this);
         }
@@ -119,14 +118,14 @@ namespace FruitSort
         {
             if (d == null) return;
             Transform root = contentRoot != null ? contentRoot : transform;
-            int slot = _contained.Count;
+            int slot = currentFill;
             _contained.Add(d);
 
             // Gỡ mọi điều khiển chuyển động cũ, parent vào giỏ (giữ vị trí world để bay vào mượt).
             d.transform.DOKill();
             d.transform.SetParent(root, true);
 
-            // Đảm bảo dot vẽ ĐÈ lên thân giỏ và xếp lớp theo thứ tự vào.
+            // Dot bay tới đúng ô; khi chạm ô thì shader mới reveal ô đó và dot thật được thu hồi.
             if (d.Sr != null)
             {
                 if (body != null)
@@ -136,23 +135,25 @@ namespace FruitSort
                 }
             }
 
-            Vector3 targetLocal = SlotLocalPosition(slot);
-            d.transform.DOLocalJump(targetLocal, jumpPower, 1, dropDuration).SetEase(Ease.OutQuad);
-            d.transform.DOScale(Vector3.one * dotScaleInBucket, dropDuration);
+            Vector3 targetWorld = gridFill != null ? gridFill.GetCellWorldPosition(slot) : MouthPosition;
+            Vector3 targetLocal = root.InverseTransformPoint(targetWorld);
+            d.transform.DOLocalJump(targetLocal, jumpPower, 1, dropDuration)
+                       .SetEase(Ease.OutQuad)
+                       .OnComplete(() => CompleteDotVisual(d));
             d.transform.DOLocalRotate(Vector3.zero, dropDuration);
 
             AddFill(1);
         }
 
-        /// <summary>Vị trí (local so với contentRoot) của ô thứ index trong giỏ — xếp theo hàng từ dưới lên.</summary>
-        Vector3 SlotLocalPosition(int index)
+        void CompleteDotVisual(Dot dot)
         {
-            int cols = Mathf.Max(1, slotColumns);
-            int col = index % cols;
-            int row = index / cols;
-            float x = (col - (cols - 1) * 0.5f) * slotSpacing;
-            float y = row * slotSpacing;
-            return new Vector3(slotAreaOffset.x + x, slotAreaOffset.y + y, 0f);
+            _visibleFill = Mathf.Min(currentFill, _visibleFill + 1);
+            UpdateFillVisual();
+            if (dot != null)
+            {
+                _contained.Remove(dot);
+                Destroy(dot.gameObject);
+            }
         }
 
         /// <summary>Tăng fill. Đầy -> punch scale rồi Destroy.</summary>
@@ -160,7 +161,6 @@ namespace FruitSort
         {
             if (_full || currentFill >= maxFill) return;
             currentFill = Mathf.Min(maxFill, currentFill + Mathf.Max(1, n));
-            UpdateFillVisual();
 
             if (currentFill >= maxFill) DoFull();
         }
@@ -190,35 +190,32 @@ namespace FruitSort
         void ApplyVisual()
         {
             if (body == null) body = GetComponent<SpriteRenderer>();
-            if (body != null) body.color = color;
+            if (body != null)
+            {
+                body.color = color;
+                if (gridFill == null) gridFill = body.GetComponent<SpriteGridFill>();
+            }
             UpdateFillVisual();
         }
 
         void UpdateFillVisual()
         {
-            // Fill chính sprite qua MaterialPropertyBlock (không tạo material instance, không leak).
-            if (body != null)
-            {
-                if (_mpb == null) _mpb = new MaterialPropertyBlock();
-                body.GetPropertyBlock(_mpb);
-                _mpb.SetFloat(FillAmountID, FillRatio);
-                body.SetPropertyBlock(_mpb);
-            }
-
-            // Thanh fill phụ tuỳ chọn.
-            if (fillBar != null)
-            {
-                Vector3 s = fillBar.localScale;
-                s.y = FillRatio;
-                fillBar.localScale = s;
-            }
+            if (gridFill == null) return;
+            int columns = Mathf.Max(1, gridColumns);
+            int rows = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(1, maxFill) / (float)columns));
+            gridFill.SetGrid(columns, rows);
+            gridFill.CellGap = cellGap;
+            gridFill.FillAmount = Mathf.Clamp01(_visibleFill / (float)Mathf.Max(1, maxFill));
         }
 
         void OnValidate()
         {
             if (body == null) body = GetComponent<SpriteRenderer>();
             if (zone == null) zone = GetComponent<Collider2D>();
-            if (body != null) body.color = color;
+            maxFill = Mathf.Max(1, maxFill);
+            gridColumns = Mathf.Max(1, gridColumns);
+            cellGap = Mathf.Clamp(cellGap, 0f, 0.45f);
+            if (body != null && gridFill == null) gridFill = body.GetComponent<SpriteGridFill>();
         }
 
         void OnDrawGizmosSelected()

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7586780288578330236}
   - component: {fileID: 5787813867433001539}
   - component: {fileID: 4522435461114877133}
+  - component: {fileID: 221697749607100103}
   m_Layer: 0
   m_Name: FruitSpawn
   m_TagString: Untagged
@@ -53,6 +54,9 @@ MonoBehaviour:
   packageSprite: {fileID: 5787813867433001539}
   totalClicks: 5
   clicksLeftDebug: 0
+  gridFill: {fileID: 221697749607100103}
+  gridColumns: 16
+  cellGap: 0.02
   spawnCount: 50
   spawnOrigin: {fileID: 0}
   spawnSpread: 0
@@ -101,7 +105,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0cfc58e8060355b4188e2815cadb8895, type: 2}
+  - {fileID: 2100000, guid: 3322f08d9c0f6d04b91e16d8a239d277, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -180,3 +184,19 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &221697749607100103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2244274073769226203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119f1c43deba6bb4c8179c38bcae4249, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteGridFill
+  columns: 16
+  rows: 16
+  fillAmount: 1
+  cellGap: 0.02

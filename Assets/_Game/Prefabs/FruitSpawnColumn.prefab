@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3970927671812231887}
   - component: {fileID: 1208095392955564772}
   - component: {fileID: 295672197921161066}
+  - component: {fileID: 5174651615057029859}
   m_Layer: 0
   m_Name: ModelDotSpawner (2)
   m_TagString: Untagged
@@ -53,6 +54,9 @@ MonoBehaviour:
   packageSprite: {fileID: 1208095392955564772}
   totalClicks: 5
   clicksLeftDebug: 0
+  gridFill: {fileID: 5174651615057029859}
+  gridColumns: 16
+  cellGap: 0.02
   spawnCount: 50
   spawnOrigin: {fileID: 0}
   spawnSpread: 0
@@ -101,7 +105,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0cfc58e8060355b4188e2815cadb8895, type: 2}
+  - {fileID: 2100000, guid: 3322f08d9c0f6d04b91e16d8a239d277, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -180,6 +184,22 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &5174651615057029859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3176072162473517344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119f1c43deba6bb4c8179c38bcae4249, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteGridFill
+  columns: 16
+  rows: 16
+  fillAmount: 1
+  cellGap: 0.02
 --- !u!1 &6868886504829181817
 GameObject:
   m_ObjectHideFlags: 0
@@ -242,6 +262,7 @@ GameObject:
   - component: {fileID: 7103309071599434739}
   - component: {fileID: 4831082964639009668}
   - component: {fileID: 8162435373107152769}
+  - component: {fileID: 6069960632016495906}
   m_Layer: 0
   m_Name: ModelDotSpawner (1)
   m_TagString: Untagged
@@ -283,6 +304,9 @@ MonoBehaviour:
   packageSprite: {fileID: 4831082964639009668}
   totalClicks: 5
   clicksLeftDebug: 0
+  gridFill: {fileID: 6069960632016495906}
+  gridColumns: 16
+  cellGap: 0.02
   spawnCount: 50
   spawnOrigin: {fileID: 0}
   spawnSpread: 0
@@ -331,7 +355,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0cfc58e8060355b4188e2815cadb8895, type: 2}
+  - {fileID: 2100000, guid: 3322f08d9c0f6d04b91e16d8a239d277, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -410,6 +434,22 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &6069960632016495906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7859299259003046922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119f1c43deba6bb4c8179c38bcae4249, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteGridFill
+  columns: 16
+  rows: 16
+  fillAmount: 1
+  cellGap: 0.02
 --- !u!1001 &1718828099572683057
 PrefabInstance:
   m_ObjectHideFlags: 0
