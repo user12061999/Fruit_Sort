@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 namespace FruitSort
 {
@@ -125,6 +126,7 @@ namespace FruitSort
 
             d.state = DotState.Launched;
             d.launchVelocity = velocity;
+            d.launchGravityScale = 0f;
             d.fallSpeed = 0f;
             d.targetBucket = null;
             d.markedForRemoval = false;
@@ -133,6 +135,39 @@ namespace FruitSort
             d.ApplyColor();
             d.transform.SetParent(transform, true);
             _dots.Add(d);
+        }
+
+        /// <summary>
+        /// Nhả 1 dot khỏi giỏ: bắn ra theo <paramref name="velocity"/> như AddDotLaunched NHƯNG có trọng lực
+        /// (<paramref name="gravityScale"/>) để dot vọt ra rồi rơi xuống băng chuyền GẦN ĐÓ thay vì rải khắp belt.
+        /// Bỏ qua <paramref name="ignore"/> cho tới khi dot rời khỏi vùng hút của bucket đó -> không bị hút lại ngay.
+        /// </summary>
+        public void ReleaseDotLaunched(Dot d, Vector3 origin, Vector2 velocity, Bucket ignore, float gravityScale = 1f)
+        {
+            if (d == null) return;
+
+            d.transform.DOKill();
+            d.transform.SetParent(transform, true);
+            d.transform.position = origin;
+
+            d.state = DotState.Launched;
+            d.launchVelocity = velocity;
+            d.launchGravityScale = Mathf.Max(0f, gravityScale);
+            d.fallSpeed = 0f;
+            d.targetBucket = null;
+            d.markedForRemoval = false;
+            d.capturedByBucket = false;
+            d.ignoredBucket = ignore;
+            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+            d.spin = Random.Range(-maxSpin, maxSpin);
+            if (d.Sr != null)
+            {
+                d.Sr.enabled = true;
+                d.Sr.sortingLayerID = 0;
+                d.Sr.sortingOrder = 0;
+            }
+            d.ApplyColor();
+            if (!_dots.Contains(d)) _dots.Add(d);
         }
 
         /// <summary>
@@ -165,6 +200,74 @@ namespace FruitSort
             d.ApplyColor();
             d.transform.SetParent(transform, true);
             _dots.Add(d);
+        }
+
+        public void ReturnDotToConveyor(
+            Dot d,
+            Vector3 releasePosition,
+            float jumpPower,
+            float duration,
+            int releaseIndex)
+        {
+            if (d == null) return;
+
+            ConveyorSpline belt = d.conveyor != null && d.conveyor.isActiveAndEnabled
+                ? d.conveyor
+                : conveyor;
+            if (belt == null)
+            {
+                d.transform.position = releasePosition;
+                AddDot(d);
+                return;
+            }
+
+            float progress = belt.FindClosestProgress(releasePosition, out _);
+            float length = Mathf.Max(0.01f, belt.GetSplineLength());
+            progress += releaseIndex * dotSize * 0.65f / length;
+            progress = belt.IsClosed ? Mathf.Repeat(progress, 1f) : Mathf.Clamp01(progress);
+            float halfWidth = Mathf.Max(0f, belt.HalfWidth - dotSize * 0.5f);
+            float lateral = Random.Range(-halfWidth, halfWidth);
+            Vector3 target = belt.GetPositionOnSpline(progress, lateral);
+
+            d.transform.DOKill();
+            d.transform.SetParent(transform, true);
+            d.transform.position = releasePosition;
+            d.conveyor = belt;
+            d.beltProgress = progress;
+            d.lateralOffset = lateral;
+            d.targetBucket = null;
+            d.markedForRemoval = false;
+            d.capturedByBucket = false;
+            d.state = DotState.Approaching;
+            if (d.Sr != null)
+            {
+                d.Sr.enabled = true;
+                d.Sr.sortingLayerID = 0;
+                d.Sr.sortingOrder = 0;
+            }
+            d.ApplyColor();
+
+            d.transform.DOJump(target, Mathf.Max(0f, jumpPower), 1, Mathf.Max(0.01f, duration))
+                .SetEase(Ease.OutQuad)
+                .OnComplete(() => ActivateReturnedDot(d, belt, progress, lateral, target));
+        }
+
+        void ActivateReturnedDot(
+            Dot d,
+            ConveyorSpline belt,
+            float progress,
+            float lateral,
+            Vector3 target)
+        {
+            if (d == null || belt == null) return;
+            d.transform.position = target;
+            d.state = DotState.OnBelt;
+            d.conveyor = belt;
+            d.beltProgress = progress;
+            d.lateralOffset = lateral;
+            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+            d.spin = Random.Range(-maxSpin, maxSpin);
+            if (!_dots.Contains(d)) _dots.Add(d);
         }
 
         void Update()
@@ -320,14 +423,22 @@ namespace FruitSort
         // Phóng theo hướng cố định; khi chạm bất kỳ băng chuyền nào thì lên belt đó.
         void StepLaunched(Dot d, Vector2 sep, float dt, int idx)
         {
+            // Trọng lực (chỉ khi nhả khỏi giỏ): dot vọt ra rồi rơi xuống.
+            if (d.launchGravityScale > 0f)
+                d.launchVelocity.y -= gravity * d.launchGravityScale * dt;
+
             Vector3 pos = _posCache[idx];
             pos.x += d.launchVelocity.x * dt + sep.x;
             pos.y += d.launchVelocity.y * dt + sep.y;
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
+            // Khi có trọng lực: chỉ cho bám belt lúc ĐANG RƠI (vy<=0) để không dính lại belt ngay
+            // khi vừa bắn lên từ miệng giỏ (giỏ nằm sát băng chuyền) -> dot kịp vọt ra ngoài trước.
+            bool canStick = d.launchGravityScale <= 0f || d.launchVelocity.y <= 0f;
+
             // Kiểm tra va chạm với từng băng chuyền đã đăng ký.
             float threshold = dotSize * 0.5f;
-            for (int i = 0; i < _allConveyors.Count; i++)
+            for (int i = 0; canStick && i < _allConveyors.Count; i++)
             {
                 var belt = _allConveyors[i];
                 if (belt == null || !belt.isActiveAndEnabled) continue;
@@ -505,7 +616,19 @@ namespace FruitSort
         void StepAttracting(Dot d, float dt, int idx)
         {
             Bucket b = d.targetBucket;
-            if (b == null || !b.IsActive) { d.state = DotState.OnBelt; d.targetBucket = null; return; }
+            if (b == null)
+            {
+                d.state = DotState.OnBelt;
+                d.targetBucket = null;
+                return;
+            }
+            if (!b.CanReceiveReserved(d))
+            {
+                b.CancelReservation(d);
+                d.state = DotState.OnBelt;
+                d.targetBucket = null;
+                return;
+            }
 
             Vector3 mouth = b.MouthPosition;
             _posCache[idx] = Vector3.MoveTowards(_posCache[idx], mouth, b.attractSpeed * dt);
@@ -516,22 +639,46 @@ namespace FruitSort
                 // Ghi vị trí cache cuối cùng vào Transform trước khi bucket nhận nuôi (DOTween sẽ
                 // điều khiển từ đây) — nếu không, vòng write-back sau MoveDots vẫn dùng vị trí cũ.
                 d.transform.position = _posCache[idx];
-                b.ReceiveDot(d);             // dot bay vào & nằm trong giỏ (KHÔNG destroy)
-                if (GameManager.Instance != null) GameManager.Instance.OnDotSorted(d);
-                d.capturedByBucket = true;
-                d.markedForRemoval = true;
+                bool isCorrectColor = d.colorId == b.colorId;
+                if (b.ReceiveDot(d))
+                {
+                    if (isCorrectColor && !d.sortScoreAwarded && GameManager.Instance != null)
+                    {
+                        GameManager.Instance.OnDotSorted(d);
+                        d.sortScoreAwarded = true;
+                    }
+                    d.capturedByBucket = true;
+                    d.markedForRemoval = true;
+                }
+                else
+                {
+                    d.state = DotState.OnBelt;
+                    d.targetBucket = null;
+                }
             }
         }
 
         // Tìm bucket cùng màu trong tầm hút -> chuyển sang trạng thái Attracting.
         void TryAttract(Dot d, int idx)
         {
+            Vector3 position = _posCache[idx];
+            Bucket ignored = d.ignoredBucket;
+            if (ignored == null)
+            {
+                d.ignoredBucket = null;
+            }
+            else if (!ignored.Contains(position))
+            {
+                d.ignoredBucket = null;
+                ignored = null;
+            }
+
             for (int i = 0; i < _buckets.Count; i++)
             {
                 Bucket b = _buckets[i];
-                if (b == null || !b.IsActive || b.colorId != d.colorId) continue;
+                if (b == null || b == ignored || !b.IsActive) continue;
                 // Phát hiện theo VÙNG VA CHẠM (Collider2D) của bucket, fallback bán kính nếu chưa gán zone.
-                if (b.Contains(_posCache[idx])) // dùng cache
+                if (b.Contains(position) && b.TryReserve(d)) // dùng cache
                 {
                     d.state = DotState.Attracting;
                     d.targetBucket = b;

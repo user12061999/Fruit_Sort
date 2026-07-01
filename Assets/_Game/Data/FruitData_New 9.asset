@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.FruitData
   colorId: 9
   fruitName: "Qu\u1EA3 M\u1EDBi"
-  color: {r: 0.73030996, g: 1, b: 0, a: 1}
-  sprite: {fileID: -7382044261363679746, guid: 958fd550b81fb5548a7f15a72cc7782c, type: 3}
+  color: {r: 0.098039225, g: 0.3254902, b: 0.07058824, a: 1}
+  sprite: {fileID: 7604749446595944949, guid: 6a4d5e8e42d7cfc468ea0682275bd505, type: 3}
+  dotSprite: {fileID: 21300000, guid: 580194e9ec365ec45a6c5f7f7d5076c0, type: 3}

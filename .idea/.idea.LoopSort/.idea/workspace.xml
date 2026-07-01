@@ -11,10 +11,742 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37a0f35e-74ce-4a1a-91d1-042b7b429311" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.agents/plugins/marketplace.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/agent-introspection-debugging/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/agent-introspection-debugging/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/agent-sort/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/agent-sort/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/api-design/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/api-design/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/article-writing/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/article-writing/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/backend-patterns/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/backend-patterns/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/benchmark-methodology/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/benchmark-methodology/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/10_purpose-why.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/20_positioning.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/30_audience-niche.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/40_personality-archetype.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/50_voice-tone.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/60_narrative-story.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/70_founder-tension.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-discovery/references/90_SYNTHESIS.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-voice/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-voice/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/brand-voice/references/voice-profile-schema.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/bun-runtime/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/bun-runtime/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/coding-standards/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/coding-standards/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/competitive-platform-analysis/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/competitive-platform-analysis/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/competitive-report-structure/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/competitive-report-structure/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/content-engine/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/content-engine/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/crosspost/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/crosspost/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/deep-research/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/deep-research/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/dmux-workflows/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/dmux-workflows/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/documentation-lookup/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/documentation-lookup/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/e2e-testing/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/e2e-testing/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/eval-harness/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/eval-harness/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/everything-claude-code/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/everything-claude-code/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/exa-search/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/exa-search/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/fal-ai-media/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/fal-ai-media/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/frontend-patterns/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/frontend-patterns/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/frontend-slides/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/frontend-slides/STYLE_PRESETS.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/frontend-slides/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/investor-materials/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/investor-materials/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/investor-outreach/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/investor-outreach/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/market-research/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/market-research/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/mcp-server-patterns/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/mcp-server-patterns/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/mle-workflow/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/mle-workflow/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/nextjs-turbopack/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/nextjs-turbopack/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/product-capability/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/product-capability/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/security-review/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/security-review/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/strategic-compact/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/strategic-compact/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/tdd-workflow/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/tdd-workflow/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/verification-loop/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/verification-loop/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/video-editing/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/video-editing/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/x-api/SKILL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.agents/skills/x-api/agents/openai.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.codex/AGENTS.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.codex/agents/docs-researcher.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.codex/agents/explorer.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.codex/agents/reviewer.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.codex/config.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/BucketColorFlowTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/BucketColorFlowTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/160.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/160.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/GUI.spriteatlasv2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/GUI.spriteatlasv2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Game.spriteatlasv2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Game.spriteatlasv2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/LuckySpin.spriteatlasv2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/LuckySpin.spriteatlasv2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map 1.spriteatlasv2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map 1.spriteatlasv2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map 2.spriteatlasv2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map 2.spriteatlasv2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map 3.spriteatlasv2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map 3.spriteatlasv2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map.spriteatlasv2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Atlases/Map.spriteatlasv2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/bandana-part-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/bandana-part-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/bandana-part-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/bandana-part-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/bandana-part-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/bandana-part-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/closed-eye.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/closed-eye.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/ear-sad-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/ear-sad-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/ear-sad-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/ear-sad-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/ear.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/ear.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/eye.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/eye.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-01.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-01.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-02.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-02.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-03.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-03.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-04.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-04.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-05.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand-05.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand_shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/hand_shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/happy-eye.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/happy-eye.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/happy-hand.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/happy-hand.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/happy-mouth.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/happy-mouth.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/leg.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/leg.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-body.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-body2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-body2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-cheek.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-cheek.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-head.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-head.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-white-cheek.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/main-character-white-cheek.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/mouth-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/mouth-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/mouth-sad.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/mouth-sad.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/mouth.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/mouth.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/nose.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/nose.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/sad_bunny_hand.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/sad_bunny_hand.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/sad_bunny_hand2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/sad_bunny_hand2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/tear-particle.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/tear-particle.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/tutorial-body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/tutorial-body.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/water-particle.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/Main-character/water-particle.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/red-bunny-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/red-bunny-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-arm.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-arm.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-bandana.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-bandana.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-body-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-body-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-body-blink.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-body-blink.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-body.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-leg.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-leg.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Character/small-bunny-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/diagonal_bomb2_icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/diagonal_bomb2_icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/diagonal_bomb3_icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/diagonal_bomb3_icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/diagonal_bomb_icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/diagonal_bomb_icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/hor_vert_bomb_icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/hor_vert_bomb_icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/horizontal_bomb_icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/horizontal_bomb_icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/vert_bomb_icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Editor Icons/vert_bomb_icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Backgrounds.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Backgrounds/Background_1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Backgrounds/Background_1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Backgrounds/Background_2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Backgrounds/Background_2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Backgrounds/Background_3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Backgrounds/Background_3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/GameParticles.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/GameParticles/blurred_circle 1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/GameParticles/blurred_circle 1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/GameParticles/star_part-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/GameParticles/star_part-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Aim_booster.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Aim_booster.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bomb-item-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bomb-item-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bomb-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bomb-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-blink.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-blink.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-body.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-leg.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-leg.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-wing.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bouncing Item/bouncing-wing.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bubble-light.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Bubble-light.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Carrot-collect-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Carrot-collect-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Chameleon-item-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Chameleon-item-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Chameleon-item-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Chameleon-item-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Collapsar-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Collapsar-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Cover-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Cover-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Direction-bomb-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Direction-bomb-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Direction-bomb-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Direction-bomb-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Direction-bomb-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Direction-bomb-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Empty-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Empty-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_blink.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra Item/extra_item_blink.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra-Score-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra-Score-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Extra-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/ExtraMovesTime.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/ExtraMovesTime.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item-anim1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item-anim1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item-anim2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item-anim2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item-anim3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item-anim3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Fragile-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Hardbreakable-item-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Hardbreakable-item-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Hardbreakable-item-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Hardbreakable-item-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Holding-item-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Holding-item-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Holding-item-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Holding-item-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-4.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-5.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-5.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-6.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Item-6.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Multicolor-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Multicolor-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Random-destructor.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Random-destructor.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Random-item-editor.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Random-item-editor.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Score-star-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Score-star-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Sharp-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Sharp-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Star-collect-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Star-collect-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Unbreakable-item.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/Items/Unbreakable-item.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bonus-item-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bonus-item-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bonus-item-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bonus-item-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bonus-item-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bonus-item-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/baby_parachute.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/baby_parachute.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble-bunny-blink.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble-bunny-blink.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble-bunny-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble-bunny-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble-bunny-icon2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble-bunny-icon2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_head.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_head.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_left_ear.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_left_ear.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_mouth.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_mouth.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_right_ear.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Bubble-character/bubble_bunny_right_ear.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Hole-theme-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Hole-theme-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Hole-theme-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/Hole-theme-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/aim-booster.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/aim-booster.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-labe-lockedl.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-labe-lockedl.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-label.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-label.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-number.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-number.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-plus.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/booster-plus.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/bubble_line.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/bubble_line.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/circle-arrows.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/circle-arrows.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/circle-in-middle.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/circle-in-middle.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/fantastic-txt.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/fantastic-txt.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/good-txt.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/good-txt.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/great-txt.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/great-txt.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hand-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hand-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hole-theme-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hole-theme-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hole-theme-mask.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hole-theme-mask.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hole.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/hole.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/level-completed-label.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/level-completed-label.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/level-completed-label2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/level-completed-label2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/quest-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/quest-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/square-white-label.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/square-white-label.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-1-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-1-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/star-bar-4.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/top-menu-target.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/top-menu-target.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/tutorial-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/tutorial-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/tutorial-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/tutorial-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/tutorial-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GameScene/UI/tutorial-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/ads-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/ads-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/again-arrow-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/again-arrow-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/again-arrow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/again-arrow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/blue_banner.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/blue_banner.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/bubble-icon-big.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/bubble-icon-big.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/bubble-icon-small.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/bubble-icon-small.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/button-4.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/buy-more-map-button.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/buy-more-map-button.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/clock-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/clock-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-shop-banner.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-shop-banner.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-shop-banner2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/coin-shop-banner2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-blue-button.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-blue-button.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-green-button.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/daily-bonus-green-button.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/dark-menu-back.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/dark-menu-back.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/dotte-line-rectangle.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/dotte-line-rectangle.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/green-bunny-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/green-bunny-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/heart-icon-big.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/heart-icon-big.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/heart-icon-ui.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/heart-icon-ui.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/heart-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/heart-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main-menu-banner-grey.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main-menu-banner-grey.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main-menu-banner.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main-menu-banner.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main-menu-banner2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main-menu-banner2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main_menu_shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/main_menu_shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/music-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/music-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/next-arrow-4.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/part-of-ribbon-grey.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/part-of-ribbon-grey.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/part-of-ribbon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/part-of-ribbon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/play-button-icon-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/play-button-icon-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/play-button-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/play-button-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/play-button-white.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/play-button-white.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/plus-map-button.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/plus-map-button.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/purple_banner.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/purple_banner.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/rainbow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/rainbow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/rays.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/rays.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/red_banner.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/red_banner.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/settings-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/settings-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/sound-button.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/sound-button.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/sound-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/sound-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/star_part.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/star_part.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/v-check-arrow-shape.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/v-check-arrow-shape.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/white-lable.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/white-lable.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/win-star-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/win-star-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/win-star-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/win-star-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/x-check-arrow-shape.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/x-check-arrow-shape.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/x-lable-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/x-lable-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/x-lable-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/CommonUI/x-lable-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon-light.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon-light.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-icon4.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-part-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-part-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-part-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-part-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-patric-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-patric-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-patrtic-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/LuckySpin/lucky-spin-patrtic-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/MainMenu.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/MainMenu/main-scene-background.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/MainMenu/main-scene-background.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/gdpr.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/gdpr/uiAd.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/gdpr/uiAd.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/gdpr/x.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/gdpr/x.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/loading-cloud.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/loading-cloud.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/bubble-tail-logo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/bubble-tail-logo.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/bubble_shooter_logo_2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/bubble_shooter_logo_2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/bubble_shooter_logo_txt.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/bubble_shooter_logo_txt.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/carrot.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/carrot.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/red_logo_txt.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/GeneralUI/logo/red_logo_txt.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/Mushroom-map-house-1-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/Mushroom-map-house-1-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/Mushroom-map-house-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/Mushroom-map-house-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/carrot-map-1-leaf1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/carrot-map-1-leaf1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/carrot-map-1-leaf2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/carrot-map-1-leaf2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/carrot-map-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/carrot-map-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/flower-map.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/flower-map.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/grass-map-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/grass-map-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/pine-tree-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/pine-tree-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/pine-tree-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/pine-tree-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/pine-tree-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 1/pine-tree-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/grass-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/grass-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/humpkin-house-2-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/humpkin-house-2-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/humpkin-house-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/humpkin-house-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/mushroom-2-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/mushroom-2-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/mushroom-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/mushroom-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/pumpkin-2-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/pumpkin-2-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/pumpkin-leaves.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/pumpkin-leaves.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/pumpkin.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/pumpkin.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/tree.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/tree/tree-body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/tree/tree-body.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/tree/tree-leaf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/tree/tree-leaf.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/tree/tree-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 2/tree/tree-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/flower-3-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/flower-3-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/flower-3-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/flower-3-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/flower-3-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/flower-3-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/grass-3-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/grass-3-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/grass-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/grass-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3-house-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3-house-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3-house-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3-house-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/mushroom-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-2-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-2-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-4-leaves.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-4-leaves.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-4.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-shadow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/Theme 3/trees/tree-3-shadow.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/avatar-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/avatar-icon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/avatar.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/avatar.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/closed-pin.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/closed-pin.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-star-pin-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-star-pin-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-4-preview.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/map-theme-4-preview.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/opened-pin.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Map/opened-pin.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/Bolt.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/Bolt.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/Bubble.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/Bubble.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/H_line.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/H_line.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/Lightning.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/Lightning.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-1-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-1-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-2-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-2-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-3-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-3-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-4-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-4-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-5-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-5-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-6-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-6-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-7-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-7-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-8-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-8-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/ball-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/blurred_circle-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/blurred_circle-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/blurred_circle-3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/blurred_circle-3.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/blurred_circle.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/blurred_circle.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/bonus-item-star.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/bonus-item-star.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/circle.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/circle.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/fire-effect.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/fire-effect.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/lightning_effect.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/lightning_effect.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/rain.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/rain.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/sharp-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/sharp-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/star-particles.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/star-particles.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/trail-1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/trail-1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/trail-2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/trail-2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/wave.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/wave.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/white-circle.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/white-circle.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/white_point_glow_part2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Sprites/Particles/white_point_glow_part2.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/Fruit_Toon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/Fruit_Toon.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/conveyor-belt-center-1x1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/conveyor-belt-center-1x1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/conveyor-border-1x1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/conveyor-border-1x1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/conveyor-side-borders-left-right-1x1-no-padding.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/conveyor-side-borders-left-right-1x1-no-padding.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/square-fruit-basket-block-transparent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Texture/square-fruit-basket-block-transparent.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Recovery/0 (1).unity" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Recovery/0 (1).unity.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Recovery/0 (2).unity" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Recovery/0 (2).unity.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Belt.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Belt.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/BeltOuter.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/BeltOuter.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 1.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 1.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 10.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 10.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 2.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 2.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 3.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 3.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 4.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 4.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 5.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 5.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 6.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 6.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 7.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 7.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 8.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 8.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 9.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New 9.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Data/FruitData_New.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/Cage.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/Cage.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawnColumn.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawnColumn.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Scenes/SampleScene.unity" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Dot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Dot.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" afterDir="false" />
@@ -25,7 +757,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="4" />
+    <option name="cachedIndexableFilesCount" value="1" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -39,23 +771,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.5798404790457867" />
-      <entry key="MS500" value="3.830707986138807" />
-      <entry key="S2" value="5.289887422059952" />
-      <entry key="S5" value="5.698337921352414" />
-      <entry key="S10" value="5.846034636807948" />
-      <entry key="S30" value="5.9479621403697385" />
-      <entry key="S60" value="5.973890328797664" />
-      <entry key="M2" value="5.987213536224409" />
-      <entry key="M5" value="6.083253270047365" />
-      <entry key="M10" value="6.592325444475482" />
-      <entry key="M15" value="7.1211448794961205" />
-      <entry key="M30" value="8.118457919350636" />
-      <entry key="H1" value="8.911147904614879" />
-      <entry key="H2" value="9.412454843484486" />
-      <entry key="H4" value="9.694575216182422" />
-      <entry key="D1" value="9.947397682326507" />
-      <entry key="W1" value="9.99244271268408" />
+      <entry key="MS100" value="1.6015257946737518" />
+      <entry key="MS500" value="4.123917103439504" />
+      <entry key="S2" value="7.131359155163719" />
+      <entry key="S5" value="8.17421333947503" />
+      <entry key="S10" value="8.57265390593629" />
+      <entry key="S30" value="8.854196972808264" />
+      <entry key="S60" value="8.92666995095681" />
+      <entry key="M2" value="8.963517261411726" />
+      <entry key="M5" value="9.073630046270386" />
+      <entry key="M10" value="9.587153615569763" />
+      <entry key="M15" value="10.117448228831728" />
+      <entry key="M30" value="11.116375146286849" />
+      <entry key="H1" value="11.910013363642696" />
+      <entry key="H2" value="12.411858118631232" />
+      <entry key="H4" value="12.69426856590684" />
+      <entry key="D1" value="12.947345336098593" />
+      <entry key="W1" value="12.992435203145122" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -77,23 +809,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.5237918373808386" />
-      <entry key="MS500" value="3.8014186777261614" />
-      <entry key="S2" value="5.279571152803671" />
-      <entry key="S5" value="5.693874097230856" />
-      <entry key="S10" value="5.843741649639235" />
-      <entry key="S30" value="5.947183753291043" />
-      <entry key="S60" value="5.97349934656375" />
-      <entry key="M2" value="5.987016684842985" />
-      <entry key="M5" value="6.083063548920294" />
-      <entry key="M10" value="6.591911666025829" />
-      <entry key="M15" value="7.1206472183245" />
-      <entry key="M30" value="8.117999662924953" />
-      <entry key="H1" value="8.910835490636707" />
-      <entry key="H2" value="9.41227229305956" />
-      <entry key="H4" value="9.694476527262466" />
-      <entry key="D1" value="9.947380126777917" />
-      <entry key="W1" value="9.992440176561153" />
+      <entry key="MS100" value="1.0360024201522942" />
+      <entry key="MS500" value="3.654625795390597" />
+      <entry key="S2" value="6.9626886006566835" />
+      <entry key="S5" value="8.10126449711629" />
+      <entry key="S10" value="8.535199769616389" />
+      <entry key="S30" value="8.841487948941992" />
+      <entry key="S60" value="8.920286975420254" />
+      <entry key="M2" value="8.96031771793137" />
+      <entry key="M5" value="9.072237792164007" />
+      <entry key="M10" value="9.586138487218095" />
+      <entry key="M15" value="10.116549653508356" />
+      <entry key="M30" value="11.11571639672027" />
+      <entry key="H1" value="11.909600679262331" />
+      <entry key="H2" value="12.411625423702956" />
+      <entry key="H4" value="12.694144801853737" />
+      <entry key="D1" value="12.94732360090588" />
+      <entry key="W1" value="12.992432069918253" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -117,13 +849,13 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "cidr.known.project.marker": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "Claude",
+    "git-widget-placeholder": "Codex__2",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "ml.llm.mcp",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -175,6 +907,9 @@
       <workItem from="1781710452593" duration="1580000" />
       <workItem from="1781714348213" duration="739000" />
       <workItem from="1782227642691" duration="5342000" />
+      <workItem from="1782833675825" duration="1251000" />
+      <workItem from="1782840962103" duration="2570000" />
+      <workItem from="1782877606557" duration="2334000" />
     </task>
     <servers />
   </component>

@@ -47,6 +47,9 @@ namespace FruitSort
 
         // ---- Phóng theo hướng (state Launched). Không serialize. ----
         [System.NonSerialized] public Vector2 launchVelocity;     // vận tốc hiện tại (world unit/giây)
+        // Hệ số trọng lực khi đang Launched (0 = bay thẳng như cũ; >0 = vọt ra rồi rơi xuống belt).
+        // Khi >0, dot CHỈ bám vào băng chuyền lúc ĐANG RƠI (vy<=0) để không dính lại belt ngay khi vừa bắn lên.
+        [System.NonSerialized] public float launchGravityScale = 0f;
 
         // Băng chuyền dot đang chạy trên đó (đổi khi đi qua liên kết sang băng kế). Không serialize.
         [System.NonSerialized] public ConveyorSpline conveyor;
@@ -57,6 +60,9 @@ namespace FruitSort
         [System.NonSerialized] public bool markedForRemoval = false;
         // Đã được bucket "nhận nuôi" (xếp vào giỏ) -> gỡ khỏi manager nhưng KHÔNG destroy. Không serialize.
         [System.NonSerialized] public bool capturedByBucket = false;
+        [System.NonSerialized] public bool sortScoreAwarded = false;
+        // Sau khi bị đổ ra, bỏ qua bucket cũ cho đến khi dot đã đi ra ngoài vùng hút của bucket đó.
+        [System.NonSerialized] public Bucket ignoredBucket;
 
         SpriteRenderer _sr;
         public SpriteRenderer Sr
@@ -79,6 +85,8 @@ namespace FruitSort
             gridPos = gp;
             state = DotState.InGrid;
             markedForRemoval = false;
+            sortScoreAwarded = false;
+            ignoredBucket = null;
             ApplySprite(newSprite);
             ApplyColor();
         }
@@ -94,8 +102,8 @@ namespace FruitSort
         public void ApplyColor()
         {
             if (Sr == null) return;
-            // Có sprite riêng theo màu -> để trắng cho hiện đúng art; ngược lại tint bằng color.
-            Sr.color = hasColorSprite ? Color.white : color;
+            // dotSprite trong FruitData là sprite trắng dùng chung, nên luôn tint theo màu của colorId.
+            Sr.color = color;
         }
 
         /// <summary>
@@ -111,7 +119,7 @@ namespace FruitSort
             if (Sr != null)
             {
                 float t = 1f - Mathf.Clamp01(currentHP / (float)maxHP);
-                Color baseColor = hasColorSprite ? Color.white : color;
+                Color baseColor = color;
                 Sr.color = Color.Lerp(baseColor, Color.white, 0.4f * t + 0.2f);
             }
 

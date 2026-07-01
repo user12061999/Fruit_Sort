@@ -314,16 +314,11 @@ namespace FruitSort
             Vector2 r = Random.insideUnitCircle * spawnSpread;
             Vector3 pos = baseP + new Vector3(r.x, r.y, 0f);
 
-            // Chọn màu.
-            int paletteLen = (palette != null && palette.Length > 0) ? palette.Length : 1;
-            int colorId = (fixedColorId >= 0)
-                ? Mathf.Clamp(fixedColorId, 0, paletteLen - 1)
-                : Random.Range(0, paletteLen);
-            Color c = (palette != null && palette.Length > 0) ? palette[colorId] : Color.white;
+            if (!TryResolveSpawnAppearance(out int colorId, out Color c, out Sprite spr))
+                return false;
 
             Dot d = Instantiate(dotPrefab, pos, Quaternion.identity);
             d.transform.localScale = Vector3.one * dotScale;
-            Sprite spr = fruitDatabase != null ? fruitDatabase.GetById(colorId)?.dotSprite : null;
             d.Init(colorId, c, dotHP, new Vector2Int(-1, -1), spr);
 
             if (useDirectionalLaunch)
@@ -348,6 +343,63 @@ namespace FruitSort
                 float t = overrideEntry ? entryProgress : float.NaN;
                 fm.AddDotApproaching(d, t);
             }
+            return true;
+        }
+
+        public bool TryResolveSpawnAppearance(
+            out int resolvedColorId,
+            out Color resolvedColor,
+            out Sprite resolvedSprite)
+        {
+            resolvedColorId = 0;
+            resolvedColor = Color.white;
+            resolvedSprite = null;
+
+            FruitData fruit = null;
+            if (fixedColorId >= 0)
+            {
+                fruit = fruitDatabase != null ? fruitDatabase.GetById(fixedColorId) : null;
+                if (fruit != null)
+                {
+                    resolvedColorId = fruit.colorId;
+                    resolvedColor = fruit.color;
+                    resolvedSprite = fruit.dotSprite;
+                    return true;
+                }
+
+                int paletteLength = palette != null ? palette.Length : 0;
+                if (paletteLength <= 0) return false;
+                resolvedColorId = Mathf.Clamp(fixedColorId, 0, paletteLength - 1);
+                resolvedColor = palette[resolvedColorId];
+                return true;
+            }
+
+            if (fruitDatabase != null && fruitDatabase.fruits != null)
+            {
+                int validCount = 0;
+                for (int i = 0; i < fruitDatabase.fruits.Length; i++)
+                    if (fruitDatabase.fruits[i] != null) validCount++;
+
+                if (validCount > 0)
+                {
+                    int pick = Random.Range(0, validCount);
+                    for (int i = 0; i < fruitDatabase.fruits.Length; i++)
+                    {
+                        FruitData candidate = fruitDatabase.fruits[i];
+                        if (candidate == null) continue;
+                        if (pick-- > 0) continue;
+                        resolvedColorId = candidate.colorId;
+                        resolvedColor = candidate.color;
+                        resolvedSprite = candidate.dotSprite;
+                        return true;
+                    }
+                }
+            }
+
+            int fallbackLength = palette != null ? palette.Length : 0;
+            if (fallbackLength <= 0) return false;
+            resolvedColorId = Random.Range(0, fallbackLength);
+            resolvedColor = palette[resolvedColorId];
             return true;
         }
 
