@@ -44,6 +44,9 @@ namespace FruitSort
         public float attractSpeed = 6f;
 
         [Header("Fruit Visual Layers")]
+        [Tooltip("Kéo sprite quả của bucket vào đây. Nếu để trống, bucket sẽ lấy sprite từ Fruit Database theo Color Id.")]
+        [InspectorName("Sprite Quả (Kéo Vào Đây)")]
+        public SpriteRenderer fruitSprite;
         [Tooltip("Database dùng để lấy sprite và màu quả theo colorId.")]
         public FruitDatabase fruitDatabase;
         [Tooltip("Lớp nền luôn hiện đầy hình quả, nằm phía sau lớp fill.")]
@@ -72,16 +75,16 @@ namespace FruitSort
         [Tooltip("Thời lượng dot bay vào ô của nó.")]
         public float dropDuration = 0.35f;
 
-        [Header("Wrong color & return")]
+        [Header("Wrong color")]
         [Min(0f)] public float wrongColorLerpDuration = 0.25f;
-        [Min(0f)] public float returnJumpPower = 0.8f;
-        [Min(0.01f)] public float returnDuration = 0.35f;
 
-        [Header("Nhả dot (release) — spawn ngay trong zone")]
-        [Tooltip("Độ 'pop' nhẹ ngẫu nhiên khi dot xuất hiện trong zone (world unit/giây). 0 = đứng yên rồi rơi.")]
-        [Min(0f)] public float releasePopSpeed = 2f;
-        [Tooltip("Hệ số trọng lực để dot rơi nhẹ xuống băng chuyền trong zone.")]
-        [Min(0f)] public float releaseGravityScale = 1f;
+        [Header("Phóng dot vào băng chuyền")]
+        [Tooltip("Hướng phóng từ miệng bucket (sẽ normalize).")]
+        public Vector2 launchDirection = Vector2.down;
+        [Tooltip("Tốc độ phóng (world unit/giây).")]
+        [Min(0.1f)] public float launchSpeed = 10f;
+        [Tooltip("Độ tản hướng ngẫu nhiên (±độ).")]
+        [Range(0f, 45f)] public float launchSpread = 3f;
         [Tooltip("Giãn cách thời gian giữa từng dot khi nhả (0 = spawn cùng lúc).")]
         [Min(0f)] public float releaseInterval = 0.04f;
 
@@ -322,34 +325,7 @@ namespace FruitSort
         void LaunchReleasedDot(Dot dot, FallingPixelManager manager)
         {
             if (dot == null) return;
-            dot.ignoredBucket = this;
-
-            // Spawn NGAY trong zone (điểm ngẫu nhiên), pop nhẹ ngẫu nhiên rồi rơi xuống belt trong zone.
-            Vector3 origin = RandomReleasePosition();
-            Vector2 velocity = Random.insideUnitCircle * releasePopSpeed;
-
-            manager.ReleaseDotLaunched(dot, origin, velocity, this, releaseGravityScale);
-        }
-
-        /// <summary>Một điểm ngẫu nhiên BÊN TRONG zone (fallback: trong bán kính hút quanh miệng giỏ).</summary>
-        Vector3 RandomReleasePosition()
-        {
-            if (zone != null)
-            {
-                Bounds b = zone.bounds;
-                for (int i = 0; i < 8; i++)
-                {
-                    Vector3 p = new Vector3(
-                        Random.Range(b.min.x, b.max.x),
-                        Random.Range(b.min.y, b.max.y),
-                        MouthPosition.z);
-                    if (!precisePointTest || zone.OverlapPoint(p)) return p;
-                }
-                return new Vector3(b.center.x, b.center.y, MouthPosition.z);
-            }
-
-            Vector2 r = Random.insideUnitCircle * attractRadius;
-            return MouthPosition + new Vector3(r.x, r.y, 0f);
+            manager.LaunchDot(dot, MouthPosition, launchDirection, launchSpeed, launchSpread, this);
         }
 
         void DoFull()
@@ -388,7 +364,7 @@ namespace FruitSort
                 if (fruit != null)
                 {
                     color = fruit.color;
-                    if (fruit.sprite != null) body.sprite = fruit.sprite;
+                    fruitSprite.sprite = fruit.sprite;
                 }
 
                 body.enabled = true;
@@ -458,9 +434,10 @@ namespace FruitSort
             gridColumns = Mathf.Max(1, gridColumns);
             cellGap = Mathf.Clamp(cellGap, 0f, 0.45f);
             wrongColorLerpDuration = Mathf.Max(0f, wrongColorLerpDuration);
-            returnJumpPower = Mathf.Max(0f, returnJumpPower);
-            returnDuration = Mathf.Max(0.01f, returnDuration);
+            launchSpeed = Mathf.Max(0.1f, launchSpeed);
+            launchSpread = Mathf.Clamp(launchSpread, 0f, 45f);
             if (body != null && gridFill == null) gridFill = body.GetComponent<SpriteGridFill>();
+            ApplyVisual();
         }
 
         void OnDrawGizmosSelected()

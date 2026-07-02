@@ -62,10 +62,7 @@ MonoBehaviour:
   spawnSpread: 0
   dotScale: 0.3
   dotHP: 1
-  spawnInterval: 0.05
-  overrideEntry: 0
-  entryProgress: 0
-  useDirectionalLaunch: 0
+  spawnInterval: 0
   launchDirection: {x: 0, y: -1}
   launchSpeed: 10
   launchSpread: 3

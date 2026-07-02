@@ -260,16 +260,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.ConveyorBeltRenderer
   beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
-  texture: {fileID: 2800000, guid: 227ab5fca76ba4445b06f41cf6c11e6a, type: 3}
-  segments: 968
+  texture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+  segments: 959
   zOffset: 0.05
   tilesAcrossWidth: 1
   scrollSpeed: 0.5
   showWalls: 1
-  wallWidth: 0.1
-  wallZOffset: -0.01
+  wallWidth: 0.5
+  wallZOffset: 0
   scrollWalls: 0
   wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
-  wallTextureOuter: {fileID: 2800000, guid: 05a73279074a2154a98c02a7f669a329, type: 3}
+  wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
   wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
-  wallTextureInner: {fileID: 2800000, guid: 05a73279074a2154a98c02a7f669a329, type: 3}
+  wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}

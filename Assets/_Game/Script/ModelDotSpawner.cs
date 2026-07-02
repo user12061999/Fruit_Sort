@@ -54,15 +54,7 @@ namespace FruitSort
         [Tooltip("Giãn cách thời gian (giây) giữa từng dot khi spawn loạt. 0 = sinh cùng lúc.")]
         public float spawnInterval = 0.03f;
 
-        [Header("Vào băng chuyền")]
-        [Tooltip("Bật: ép tất cả dot vào belt tại 1 progress cố định. Tắt: dùng spawnEntryProgress của FallingPixelManager + lateral random.")]
-        public bool overrideEntry = false;
-        [Range(0f, 1f)] public float entryProgress = 0f;
-
-        [Header("Phóng theo hướng cố định")]
-        [Tooltip("Bật: phóng dot theo hướng launchDirection, tự va chạm băng chuyền. " +
-                 "Tắt (mặc định): bay thẳng tới 1 điểm cố định trên băng chuyền.")]
-        public bool useDirectionalLaunch = false;
+        [Header("Phóng dot vào băng chuyền")]
         [Tooltip("Hướng phóng (sẽ normalize). Ví dụ: (0,-1) = thẳng xuống, (1,-1) = xuống phải.")]
         public Vector2 launchDirection = Vector2.down;
         [Tooltip("Tốc độ phóng ban đầu (world unit/giây).")]
@@ -321,28 +313,7 @@ namespace FruitSort
             d.transform.localScale = Vector3.one * dotScale;
             d.Init(colorId, c, dotHP, new Vector2Int(-1, -1), spr);
 
-            if (useDirectionalLaunch)
-            {
-                Vector2 dir = launchDirection.sqrMagnitude > 0.001f
-                    ? launchDirection.normalized
-                    : Vector2.down;
-
-                // Xoay hướng ngẫu nhiên trong ±launchSpread độ.
-                float spreadRad = launchSpread * Mathf.Deg2Rad;
-                float angle = Random.Range(-spreadRad, spreadRad);
-                float cos = Mathf.Cos(angle), sin = Mathf.Sin(angle);
-                Vector2 vel = new Vector2(
-                    dir.x * cos - dir.y * sin,
-                    dir.x * sin + dir.y * cos
-                ) * launchSpeed;
-
-                fm.AddDotLaunched(d, vel);
-            }
-            else
-            {
-                float t = overrideEntry ? entryProgress : float.NaN;
-                fm.AddDotApproaching(d, t);
-            }
+            fm.LaunchDot(d, pos, launchDirection, launchSpeed, launchSpread);
             return true;
         }
 
@@ -408,6 +379,8 @@ namespace FruitSort
             totalClicks = Mathf.Max(1, totalClicks);
             gridColumns = Mathf.Max(1, gridColumns);
             cellGap = Mathf.Clamp(cellGap, 0f, 0.45f);
+            launchSpeed = Mathf.Max(0.1f, launchSpeed);
+            launchSpread = Mathf.Clamp(launchSpread, 0f, 45f);
             if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
             if (packageSprite != null && gridFill == null) gridFill = packageSprite.GetComponent<SpriteGridFill>();
         }

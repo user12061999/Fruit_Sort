@@ -13,6 +13,7 @@ namespace FruitSort.EditorTests
         public void SetUp()
         {
             _bucketObject = new GameObject("Bucket under test");
+            _bucketObject.AddComponent<SpriteRenderer>();
             _bucket = _bucketObject.AddComponent<Bucket>();
             _bucket.maxFill = 3;
             _bucket.colorId = 1;
@@ -131,6 +132,40 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
+        public void LaunchDot_UsesNormalizedDirectionAndConfiguredSpeed()
+        {
+            var managerObject = new GameObject("FallingPixelManager under test");
+            FallingPixelManager manager = managerObject.AddComponent<FallingPixelManager>();
+            Dot dot = CreateDot(1, Color.green);
+            Vector3 origin = new Vector3(2f, 3f, 0f);
+
+            manager.LaunchDot(dot, origin, new Vector2(3f, 4f), 10f, 0f);
+
+            Assert.That(dot.state, Is.EqualTo(DotState.Launched));
+            Assert.That(dot.transform.position, Is.EqualTo(origin));
+            Assert.That(dot.launchVelocity.x, Is.EqualTo(6f).Within(0.0001f));
+            Assert.That(dot.launchVelocity.y, Is.EqualTo(8f).Within(0.0001f));
+            Assert.That(manager.ActiveCount, Is.EqualTo(1));
+
+            Object.DestroyImmediate(managerObject);
+        }
+
+        [Test]
+        public void LaunchDot_ZeroDirectionFallsBackToDown()
+        {
+            var managerObject = new GameObject("FallingPixelManager under test");
+            FallingPixelManager manager = managerObject.AddComponent<FallingPixelManager>();
+            Dot dot = CreateDot(1, Color.green);
+
+            manager.LaunchDot(dot, Vector3.zero, Vector2.zero, 5f, 0f);
+
+            Assert.That(dot.launchVelocity.x, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(dot.launchVelocity.y, Is.EqualTo(-5f).Within(0.0001f));
+
+            Object.DestroyImmediate(managerObject);
+        }
+
+        [Test]
         public void RefreshVisuals_UsesSeparateBackgroundAndFillLayers()
         {
             var backgroundObject = new GameObject("Fruit Background");
@@ -158,6 +193,32 @@ namespace FruitSort.EditorTests
             Object.DestroyImmediate(database);
             Object.DestroyImmediate(fruit);
             Object.DestroyImmediate(fruitSprite);
+            Object.DestroyImmediate(texture);
+        }
+
+        [Test]
+        public void RefreshVisuals_DirectFruitSpriteOverridesDatabaseSprite()
+        {
+            var backgroundObject = new GameObject("Fruit Background");
+            backgroundObject.transform.SetParent(_bucketObject.transform);
+            _bucket.background = backgroundObject.AddComponent<SpriteRenderer>();
+
+            var texture = new Texture2D(2, 1);
+            Sprite databaseSprite = Sprite.Create(texture, new Rect(0, 0, 1, 1), Vector2.one * 0.5f);
+
+            FruitDatabase database = ScriptableObject.CreateInstance<FruitDatabase>();
+            FruitData fruit = ScriptableObject.CreateInstance<FruitData>();
+            fruit.colorId = _bucket.colorId;
+            fruit.sprite = databaseSprite;
+            database.fruits = new[] { fruit };
+            _bucket.fruitDatabase = database;
+
+
+            _bucket.RefreshVisuals();
+
+            Object.DestroyImmediate(database);
+            Object.DestroyImmediate(fruit);
+            Object.DestroyImmediate(databaseSprite);
             Object.DestroyImmediate(texture);
         }
 

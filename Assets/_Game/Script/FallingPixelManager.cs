@@ -16,7 +16,7 @@ namespace FruitSort
         public static FallingPixelManager Instance { get; private set; }
 
         [Header("Refs")]
-        [Tooltip("Băng chuyền mặc định (dùng cho Falling và Approaching). Để trống = tự tìm băng đầu tiên.")]
+        [Tooltip("Băng chuyền mặc định cho dot đang rơi. Để trống = tự tìm băng đầu tiên.")]
         public ConveyorSpline conveyor;
 
         [Header("Sức chứa & kích thước")]
@@ -36,12 +36,6 @@ namespace FruitSort
         [Range(0f, 0.9f)] public float speedJitter = 0.2f;
         [Tooltip("Tốc độ xoay tối đa của dot (độ/giây).")]
         public float maxSpin = 90f;
-
-        [Header("Bay thẳng vào băng chuyền (spawn từ model 3D)")]
-        [Tooltip("Tốc độ bay thẳng từ điểm spawn tới miệng băng chuyền (world unit/giây).")]
-        public float approachSpeed = 8f;
-        [Tooltip("Vị trí trên spline để các dot bay vào (0 = đầu băng, 1 = cuối băng).")]
-        [Range(0f, 1f)] public float spawnEntryProgress = 0f;
 
         [Header("Spatial grid / tách dot")]
         [Tooltip("Cell size = dotSize * hệ số này (~1.2). Ô ~ cỡ dot => mỗi ô vài dot.")]
@@ -75,6 +69,11 @@ namespace FruitSort
         {
             if (Instance != null && Instance != this) { Destroy(this); return; }
             Instance = this;
+        }
+
+        void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
         }
 
         void Start()
@@ -115,49 +114,45 @@ namespace FruitSort
             _dots.Add(d);
         }
 
-        /// <summary>
-        /// Thêm 1 dot phóng theo hướng cố định. Dot tự phát hiện và lên băng chuyền đầu tiên nó chạm.
-        /// Dùng cho ModelDotSpawner với useDirectionalLaunch = true.
-        /// </summary>
-        public void AddDotLaunched(Dot d, Vector2 velocity)
+        /// <summary>Phóng dot theo hướng cấu hình; dot bám vào băng chuyền đầu tiên nó chạm.</summary>
+        public void LaunchDot(
+            Dot d,
+            Vector3 origin,
+            Vector2 direction,
+            float speed,
+            float spreadDegrees,
+            Bucket ignoredBucket = null)
         {
             if (d == null) return;
-            if (maxDots > 0 && _dots.Count >= maxDots) { Destroy(d.gameObject); return; }
 
-            d.state = DotState.Launched;
-            d.launchVelocity = velocity;
-            d.launchGravityScale = 0f;
-            d.fallSpeed = 0f;
-            d.targetBucket = null;
-            d.markedForRemoval = false;
-            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
-            d.spin = Random.Range(-maxSpin, maxSpin);
-            d.ApplyColor();
-            d.transform.SetParent(transform, true);
-            _dots.Add(d);
-        }
+            bool alreadyManaged = _dots.Contains(d);
+            if (!alreadyManaged && ignoredBucket == null && maxDots > 0 && _dots.Count >= maxDots)
+            {
+                Destroy(d.gameObject);
+                return;
+            }
 
-        /// <summary>
-        /// Nhả 1 dot khỏi giỏ: bắn ra theo <paramref name="velocity"/> như AddDotLaunched NHƯNG có trọng lực
-        /// (<paramref name="gravityScale"/>) để dot vọt ra rồi rơi xuống băng chuyền GẦN ĐÓ thay vì rải khắp belt.
-        /// Bỏ qua <paramref name="ignore"/> cho tới khi dot rời khỏi vùng hút của bucket đó -> không bị hút lại ngay.
-        /// </summary>
-        public void ReleaseDotLaunched(Dot d, Vector3 origin, Vector2 velocity, Bucket ignore, float gravityScale = 1f)
-        {
-            if (d == null) return;
+            Vector2 normalizedDirection = direction.sqrMagnitude > 0.001f
+                ? direction.normalized
+                : Vector2.down;
+            float spread = Mathf.Clamp(Mathf.Abs(spreadDegrees), 0f, 180f);
+            float angle = Random.Range(-spread, spread) * Mathf.Deg2Rad;
+            float cos = Mathf.Cos(angle);
+            float sin = Mathf.Sin(angle);
+            Vector2 launchDirection = new Vector2(
+                normalizedDirection.x * cos - normalizedDirection.y * sin,
+                normalizedDirection.x * sin + normalizedDirection.y * cos);
 
             d.transform.DOKill();
             d.transform.SetParent(transform, true);
             d.transform.position = origin;
-
             d.state = DotState.Launched;
-            d.launchVelocity = velocity;
-            d.launchGravityScale = Mathf.Max(0f, gravityScale);
+            d.launchVelocity = launchDirection * Mathf.Max(0f, speed);
             d.fallSpeed = 0f;
             d.targetBucket = null;
             d.markedForRemoval = false;
             d.capturedByBucket = false;
-            d.ignoredBucket = ignore;
+            d.ignoredBucket = ignoredBucket;
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
             d.spin = Random.Range(-maxSpin, maxSpin);
             if (d.Sr != null)
@@ -167,107 +162,7 @@ namespace FruitSort
                 d.Sr.sortingOrder = 0;
             }
             d.ApplyColor();
-            if (!_dots.Contains(d)) _dots.Add(d);
-        }
-
-        /// <summary>
-        /// Thêm 1 dot bay THẲNG từ vị trí hiện tại tới miệng băng chuyền rồi chạy như bình thường.
-        /// Dùng cho spawn từ model 3D (ModelDotSpawner).
-        /// </summary>
-        /// <param name="entryProgress">Progress (t, 0..1) trên spline để vào belt. NaN = dùng spawnEntryProgress.</param>
-        /// <param name="lateral">Lệch ngang khi vào belt. NaN = random trong bề rộng.</param>
-        public void AddDotApproaching(Dot d, float entryProgress = float.NaN, float lateral = float.NaN)
-        {
-            if (d == null) return;
-            if (maxDots > 0 && _dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
-
-            float t = float.IsNaN(entryProgress) ? spawnEntryProgress : Mathf.Clamp01(entryProgress);
-            float lat = float.IsNaN(lateral)
-                ? ((conveyor != null) ? Random.Range(-conveyor.HalfWidth, conveyor.HalfWidth) : 0f)
-                : lateral;
-
-            d.state = DotState.Approaching;
-            d.fallSpeed = 0f;
-            d.targetBucket = null;
-            d.markedForRemoval = false;
-            d.beltEntryProgress = t;
-            d.entryLateral = lat;
-            d.approachTarget = (conveyor != null)
-                ? conveyor.GetPositionOnSpline(t, lat)
-                : d.transform.position;
-            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
-            d.spin = Random.Range(-maxSpin, maxSpin);
-            d.ApplyColor();
-            d.transform.SetParent(transform, true);
-            _dots.Add(d);
-        }
-
-        public void ReturnDotToConveyor(
-            Dot d,
-            Vector3 releasePosition,
-            float jumpPower,
-            float duration,
-            int releaseIndex)
-        {
-            if (d == null) return;
-
-            ConveyorSpline belt = d.conveyor != null && d.conveyor.isActiveAndEnabled
-                ? d.conveyor
-                : conveyor;
-            if (belt == null)
-            {
-                d.transform.position = releasePosition;
-                AddDot(d);
-                return;
-            }
-
-            float progress = belt.FindClosestProgress(releasePosition, out _);
-            float length = Mathf.Max(0.01f, belt.GetSplineLength());
-            progress += releaseIndex * dotSize * 0.65f / length;
-            progress = belt.IsClosed ? Mathf.Repeat(progress, 1f) : Mathf.Clamp01(progress);
-            float halfWidth = Mathf.Max(0f, belt.HalfWidth - dotSize * 0.5f);
-            float lateral = Random.Range(-halfWidth, halfWidth);
-            Vector3 target = belt.GetPositionOnSpline(progress, lateral);
-
-            d.transform.DOKill();
-            d.transform.SetParent(transform, true);
-            d.transform.position = releasePosition;
-            d.conveyor = belt;
-            d.beltProgress = progress;
-            d.lateralOffset = lateral;
-            d.targetBucket = null;
-            d.markedForRemoval = false;
-            d.capturedByBucket = false;
-            d.state = DotState.Approaching;
-            if (d.Sr != null)
-            {
-                d.Sr.enabled = true;
-                d.Sr.sortingLayerID = 0;
-                d.Sr.sortingOrder = 0;
-            }
-            d.ApplyColor();
-
-            d.transform.DOJump(target, Mathf.Max(0f, jumpPower), 1, Mathf.Max(0.01f, duration))
-                .SetEase(Ease.OutQuad)
-                .OnComplete(() => ActivateReturnedDot(d, belt, progress, lateral, target));
-        }
-
-        void ActivateReturnedDot(
-            Dot d,
-            ConveyorSpline belt,
-            float progress,
-            float lateral,
-            Vector3 target)
-        {
-            if (d == null || belt == null) return;
-            d.transform.position = target;
-            d.state = DotState.OnBelt;
-            d.conveyor = belt;
-            d.beltProgress = progress;
-            d.lateralOffset = lateral;
-            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
-            d.spin = Random.Range(-maxSpin, maxSpin);
-            if (!_dots.Contains(d)) _dots.Add(d);
+            if (!alreadyManaged) _dots.Add(d);
         }
 
         void Update()
@@ -404,9 +299,6 @@ namespace FruitSort
                     case DotState.Launched:
                         StepLaunched(d, sep, dt, i);
                         break;
-                    case DotState.Approaching:
-                        StepApproaching(d, sep, dt, i);
-                        break;
                     case DotState.Falling:
                         StepFalling(d, sep, dt, i);
                         break;
@@ -423,22 +315,14 @@ namespace FruitSort
         // Phóng theo hướng cố định; khi chạm bất kỳ băng chuyền nào thì lên belt đó.
         void StepLaunched(Dot d, Vector2 sep, float dt, int idx)
         {
-            // Trọng lực (chỉ khi nhả khỏi giỏ): dot vọt ra rồi rơi xuống.
-            if (d.launchGravityScale > 0f)
-                d.launchVelocity.y -= gravity * d.launchGravityScale * dt;
-
             Vector3 pos = _posCache[idx];
             pos.x += d.launchVelocity.x * dt + sep.x;
             pos.y += d.launchVelocity.y * dt + sep.y;
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
-            // Khi có trọng lực: chỉ cho bám belt lúc ĐANG RƠI (vy<=0) để không dính lại belt ngay
-            // khi vừa bắn lên từ miệng giỏ (giỏ nằm sát băng chuyền) -> dot kịp vọt ra ngoài trước.
-            bool canStick = d.launchGravityScale <= 0f || d.launchVelocity.y <= 0f;
-
             // Kiểm tra va chạm với từng băng chuyền đã đăng ký.
             float threshold = dotSize * 0.5f;
-            for (int i = 0; canStick && i < _allConveyors.Count; i++)
+            for (int i = 0; i < _allConveyors.Count; i++)
             {
                 var belt = _allConveyors[i];
                 if (belt == null || !belt.isActiveAndEnabled) continue;
@@ -466,44 +350,6 @@ namespace FruitSort
                 d.markedForRemoval = true;
 
             _posCache[idx] = pos;
-        }
-
-        // Bay thẳng tới đích trên spline; tới nơi thì chuyển sang OnBelt.
-        void StepApproaching(Dot d, Vector2 sep, float dt, int idx)
-        {
-            // Đích có thể đổi nếu spline di chuyển -> cập nhật lại cho an toàn.
-            if (conveyor != null)
-                d.approachTarget = conveyor.GetPositionOnSpline(d.beltEntryProgress, d.entryLateral);
-
-            Vector3 pos = _posCache[idx]; // dùng cache
-            Vector3 moved = Vector3.MoveTowards(pos, d.approachTarget, approachSpeed * dt);
-            float dMoved = Vector3.Distance(moved, d.approachTarget);
-
-            // Tách nhẹ để các dot không chồng khít khi bay theo bầy, NHƯNG không cho tách đẩy
-            // dot ra XA target hơn 'moved'. Nhờ vậy khoảng cách tới đích giảm đều mỗi frame
-            // (luôn tiến tới và CHẮC CHẮN tới nơi) -> không còn dot kẹt lởn vởn ở cửa vào.
-            Vector3 withSep = moved + new Vector3(sep.x, sep.y, 0f);
-            if (dMoved > 1e-4f && Vector3.Distance(withSep, d.approachTarget) > dMoved)
-                withSep = d.approachTarget + (withSep - d.approachTarget).normalized * dMoved;
-
-            _posCache[idx] = withSep; // ghi cache, KHÔNG ghi Transform ngay
-            d.transform.Rotate(0f, 0f, d.spin * dt);
-
-            if (dMoved <= dotSize * 0.5f)
-            {
-                if (conveyor != null)
-                {
-                    d.state = DotState.OnBelt;
-                    d.conveyor = conveyor;
-                    d.beltProgress = d.beltEntryProgress;
-                    d.lateralOffset = d.entryLateral;
-                    d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
-                }
-                else
-                {
-                    d.markedForRemoval = true;
-                }
-            }
         }
 
         void StepFalling(Dot d, Vector2 sep, float dt, int idx)
