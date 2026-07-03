@@ -364,7 +364,9 @@ namespace FruitSort
                 if (fruit != null)
                 {
                     color = fruit.color;
-                    fruitSprite.sprite = fruit.sprite;
+                    if (fruitSprite != null) fruitSprite.sprite = fruit.sprite;
+                    // Lớp fill (body) cũng dùng art quả -> background đổi theo (copy body.sprite bên dưới).
+                    if (fruit.sprite != null) body.sprite = fruit.sprite;
                 }
 
                 body.enabled = true;
@@ -404,10 +406,24 @@ namespace FruitSort
         void SetBodyColor(Color target, float duration)
         {
             if (body == null) body = GetComponent<SpriteRenderer>();
-            if (body == null) return;
-            body.DOKill();
-            if (duration <= 0f) body.color = target;
-            else body.DOColor(target, duration).SetEase(Ease.Linear);
+            if (body != null)
+            {
+                body.DOKill();
+                if (duration <= 0f) body.color = target;
+                else body.DOColor(target, duration).SetEase(Ease.Linear);
+            }
+
+            // Body chỉ hiện theo fill (0 lúc rỗng) -> tint thêm BACKGROUND (luôn hiện đầy)
+            // để thấy màu sai ngay cả khi chưa có ô nào reveal.
+            if (background != null)
+            {
+                Color bg = target == Color.white
+                    ? backgroundColor
+                    : new Color(target.r, target.g, target.b, backgroundColor.a);
+                background.DOKill();
+                if (duration <= 0f) background.color = bg;
+                else background.DOColor(bg, duration).SetEase(Ease.Linear);
+            }
         }
 
         void UpdateFillVisual()

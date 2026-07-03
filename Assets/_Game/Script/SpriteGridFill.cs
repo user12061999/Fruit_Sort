@@ -18,6 +18,7 @@ public sealed class SpriteGridFill : MonoBehaviour
 
     private SpriteRenderer spriteRenderer;
     private MaterialPropertyBlock propertyBlock;
+    private Material materialInstance;
     private Sprite appliedSprite;
     private int appliedColumns = -1;
     private int appliedRows = -1;
@@ -98,6 +99,14 @@ public sealed class SpriteGridFill : MonoBehaviour
         Apply(force: true);
     }
 
+    private void OnDestroy()
+    {
+        if (materialInstance == null) return;
+        if (Application.isPlaying) Destroy(materialInstance);
+        else DestroyImmediate(materialInstance);
+        materialInstance = null;
+    }
+
     private void OnValidate()
     {
         columns = Mathf.Max(1, columns);
@@ -141,23 +150,43 @@ public sealed class SpriteGridFill : MonoBehaviour
         if (!changed)
             return;
 
-        if (propertyBlock == null)
-            propertyBlock = new MaterialPropertyBlock();
-
         Bounds bounds = sprite.bounds;
         Vector2 size = bounds.size;
         size.x = Mathf.Max(size.x, 0.00001f);
         size.y = Mathf.Max(size.y, 0.00001f);
+        Vector4 localBounds = new Vector4(bounds.min.x, bounds.min.y, size.x, size.y);
 
-        spriteRenderer.GetPropertyBlock(propertyBlock);
-        propertyBlock.SetFloat(ColumnsId, columns);
-        propertyBlock.SetFloat(RowsId, rows);
-        propertyBlock.SetFloat(FillAmountId, fillAmount);
-        propertyBlock.SetFloat(CellGapId, cellGap);
-        propertyBlock.SetVector(
-            LocalBoundsId,
-            new Vector4(bounds.min.x, bounds.min.y, size.x, size.y));
-        spriteRenderer.SetPropertyBlock(propertyBlock);
+        if (Application.isPlaying)
+        {
+            // LÚC PLAY: dùng MATERIAL INSTANCE thay vì MaterialPropertyBlock.
+            // SRP Batcher / sprite batching của URP 2D (Unity 6) có thể BỎ QUA property block
+            // khi sprite bị gom batch -> sprite tàng hình dù block đã set đúng (chỉ hiện lại
+            // 1 frame mỗi khi SetPropertyBlock phá batch). Material instance luôn được tôn trọng.
+            if (materialInstance == null)
+            {
+                materialInstance = spriteRenderer.material; // tự tạo instance 1 lần
+                spriteRenderer.SetPropertyBlock(null);      // xoá block cũ kẻo nó đè material
+            }
+            materialInstance.SetFloat(ColumnsId, columns);
+            materialInstance.SetFloat(RowsId, rows);
+            materialInstance.SetFloat(FillAmountId, fillAmount);
+            materialInstance.SetFloat(CellGapId, cellGap);
+            materialInstance.SetVector(LocalBoundsId, localBounds);
+        }
+        else
+        {
+            // EDIT MODE: giữ property block để không tạo material instance leak vào editor.
+            if (propertyBlock == null)
+                propertyBlock = new MaterialPropertyBlock();
+
+            spriteRenderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetFloat(ColumnsId, columns);
+            propertyBlock.SetFloat(RowsId, rows);
+            propertyBlock.SetFloat(FillAmountId, fillAmount);
+            propertyBlock.SetFloat(CellGapId, cellGap);
+            propertyBlock.SetVector(LocalBoundsId, localBounds);
+            spriteRenderer.SetPropertyBlock(propertyBlock);
+        }
 
         appliedSprite = sprite;
         appliedColumns = columns;

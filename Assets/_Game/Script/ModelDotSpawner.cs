@@ -112,8 +112,30 @@ namespace FruitSort
             _reservedDots = 0;
             _depleted = false;
             clicksLeftDebug = _dotsLeft;
-            UpdateFillVisual();
+            RefreshVisuals(); // đổi sprite/màu gói theo fixedColorId + cập nhật fill
             if (!s_all.Contains(this)) s_all.Add(this);
+        }
+
+        /// <summary>
+        /// TINT màu gói theo <see cref="fixedColorId"/> (GIỮ NGUYÊN sprite gói):
+        /// lấy màu từ FruitDatabase, fallback palette. fixedColorId = -1 (random) -> trắng.
+        /// </summary>
+        public void RefreshVisuals()
+        {
+            if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
+            if (packageSprite == null) return;
+
+            FruitData fruit = (fixedColorId >= 0 && fruitDatabase != null)
+                ? fruitDatabase.GetById(fixedColorId) : null;
+
+            if (fruit != null)
+                packageSprite.color = fruit.color;
+            else if (fixedColorId >= 0 && palette != null && fixedColorId < palette.Length)
+                packageSprite.color = palette[fixedColorId];
+            else if (fixedColorId < 0)
+                packageSprite.color = Color.white;
+
+            UpdateFillVisual();
         }
 
         void OnDisable()
@@ -242,7 +264,10 @@ namespace FruitSort
             int rows = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(1, totalClicks) / (float)columns));
             gridFill.SetGrid(columns, rows);
             gridFill.CellGap = cellGap;
-            gridFill.FillAmount = Mathf.Clamp01(_dotsLeft / (float)Mathf.Max(1, totalClicks));
+            // Edit mode: _dotsLeft (biến runtime) = 0 -> luôn hiển thị gói ĐẦY để preview.
+            gridFill.FillAmount = Application.isPlaying
+                ? Mathf.Clamp01(_dotsLeft / (float)Mathf.Max(1, totalClicks))
+                : 1f;
         }
 
         /// <summary>Sinh loạt dot (1 lần click).</summary>
@@ -383,6 +408,7 @@ namespace FruitSort
             launchSpread = Mathf.Clamp(launchSpread, 0f, 45f);
             if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
             if (packageSprite != null && gridFill == null) gridFill = packageSprite.GetComponent<SpriteGridFill>();
+            RefreshVisuals();
         }
     }
 }

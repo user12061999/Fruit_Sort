@@ -522,7 +522,7 @@ MonoBehaviour:
   body: {fileID: 9148949278834544462}
   gridFill: {fileID: 1548374405830041361}
   gridColumns: 5
-  cellGap: 0.02
+  cellGap: 0
   punchScale: 0.35
   punchDuration: 0.4
   contentRoot: {fileID: 0}
@@ -1044,7 +1044,7 @@ MonoBehaviour:
   columns: 5
   rows: 30
   fillAmount: 0
-  cellGap: 0.02
+  cellGap: 0
 --- !u!1 &5261861657073283899
 GameObject:
   m_ObjectHideFlags: 0
