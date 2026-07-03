@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem;/
 using DG.Tweening;
 
 namespace FruitSort
@@ -77,6 +77,11 @@ namespace FruitSort
 
         [Header("Wrong color")]
         [Min(0f)] public float wrongColorLerpDuration = 0.25f;
+        [Tooltip("Icon gợi ý click-để-nhả (tuỳ chọn, kéo SpriteRenderer con vào). " +
+                 "Tự hiện + nhấp nháy khi bucket chứa dot sai màu.")]
+        public SpriteRenderer releaseHintIcon;
+        [Tooltip("Biên độ nhấp nháy alpha của background khi chứa màu sai.")]
+        [Range(0f, 0.8f)] public float wrongColorBlink = 0.35f;
 
         [Header("Phóng dot vào băng chuyền")]
         [Tooltip("Hướng phóng từ miệng bucket (sẽ normalize).")]
@@ -413,16 +418,42 @@ namespace FruitSort
                 else body.DOColor(target, duration).SetEase(Ease.Linear);
             }
 
+            bool wrong = target != Color.white;
+
             // Body chỉ hiện theo fill (0 lúc rỗng) -> tint thêm BACKGROUND (luôn hiện đầy)
-            // để thấy màu sai ngay cả khi chưa có ô nào reveal.
+            // để thấy màu sai ngay cả khi chưa có ô nào reveal. Sai màu -> NHẤP NHÁY alpha
+            // để gợi ý người chơi click nhả giỏ.
             if (background != null)
             {
-                Color bg = target == Color.white
-                    ? backgroundColor
-                    : new Color(target.r, target.g, target.b, backgroundColor.a);
                 background.DOKill();
-                if (duration <= 0f) background.color = bg;
-                else background.DOColor(bg, duration).SetEase(Ease.Linear);
+                if (wrong)
+                {
+                    background.color = new Color(target.r, target.g, target.b, backgroundColor.a);
+                    if (wrongColorBlink > 0f)
+                        background.DOFade(Mathf.Min(1f, backgroundColor.a + wrongColorBlink), 0.45f)
+                                  .SetLoops(-1, LoopType.Yoyo)
+                                  .SetEase(Ease.InOutSine);
+                }
+                else
+                {
+                    if (duration <= 0f) background.color = backgroundColor;
+                    else background.DOColor(backgroundColor, duration).SetEase(Ease.Linear);
+                }
+            }
+
+            // Icon gợi ý (nếu designer gán): hiện + nhấp nháy khi sai màu, ẩn khi hết.
+            if (releaseHintIcon != null)
+            {
+                releaseHintIcon.DOKill();
+                releaseHintIcon.enabled = wrong;
+                if (wrong)
+                {
+                    Color c = releaseHintIcon.color; c.a = 1f;
+                    releaseHintIcon.color = c;
+                    releaseHintIcon.DOFade(0.25f, 0.4f)
+                                   .SetLoops(-1, LoopType.Yoyo)
+                                   .SetEase(Ease.InOutSine);
+                }
             }
         }
 

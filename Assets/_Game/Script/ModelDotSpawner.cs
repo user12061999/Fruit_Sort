@@ -62,6 +62,12 @@ namespace FruitSort
         [Tooltip("Độ tản hướng ngẫu nhiên (±độ). 0 = tất cả dot đi thẳng một hướng.")]
         [Range(0f, 45f)] public float launchSpread = 3f;
 
+        [Header("Feedback")]
+        [Tooltip("Cường độ punch scale khi click gói (0 = tắt).")]
+        [Range(0f, 0.5f)] public float clickPunch = 0.12f;
+        [Tooltip("Thời lượng punch.")]
+        [Min(0.05f)] public float clickPunchDuration = 0.18f;
+
         [Header("Khi gói rỗng")]
         [Tooltip("Hàm chạy khi click hết gói (kéo-thả trong Inspector).")]
         public UnityEvent onDepleted;
@@ -225,6 +231,14 @@ namespace FruitSort
             int available = Mathf.Max(0, _dotsLeft - _reservedDots);
             int count = Mathf.Min(Mathf.Max(1, spawnCount), available);
             if (count <= 0) return;
+
+            // Phản hồi xúc giác: punch scale gói khi click.
+            if (clickPunch > 0f)
+            {
+                Transform vt = packageSprite != null ? packageSprite.transform : transform;
+                vt.DOKill(true); // hoàn tất punch dở để không lệch scale gốc
+                vt.DOPunchScale(Vector3.one * clickPunch, clickPunchDuration, 10, 0.8f);
+            }
 
             _reservedDots += count;
             if (spawnInterval <= 0f)

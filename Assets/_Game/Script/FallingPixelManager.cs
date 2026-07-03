@@ -65,6 +65,9 @@ namespace FruitSort
 
         public int ActiveCount => _dots.Count;
 
+        /// <summary>Danh sách dot đang quản lý (chỉ đọc — KHÔNG Destroy trực tiếp phần tử).</summary>
+        public IReadOnlyList<Dot> Dots => _dots;
+
         void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(this); return; }
