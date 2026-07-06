@@ -27,6 +27,10 @@ namespace FruitSort
         [Tooltip("Database quả/màu. Gán xuống cho bucket/spawner nào chưa có.")]
         public FruitDatabase fruitDatabase;
 
+        [Header("Luật chơi")]
+        [Tooltip("Giới hạn thời gian (giây) cho level. 0 = không giới hạn.")]
+        [Min(0f)] public float timeLimit = 0f;
+
         [Serializable]
         public class BucketData
         {

@@ -33,7 +33,6 @@ namespace FruitSort
 
             var root = new GameObject($"{RootName}_{data.name}");
 
-            // ---- Băng chuyền (dựng trước để link) ----
             var conveyors = new List<ConveyorSpline>(data.conveyors.Count);
             for (int i = 0; i < data.conveyors.Count; i++)
                 conveyors.Add(BuildConveyor(data, data.conveyors[i], i, root.transform));
@@ -49,14 +48,12 @@ namespace FruitSort
                     conn.next.Add(conveyors[link.to]);
             }
 
-            // ---- Bucket ----
             if (data.buckets.Count > 0 && data.bucketPrefab == null)
                 Debug.LogError("[LevelBuilder] Level có bucket nhưng chưa gán bucketPrefab.", data);
             else
                 for (int i = 0; i < data.buckets.Count; i++)
                     BuildBucket(data, data.buckets[i], i, root.transform);
 
-            // ---- Spawner đứng riêng ----
             if (data.spawners.Count > 0 && data.spawnerPrefab == null)
                 Debug.LogError("[LevelBuilder] Level có spawner nhưng chưa gán spawnerPrefab.", data);
             else
@@ -69,7 +66,6 @@ namespace FruitSort
                     ConfigureSpawner(go.GetComponent<ModelDotSpawner>(), sd, data);
                 }
 
-            // ---- Cột spawner ----
             for (int i = 0; i < data.columns.Count; i++)
                 BuildColumn(data, data.columns[i], i, root.transform);
 
@@ -112,7 +108,7 @@ namespace FruitSort
 
             conv.Bake();
             MarkModified(conv);
-            MarkModified(container); // spline knots cũng là dữ liệu instance
+            MarkModified(container);
             return conv;
         }
 
@@ -142,7 +138,6 @@ namespace FruitSort
             if (data.columnPrefab != null)
             {
                 go = Spawn(data.columnPrefab.gameObject, parent);
-                // Con mặc định trong prefab sẽ được thay bằng danh sách trong data.
                 PruneChildSpawners(go);
             }
             else
@@ -172,7 +167,7 @@ namespace FruitSort
                     var sd = cd.spawners[i];
                     var sGo = Spawn(data.spawnerPrefab.gameObject, go.transform);
                     sGo.name = $"Spawner_{i}" + (sd.fixedColorId >= 0 ? $"_c{sd.fixedColorId}" : "_random");
-                    sGo.transform.localPosition = sd.position; // LOCAL trong column
+                    sGo.transform.localPosition = sd.position;
                     ConfigureSpawner(sGo.GetComponent<ModelDotSpawner>(), sd, data);
                 }
             }
@@ -195,17 +190,15 @@ namespace FruitSort
             if (s.fruitDatabase == null) s.fruitDatabase = data.fruitDatabase;
             s.RefreshVisuals();
             MarkModified(s);
-            MarkModified(s.packageSprite); // sprite/màu gói đổi theo colorId
+            MarkModified(s.packageSprite);
         }
 
-        /// <summary>Xoá mọi ModelDotSpawner con có sẵn trong prefab column (data sẽ thay thế).</summary>
         static void PruneChildSpawners(GameObject columnGo)
         {
             var kids = columnGo.GetComponentsInChildren<ModelDotSpawner>(true);
             if (kids.Length == 0) return;
 
 #if UNITY_EDITOR
-            // Editor (không play): không được xoá con của prefab instance -> unpack trước.
             if (!Application.isPlaying && PrefabUtility.IsPartOfPrefabInstance(columnGo))
                 PrefabUtility.UnpackPrefabInstance(columnGo, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
 #endif
@@ -217,11 +210,6 @@ namespace FruitSort
             }
         }
 
-        /// <summary>
-        /// Ghi các field vừa set bằng code vào m_Modifications của prefab instance (edit mode).
-        /// KHÔNG gọi -> Unity không lưu thay đổi, giá trị RƠI VỀ DEFAULT của prefab
-        /// khi scene reload / recompile / save.
-        /// </summary>
         static void MarkModified(Component c)
         {
 #if UNITY_EDITOR
@@ -231,7 +219,6 @@ namespace FruitSort
 #endif
         }
 
-        /// <summary>Instantiate prefab: editor giữ liên kết prefab, runtime Instantiate thường.</summary>
         static GameObject Spawn(GameObject prefab, Transform parent)
         {
 #if UNITY_EDITOR

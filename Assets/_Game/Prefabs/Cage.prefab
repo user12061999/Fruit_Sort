@@ -529,6 +529,8 @@ MonoBehaviour:
   jumpPower: 0.7
   dropDuration: 0.35
   wrongColorLerpDuration: 0.25
+  releaseHintIcon: {fileID: 0}
+  wrongColorBlink: 0.35
   launchDirection: {x: 0, y: -1}
   launchSpeed: 10
   launchSpread: 3
