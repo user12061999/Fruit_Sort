@@ -277,7 +277,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 293757817}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb7cd0f63c4bd264fa612087d83c62c2, type: 3}
+  m_Script: {fileID: 11500000, guid: 3e300d4aaccd12e48863e9f342a97e17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.GameManager
   gridManager: {fileID: 352439087}

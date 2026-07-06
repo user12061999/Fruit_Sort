@@ -106,9 +106,9 @@ namespace FruitSort.EditorTools
             tracer.enabled = false;
             shooter.tracer = tracer;
 
-            // ---- GameManager ----
-            var gmGo = new GameObject("_FS_GameManager");
-            var gm = gmGo.AddComponent<GameManager>();
+            // ---- GamePlayManager ----
+            var gmGo = new GameObject("_FS_GamePlayManager");
+            var gm = gmGo.AddComponent<GamePlayManager>();
             gm.gridManager = grid;
             gm.fallingManager = falling;
 

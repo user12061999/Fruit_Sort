@@ -6,9 +6,9 @@ namespace FruitSort
     /// <summary>
     /// Quản lý điểm, level và cập nhật UI (fill bucket, số dot còn lại, số dot trên belt).
     /// </summary>
-    public class GameManager : MonoBehaviour
+    public class GamePlayManager : MonoBehaviour
     {
-        public static GameManager Instance { get; private set; }
+        public static GamePlayManager Instance { get; private set; }
 
         [Header("Refs")]
         public PixelGridManager gridManager;

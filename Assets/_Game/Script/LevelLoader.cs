@@ -4,7 +4,7 @@ namespace FruitSort
 {
     /// <summary>
     /// Load <see cref="LevelData"/> thành scene lúc runtime. Đặt 1 cái trong scene gameplay
-    /// (cùng scene với FallingPixelManager/GameManager), gán level và bấm Play.
+    /// (cùng scene với FallingPixelManager/GamePlayManager), gán level và bấm Play.
     /// Bucket/ConveyorSpline tự register vào FallingPixelManager khi OnEnable.
     /// </summary>
     public class LevelLoader : MonoBehaviour

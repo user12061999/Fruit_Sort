@@ -336,7 +336,7 @@ namespace FruitSort
         void DoFull()
         {
             _full = true;
-            if (GameManager.Instance != null) GameManager.Instance.OnBucketFilled(this);
+            if (GamePlayManager.Instance != null) GamePlayManager.Instance.OnBucketFilled(this);
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
 
             OnBucketFull?.Invoke(this);

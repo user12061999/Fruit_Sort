@@ -491,9 +491,9 @@ namespace FruitSort
                 bool isCorrectColor = d.colorId == b.colorId;
                 if (b.ReceiveDot(d))
                 {
-                    if (isCorrectColor && !d.sortScoreAwarded && GameManager.Instance != null)
+                    if (isCorrectColor && !d.sortScoreAwarded && GamePlayManager.Instance != null)
                     {
-                        GameManager.Instance.OnDotSorted(d);
+                        GamePlayManager.Instance.OnDotSorted(d);
                         d.sortScoreAwarded = true;
                     }
                     d.capturedByBucket = true;
