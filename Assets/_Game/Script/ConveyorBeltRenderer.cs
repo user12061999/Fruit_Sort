@@ -87,8 +87,7 @@ namespace FruitSort
 
         void OnEnable()
         {
-            EnsureComponents();
-            BuildMesh();
+            RebuildMeshAndMaterials();
         }
 
         void OnValidate()
@@ -108,11 +107,36 @@ namespace FruitSort
             // Dọn material/mesh tạo runtime để tránh leak.
             if (Application.isPlaying)
             {
-                if (_scrollMats != null) { foreach (var m in _scrollMats) if (m != null) Destroy(m); _scrollMats = null; }
+                ReleaseScrollMaterialInstances();
                 if (_runtimeMat != null) Destroy(_runtimeMat);
                 if (_runtimeMatOuter != null) Destroy(_runtimeMatOuter);
                 if (_runtimeMatInner != null) Destroy(_runtimeMatInner);
             }
+        }
+
+        /// <summary>
+        /// Nạp lại material từ prefab/config và dựng mesh theo spline hiện tại.
+        /// Gọi sau khi LevelBuilder đã áp knots, độ rộng và cấu hình bo góc.
+        /// </summary>
+        public void RebuildMeshAndMaterials()
+        {
+            ReleaseScrollMaterialInstances();
+            _scroll = 0f;
+            BuildMesh();
+        }
+
+        void ReleaseScrollMaterialInstances()
+        {
+            if (_scrollMats == null) return;
+
+            foreach (Material material in _scrollMats)
+            {
+                if (material == null) continue;
+                if (Application.isPlaying) Destroy(material);
+                else DestroyImmediate(material);
+            }
+
+            _scrollMats = null;
         }
 
         void EnsureComponents()

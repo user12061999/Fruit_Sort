@@ -156,7 +156,7 @@ public sealed class SpriteGridFill : MonoBehaviour
         size.y = Mathf.Max(size.y, 0.00001f);
         Vector4 localBounds = new Vector4(bounds.min.x, bounds.min.y, size.x, size.y);
 
-        if (Application.isPlaying)
+        if (CanCreateMaterialInstance(Application.isPlaying, gameObject.scene.IsValid()))
         {
             // LÚC PLAY: dùng MATERIAL INSTANCE thay vì MaterialPropertyBlock.
             // SRP Batcher / sprite batching của URP 2D (Unity 6) có thể BỎ QUA property block
@@ -193,5 +193,10 @@ public sealed class SpriteGridFill : MonoBehaviour
         appliedRows = rows;
         appliedFillAmount = fillAmount;
         appliedCellGap = cellGap;
+    }
+
+    private static bool CanCreateMaterialInstance(bool isPlaying, bool isSceneObject)
+    {
+        return isPlaying && isSceneObject;
     }
 }

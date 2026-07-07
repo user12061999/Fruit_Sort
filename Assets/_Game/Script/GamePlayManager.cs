@@ -11,7 +11,6 @@ namespace FruitSort
         public static GamePlayManager Instance { get; private set; }
 
         [Header("Refs")]
-        public PixelGridManager gridManager;
         public FallingPixelManager fallingManager;
 
         [Header("Điểm")]
@@ -32,7 +31,6 @@ namespace FruitSort
 
         void Start()
         {
-            if (gridManager == null) gridManager = FindFirstObjectByType<PixelGridManager>();
             if (fallingManager == null) fallingManager = FallingPixelManager.Instance;
             RefreshUI();
         }
@@ -64,11 +62,7 @@ namespace FruitSort
                 scoreText.text = $"Score: {score}";
                 _lastScore = score;
             }
-            if (dotsLeftText != null && gridManager != null)
-            {
-                int v = gridManager.AliveCount;
-                if (v != _lastDotsLeft) { dotsLeftText.text = $"Dots: {v}"; _lastDotsLeft = v; }
-            }
+            
             if (onBeltText != null && fallingManager != null)
             {
                 int v = fallingManager.ActiveCount;

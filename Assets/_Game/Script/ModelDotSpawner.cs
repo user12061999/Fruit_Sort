@@ -17,7 +17,7 @@ namespace FruitSort
         public Dot dotPrefab;
         [Tooltip("Để trống = tự dùng FallingPixelManager.Instance.")]
         public FallingPixelManager fallingManager;
-        [Tooltip("Để tra sprite theo colorId. Gán -> dot đổi sprite thành art của màu tương ứng.")]
+        [Tooltip("Dùng để tra colorId và màu. Sprite của dot/spawner luôn giữ hình vuông mặc định.")]
         public FruitDatabase fruitDatabase;
         [Tooltip("Camera dùng để quy đổi vị trí click. Để trống = Camera.main.")]
         public Camera cam;
@@ -130,6 +130,12 @@ namespace FruitSort
         {
             if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
             if (packageSprite == null) return;
+
+            SpriteRenderer defaultDotRenderer = dotPrefab != null
+                ? dotPrefab.GetComponent<SpriteRenderer>()
+                : null;
+            if (defaultDotRenderer != null && defaultDotRenderer.sprite != null)
+                packageSprite.sprite = defaultDotRenderer.sprite;
 
             FruitData fruit = (fixedColorId >= 0 && fruitDatabase != null)
                 ? fruitDatabase.GetById(fixedColorId) : null;
@@ -373,7 +379,6 @@ namespace FruitSort
                 {
                     resolvedColorId = fruit.colorId;
                     resolvedColor = fruit.color;
-                    resolvedSprite = fruit.dotSprite;
                     return true;
                 }
 
@@ -400,7 +405,6 @@ namespace FruitSort
                         if (pick-- > 0) continue;
                         resolvedColorId = candidate.colorId;
                         resolvedColor = candidate.color;
-                        resolvedSprite = candidate.dotSprite;
                         return true;
                     }
                 }

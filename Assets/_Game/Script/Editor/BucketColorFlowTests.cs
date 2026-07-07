@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -237,6 +238,22 @@ namespace FruitSort.EditorTests
             Assert.That(bucket.background.enabled, Is.True);
             Assert.That(bucket.background.sortingOrder, Is.LessThan(bucket.body.sortingOrder));
             Assert.That(bucket.gridFill.GetComponent<SpriteRenderer>(), Is.SameAs(bucket.body));
+        }
+
+        [TestCase(true, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        public void MaterialInstance_IsOnlyCreatedForRuntimeSceneObjects(
+            bool isPlaying,
+            bool isSceneObject,
+            bool expected)
+        {
+            MethodInfo method = typeof(SpriteGridFill).GetMethod(
+                "CanCreateMaterialInstance",
+                BindingFlags.Static | BindingFlags.NonPublic);
+
+            Assert.That(method, Is.Not.Null);
+            Assert.That(method.Invoke(null, new object[] { isPlaying, isSceneObject }), Is.EqualTo(expected));
         }
 
         Dot CreateDot(int colorId, Color color)

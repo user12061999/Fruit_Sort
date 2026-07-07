@@ -1,0 +1,25 @@
+{
+  "name": "com.havigame",
+  "version": "0.1.5",
+  "displayName": "HAVIGAME",
+  "description": "Game lib",
+  "changelogUrl": "https://github.com/dev-vinhnv/havigame/CHANGELOG.md",
+  "dependencies": {
+    "com.unity.textmeshpro": "2.0.1"
+  },
+  "keywords": [
+    "lib",
+    "base"
+  ],
+  "author": {
+    "name": "Vinh Nguyen",
+    "email": "dev.vinhnv@gmail.com"
+  },
+  "samples": [
+    {
+      "displayName": "Samples",
+      "description": "Contains some features implemented. Require DOTween Pro.",
+      "path": "Samples~/Samples"
+    }
+  ]
+}

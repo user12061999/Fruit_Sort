@@ -82,34 +82,22 @@ namespace FruitSort.EditorTools
             gridOrigin.transform.position = new Vector3(-4.2f, 1.5f, 0f);
 
             var gridGo = new GameObject("_FS_PixelGridManager");
-            var grid = gridGo.AddComponent<PixelGridManager>();
-            grid.dotPrefab = dotPrefab;
-            grid.fallingManager = falling;
-            grid.gridOrigin = gridOrigin.transform;
-            grid.columns = 16;
-            grid.rows = 8;
-            grid.spacing = 0.55f;
-            grid.dotScale = 0.5f;
-            grid.dotHP = 3;
-            grid.palette = (Color[])Palette.Clone();
+          
 
             // ---- Shooter (đáy màn hình) ----
             var shooterGo = new GameObject("_FS_Shooter");
             shooterGo.transform.position = new Vector3(0f, -5.5f, 0f);
-            var shooter = shooterGo.AddComponent<Shooter>();
-            shooter.gridManager = grid;
-            shooter.cam = cam;
-            shooter.aimAtMouse = true;
+ 
             var tracer = shooterGo.AddComponent<LineRenderer>();
             tracer.widthMultiplier = 0.05f;
             tracer.material = new Material(Shader.Find("Sprites/Default"));
             tracer.enabled = false;
-            shooter.tracer = tracer;
+           
 
             // ---- GamePlayManager ----
             var gmGo = new GameObject("_FS_GamePlayManager");
             var gm = gmGo.AddComponent<GamePlayManager>();
-            gm.gridManager = grid;
+    
             gm.fallingManager = falling;
 
             // ---- Buckets: 1 cái / màu, đặt sát đường spline ----

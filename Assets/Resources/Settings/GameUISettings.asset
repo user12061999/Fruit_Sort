@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d941973a82a58d74eab54ab40c1aadc6, type: 3}
+  m_Name: GameUISettings
+  m_EditorClassIdentifier: 
+  initializeCapacity: 8
+  frameFactory:
+    rid: 1073519859792609280
+  orderUIEnabled: 1
+  physicalBackButton: 1
+  clearUIOnSceneLoad: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 1073519859792609280
+      type: {class: ResourceFrameFactory, ns: HAVIGAME.UI, asm: Assembly-CSharp}
+      data:
+        folder: UI

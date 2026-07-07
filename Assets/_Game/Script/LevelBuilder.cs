@@ -107,8 +107,14 @@ namespace FruitSort
                 go.AddComponent<ConveyorConnections>();
 
             conv.Bake();
+
+            var beltRenderer = go.GetComponent<ConveyorBeltRenderer>();
+            if (beltRenderer != null)
+                beltRenderer.RebuildMeshAndMaterials();
+
             MarkModified(conv);
             MarkModified(container);
+            MarkModified(beltRenderer);
             return conv;
         }
 

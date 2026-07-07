@@ -1,0 +1,360 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de5a311b8d464e94292f7fc96a93b279, type: 3}
+  m_Name: IAPSettings
+  m_EditorClassIdentifier: 
+  gameServiceEnabled: 0
+  validator:
+    rid: 577893893861539917
+  products: []
+  taxJsonText: '[ {  "tax_name": "Albania (USD)",  "tax_rate": 20,  "country": "AL", 
+    "subdivision": "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order":
+    1 }, {  "tax_name": "Armenia (USD)",  "tax_rate": 20,  "country": "AM",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Australia (AUD)",  "tax_rate": 10,  "country": "AU",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Austria (EUR)",  "tax_rate": 20,  "country": "AT",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Bahamas (USD)",  "tax_rate": 10,  "country": "BS",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Bahrain (USD)",  "tax_rate": 10,  "country": "BH",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Barbados (USD)",  "tax_rate": 18,  "country": "BB",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Belarus (USD)",  "tax_rate": 20,  "country": "BY",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Belgium (EUR)",  "tax_rate": 21,  "country": "BE",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Benin (USD)",  "tax_rate": 18,  "country": "BJ",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Bosnia and Herzegovina (EUR)",  "tax_rate": 17,  "country": "BA", 
+    "subdivision": "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order":
+    1 }, {  "tax_name": "Bulgaria (BGN)",  "tax_rate": 20,  "country": "BG",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Cambodia (USD)",  "tax_rate": 10,  "country": "KH",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Cameroon (USD)",  "tax_rate": 19.25,  "country": "CM",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Chile (CLP)",  "tax_rate": 19,  "country": "CL",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "China mainland (CNY)",  "tax_rate": 2,  "country": "CN",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Colombia (COP)",  "tax_rate": 19,  "country": "CO",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Cote d Ivoire (USD)",  "tax_rate": 18,  "country": "CI",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Croatia (EUR)",  "tax_rate": 25,  "country": "HR",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Cyprus (EUR)",  "tax_rate": 19,  "country": "CY",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Czech Republic (CZK)",  "tax_rate": 21,  "country": "CZ",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Denmark (DKK)",  "tax_rate": 25,  "country": "DK",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Egypt (EGP)",  "tax_rate": 14,  "country": "EG",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Estonia (EUR)",  "tax_rate": 22,  "country": "EE",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Finland (EUR)",  "tax_rate": 25.5,  "country": "FI",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "France (EUR)",  "tax_rate": 20,  "country": "FR",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Georgia (USD)",  "tax_rate": 18,  "country": "GE",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Germany (EUR)",  "tax_rate": 19,  "country": "DE",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Ghana (USD)",  "tax_rate": 21.9,  "country": "GH",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Greece (EUR)",  "tax_rate": 24,  "country": "GR",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Hungary (HUF)",  "tax_rate": 27,  "country": "HU",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Iceland (USD)",  "tax_rate": 24,  "country": "IS",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "India (INR)",  "tax_rate": 18,  "country": "IN",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Indonesia (IDR)",  "tax_rate": 11,  "country": "ID",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Ireland (EUR)",  "tax_rate": 23,  "country": "IE",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Italy (EUR)",  "tax_rate": 22,  "country": "IT",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Kazakhstan (KZT)",  "tax_rate": 12,  "country": "KZ",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Kenya (USD)",  "tax_rate": 16,  "country": "KE",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Korea, Republic of (KRW)",  "tax_rate": 10,  "country": "KR",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Kosovo (EUR)",  "tax_rate": 18,  "country": "XK",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Kyrgyzstan (USD)",  "tax_rate": 12,  "country": "KG",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Laos (USD)",  "tax_rate": 10,  "country": "LA",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Latvia (EUR)",  "tax_rate": 21,  "country": "LV",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Lithuania (EUR)",  "tax_rate": 21,  "country": "LT",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Luxembourg (EUR)",  "tax_rate": 17,  "country": "LU",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Malaysia (MYR)",  "tax_rate": 8,  "country": "MY",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Malta (EUR)",  "tax_rate": 18,  "country": "MT",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Mexico (MXN)",  "tax_rate": 16,  "country": "MX",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Moldova (USD)",  "tax_rate": 20,  "country": "MD",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Nepal (USD)",  "tax_rate": 15,  "country": "NP",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Netherlands (EUR)",  "tax_rate": 21,  "country": "NL",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "New Zealand (NZD)",  "tax_rate": 15,  "country": "NZ",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Nigeria (NGN)",  "tax_rate": 7.5,  "country": "NG",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Norway (NOK)",  "tax_rate": 25,  "country": "NO",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Oman (USD)",  "tax_rate": 5,  "country": "OM",  "subdivision": "", 
+    "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name":
+    "Poland (PLN)",  "tax_rate": 23,  "country": "PL",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Portugal
+    (EUR)",  "tax_rate": 23,  "country": "PT",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Romania
+    (RON)",  "tax_rate": 19,  "country": "RO",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Russia
+    (RUB)",  "tax_rate": 20,  "country": "RU",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Saudi Arabia
+    (SAR)",  "tax_rate": 15,  "country": "SA",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Senegal
+    (USD)",  "tax_rate": 18,  "country": "SN",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Serbia
+    (EUR)",  "tax_rate": 20,  "country": "RS",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Singapore
+    (SGD)",  "tax_rate": 9,  "country": "SG",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Slovakia
+    (EUR)",  "tax_rate": 20,  "country": "SK",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Slovenia
+    (EUR)",  "tax_rate": 22,  "country": "SI",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "South Africa
+    (ZAR)",  "tax_rate": 15,  "country": "ZA",  "subdivision": "",  "postal_code":
+    "",  "tax_exclusive": false,  "deduction_order": 1 }, {  "tax_name": "Spain (EUR)", 
+    "tax_rate": 21,  "country": "ES",  "subdivision": "",  "postal_code": "",  "tax_exclusive":
+    false,  "deduction_order": 1 }, {  "tax_name": "Suriname (USD)",  "tax_rate":
+    10,  "country": "SR",  "subdivision": "",  "postal_code": "",  "tax_exclusive":
+    false,  "deduction_order": 1 }, {  "tax_name": "Sweden (SEK)",  "tax_rate": 25, 
+    "country": "SE",  "subdivision": "",  "postal_code": "",  "tax_exclusive": false, 
+    "deduction_order": 1 }, {  "tax_name": "Switzerland (CHF)",  "tax_rate": 7.7, 
+    "country": "CH",  "subdivision": "",  "postal_code": "",  "tax_exclusive": false, 
+    "deduction_order": 1 }, {  "tax_name": "Taiwan (TWD)",  "tax_rate": 10.5,  "country":
+    "TW",  "subdivision": "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order":
+    1 }, {  "tax_name": "Tajikistan (USD)",  "tax_rate": 14,  "country": "TJ",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Tanzania (TZS)",  "tax_rate": 20,  "country": "TZ",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Thailand (THB)",  "tax_rate": 7,  "country": "TH",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Turkiye (TRY)",  "tax_rate": 20,  "country": "TR",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Uganda (USD)",  "tax_rate": 24,  "country": "UG",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Ukraine (USD)",  "tax_rate": 20,  "country": "UA",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "United Arab Emirates (AED)",  "tax_rate": 5,  "country": "AE", 
+    "subdivision": "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order":
+    1 }, {  "tax_name": "United Kingdom (GBP)",  "tax_rate": 20,  "country": "UK", 
+    "subdivision": "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order":
+    1 }, {  "tax_name": "Uruguay (USD)",  "tax_rate": 4,  "country": "UY",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Uzbekistan (USD)",  "tax_rate": 12,  "country": "UZ",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Vietnam (VND)",  "tax_rate": 11,  "country": "VN",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Zambia (USD)",  "tax_rate": 15,  "country": "ZM",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 }, { 
+    "tax_name": "Zimbabwe (USD)",  "tax_rate": 21,  "country": "ZW",  "subdivision":
+    "",  "postal_code": "",  "tax_exclusive": false,  "deduction_order": 1 } ] '
+  taxInfos:
+  - countryCode: AL
+    taxRate: 20
+  - countryCode: AM
+    taxRate: 20
+  - countryCode: AU
+    taxRate: 10
+  - countryCode: AT
+    taxRate: 20
+  - countryCode: BS
+    taxRate: 10
+  - countryCode: BH
+    taxRate: 10
+  - countryCode: BB
+    taxRate: 18
+  - countryCode: BY
+    taxRate: 20
+  - countryCode: BE
+    taxRate: 21
+  - countryCode: BJ
+    taxRate: 18
+  - countryCode: BA
+    taxRate: 17
+  - countryCode: BG
+    taxRate: 20
+  - countryCode: KH
+    taxRate: 10
+  - countryCode: CM
+    taxRate: 19
+  - countryCode: CL
+    taxRate: 19
+  - countryCode: CN
+    taxRate: 2
+  - countryCode: CO
+    taxRate: 19
+  - countryCode: CI
+    taxRate: 18
+  - countryCode: HR
+    taxRate: 25
+  - countryCode: CY
+    taxRate: 19
+  - countryCode: CZ
+    taxRate: 21
+  - countryCode: DK
+    taxRate: 25
+  - countryCode: EG
+    taxRate: 14
+  - countryCode: EE
+    taxRate: 22
+  - countryCode: FI
+    taxRate: 26
+  - countryCode: FR
+    taxRate: 20
+  - countryCode: GE
+    taxRate: 18
+  - countryCode: DE
+    taxRate: 19
+  - countryCode: GH
+    taxRate: 22
+  - countryCode: GR
+    taxRate: 24
+  - countryCode: HU
+    taxRate: 27
+  - countryCode: IS
+    taxRate: 24
+  - countryCode: IN
+    taxRate: 18
+  - countryCode: ID
+    taxRate: 11
+  - countryCode: IE
+    taxRate: 23
+  - countryCode: IT
+    taxRate: 22
+  - countryCode: KZ
+    taxRate: 12
+  - countryCode: KE
+    taxRate: 16
+  - countryCode: KR
+    taxRate: 10
+  - countryCode: XK
+    taxRate: 18
+  - countryCode: KG
+    taxRate: 12
+  - countryCode: LA
+    taxRate: 10
+  - countryCode: LV
+    taxRate: 21
+  - countryCode: LT
+    taxRate: 21
+  - countryCode: LU
+    taxRate: 17
+  - countryCode: MY
+    taxRate: 8
+  - countryCode: MT
+    taxRate: 18
+  - countryCode: MX
+    taxRate: 16
+  - countryCode: MD
+    taxRate: 20
+  - countryCode: NP
+    taxRate: 15
+  - countryCode: NL
+    taxRate: 21
+  - countryCode: NZ
+    taxRate: 15
+  - countryCode: NG
+    taxRate: 8
+  - countryCode: NO
+    taxRate: 25
+  - countryCode: OM
+    taxRate: 5
+  - countryCode: PL
+    taxRate: 23
+  - countryCode: PT
+    taxRate: 23
+  - countryCode: RO
+    taxRate: 19
+  - countryCode: RU
+    taxRate: 20
+  - countryCode: SA
+    taxRate: 15
+  - countryCode: SN
+    taxRate: 18
+  - countryCode: RS
+    taxRate: 20
+  - countryCode: SG
+    taxRate: 9
+  - countryCode: SK
+    taxRate: 20
+  - countryCode: SI
+    taxRate: 22
+  - countryCode: ZA
+    taxRate: 15
+  - countryCode: ES
+    taxRate: 21
+  - countryCode: SR
+    taxRate: 10
+  - countryCode: SE
+    taxRate: 25
+  - countryCode: CH
+    taxRate: 8
+  - countryCode: TW
+    taxRate: 10
+  - countryCode: TJ
+    taxRate: 14
+  - countryCode: TZ
+    taxRate: 20
+  - countryCode: TH
+    taxRate: 7
+  - countryCode: TR
+    taxRate: 20
+  - countryCode: UG
+    taxRate: 24
+  - countryCode: UA
+    taxRate: 20
+  - countryCode: AE
+    taxRate: 5
+  - countryCode: UK
+    taxRate: 20
+  - countryCode: UY
+    taxRate: 4
+  - countryCode: UZ
+    taxRate: 12
+  - countryCode: VN
+    taxRate: 11
+  - countryCode: ZM
+    taxRate: 15
+  - countryCode: ZW
+    taxRate: 21
+  references:
+    version: 2
+    RefIds:
+    - rid: 577893893861539917
+      type: {class: UnityIAPValidator, ns: HAVIGAME.Services.IAP, asm: Assembly-CSharp}
+      data: 

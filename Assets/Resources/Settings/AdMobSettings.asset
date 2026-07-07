@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1206f5894f29864a93c431badc0b895, type: 3}
+  m_Name: AdMobSettings
+  m_EditorClassIdentifier: 
+  enable:
+    value:
+      rid: 976551120067100793
+  appOpenAdIds: []
+  rewardedAdIds: []
+  interstitialAdIds: []
+  bannerAdIds: []
+  mediumRectangleAdIds: []
+  rewardedInterstitialAdIds: []
+  nativeAdIds: []
+  nativeOverlayAdIds: []
+  nativeImmersiveAdIds: []
+  tagForChildDirectedTreatment: -1
+  tagForUnderAgeOfConsent: -1
+  bannerAdSize:
+    type: 4
+    width: 0
+    height: 0
+  nativeAdEnabled: 0
+  nativeImmersiveAdEnabled: 0
+  customAdEnabled: 0
+  collapsibleBanner:
+    value:
+      rid: 577893893861539934
+  preloadBufferSize:
+    value:
+      rid: 976551120067100794
+  references:
+    version: 2
+    RefIds:
+    - rid: 577893893861539934
+      type: {class: DefaultBoolValue, ns: HAVIGAME, asm: Assembly-CSharp}
+      data:
+        value: 1
+    - rid: 976551120067100793
+      type: {class: DefaultBoolValue, ns: HAVIGAME, asm: Assembly-CSharp}
+      data:
+        value: 1
+    - rid: 976551120067100794
+      type: {class: DefaultIntValue, ns: HAVIGAME, asm: Assembly-CSharp}
+      data:
+        value: 0

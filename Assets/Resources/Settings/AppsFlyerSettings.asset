@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f563eaf7f5038340973e9e49780784d, type: 3}
+  m_Name: AppsFlyerSettings
+  m_EditorClassIdentifier: 
+  devKey: 48zwGUAgMkcqgxDx7ogt2N
+  appID: 
+  saveConversionData: 1
+  saveId: appsflyer
+  sanboxMode: 0
