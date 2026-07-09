@@ -250,7 +250,9 @@ namespace FruitSort
                 for (int i = 0; i < n; i++) _push[i] = Vector2.zero;
             }
 
-            MoveDots(dt, n);  // 3) tích phân chuyển động + áp lực đẩy
+            DotObstacle.BeginFrameAll(); // reset bộ đếm dot đang đè lên vật cản
+
+            MoveDots(dt, n);  // 3) tích phân chuyển động + áp lực đẩy (kèm chặn bởi vật cản)
 
             // Ghi vị trí đã cập nhật trở lại Transform (1 lần/dot).
             for (int i = 0; i < n; i++)
@@ -260,7 +262,8 @@ namespace FruitSort
                     _dots[i].transform.position = _posCache[i];
             }
 
-            RemoveDead();         // 4) xoá dot ra khỏi màn (for-loop NGƯỢC)
+            DotObstacle.EndFrameAll(); // 4) chốt số dot đang đè -> đủ thì vật cản vỡ
+            RemoveDead();              // 5) xoá dot ra khỏi màn (for-loop NGƯỢC)
         }
 
         // ================= SPATIAL GRID =================
@@ -376,6 +379,15 @@ namespace FruitSort
             pos.y += d.launchVelocity.y * dt + sep.y;
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
+            // Vật cản chặn: mất đà phóng, chuyển sang rơi để nằm tì lên bề mặt.
+            if (ResolveObstacleBlock(ref pos, flying: true, out _))
+            {
+                d.state = DotState.Falling;
+                d.fallSpeed = 0f;
+                _posCache[idx] = pos;
+                return;
+            }
+
             // Kiểm tra va chạm với từng băng chuyền đã đăng ký.
             float threshold = dotSize * 0.5f;
             for (int i = 0; i < _allConveyors.Count; i++)
@@ -415,6 +427,11 @@ namespace FruitSort
             pos.y -= d.fallSpeed * dt;
             pos.x += sep.x;
             pos.y += sep.y;
+
+            // Vật cản chặn: đẩy ra ngoài; nằm trên MẶT TRÊN thì đứng yên (hết đà rơi).
+            if (ResolveObstacleBlock(ref pos, flying: true, out bool restingTop) && restingTop)
+                d.fallSpeed = 0f;
+
             _posCache[idx] = pos; // ghi cache
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
@@ -441,6 +458,10 @@ namespace FruitSort
         {
             if (d.conveyor == null) d.conveyor = conveyor;
             if (d.conveyor == null) { d.markedForRemoval = true; return; }
+
+            // Lưu lại để hoàn tác khi frame này bị vật cản chặn (dot đứng yên trên băng).
+            float prevProgress = d.beltProgress;
+            float prevLateral = d.lateralOffset;
 
             float length = Mathf.Max(0.01f, d.conveyor.GetSplineLength());
             float half = d.conveyor.HalfWidth - dotSize * 0.5f;
@@ -480,7 +501,18 @@ namespace FruitSort
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -half, half); // clamp trong bề rộng
 
             // Vị trí = tâm + lệch ngang + nhích dọc (xấp xỉ bậc 1 — sep mỗi frame rất nhỏ nên đủ mượt).
-            _posCache[idx] = center + nrm * d.lateralOffset + tan * along; // ghi cache
+            Vector3 candidate = center + nrm * d.lateralOffset + tan * along;
+
+            // Vật cản chặn dot trên băng: hoàn tác tiến độ, dot đứng yên tại chỗ chờ vật cản vỡ
+            // (không đẩy ra ngoài vì dot phải bám spline).
+            if (IsBlockedByObstacle(candidate, flying: false))
+            {
+                d.beltProgress = prevProgress;
+                d.lateralOffset = prevLateral;
+                return; // giữ nguyên vị trí cũ trong _posCache
+            }
+
+            _posCache[idx] = candidate; // ghi cache
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
             TryAttract(d, idx);
@@ -587,6 +619,82 @@ namespace FruitSort
                     return;
                 }
             }
+        }
+
+        // ================= VẬT CẢN =================
+
+        /// <summary>
+        /// Đẩy pos ra khỏi mọi vật cản đang chặn dot bay/rơi (AABB nở theo bán kính dot).
+        /// Trả về true nếu có tiếp xúc (đã RegisterPress cho vật cản).
+        /// restingTop = true khi dot bị đẩy lên MẶT TRÊN — đang nằm đè lên vật cản.
+        /// </summary>
+        bool ResolveObstacleBlock(ref Vector3 pos, bool flying, out bool restingTop)
+        {
+            restingTop = false;
+            IReadOnlyList<DotObstacle> obstacles = DotObstacle.All;
+            if (obstacles.Count == 0) return false;
+
+            float r = dotSize * 0.5f;
+            bool contact = false;
+
+            for (int k = 0; k < obstacles.Count; k++)
+            {
+                DotObstacle obstacle = obstacles[k];
+                if (!IsBlockingObstacle(obstacle, flying)) continue;
+                if (!obstacle.TryGetWorldBounds(out Bounds b)) continue;
+
+                float minX = b.min.x - r, maxX = b.max.x + r;
+                float minY = b.min.y - r, maxY = b.max.y + r;
+                if (pos.x <= minX || pos.x >= maxX || pos.y <= minY || pos.y >= maxY) continue;
+
+                // Đẩy ra theo mặt gần nhất (độ lún nhỏ nhất).
+                float distLeft = pos.x - minX;
+                float distRight = maxX - pos.x;
+                float distDown = pos.y - minY;
+                float distUp = maxY - pos.y;
+                float min = Mathf.Min(Mathf.Min(distLeft, distRight), Mathf.Min(distDown, distUp));
+
+                if (min == distUp) { pos.y = maxY; restingTop = true; }
+                else if (min == distDown) pos.y = minY;
+                else if (min == distLeft) pos.x = minX;
+                else pos.x = maxX;
+
+                obstacle.RegisterPress();
+                contact = true;
+            }
+            return contact;
+        }
+
+        /// <summary>
+        /// Vị trí candidate của dot-trên-băng có chạm vật cản không. Chạm -> RegisterPress
+        /// và caller giữ dot đứng yên (không đẩy ra vì dot phải bám spline).
+        /// </summary>
+        bool IsBlockedByObstacle(Vector3 pos, bool flying)
+        {
+            IReadOnlyList<DotObstacle> obstacles = DotObstacle.All;
+            if (obstacles.Count == 0) return false;
+
+            float r = dotSize * 0.5f;
+            for (int k = 0; k < obstacles.Count; k++)
+            {
+                DotObstacle obstacle = obstacles[k];
+                if (!IsBlockingObstacle(obstacle, flying)) continue;
+                if (!obstacle.TryGetWorldBounds(out Bounds b)) continue;
+
+                if (pos.x > b.min.x - r && pos.x < b.max.x + r &&
+                    pos.y > b.min.y - r && pos.y < b.max.y + r)
+                {
+                    obstacle.RegisterPress();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static bool IsBlockingObstacle(DotObstacle o, bool flying)
+        {
+            if (o == null || o.IsBroken || !o.isActiveAndEnabled) return false;
+            return flying ? o.blockFlyingDots : o.blockBeltDots;
         }
 
         // ================= XOÁ AN TOÀN =================

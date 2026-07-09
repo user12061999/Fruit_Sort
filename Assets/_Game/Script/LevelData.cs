@@ -24,6 +24,8 @@ namespace FruitSort
         public ModelDotSpawnerColumn columnPrefab;
         [Tooltip("Prefab băng chuyền (SplineContainer + ConveyorSpline). Để trống = tool tự tạo GameObject trống.")]
         public ConveyorSpline conveyorPrefab;
+        [Tooltip("Prefab vật cản (có component DotObstacle). Chỉ cần khi level có obstacles.")]
+        public DotObstacle obstaclePrefab;
         [Tooltip("Database quả/màu. Gán xuống cho bucket/spawner nào chưa có.")]
         public FruitDatabase fruitDatabase;
 
@@ -85,6 +87,14 @@ namespace FruitSort
             public List<Vector3> knots = new List<Vector3>();
         }
 
+        [Serializable]
+        public class ObstacleData
+        {
+            public Vector3 position;
+            [Tooltip("Số dot phải ĐANG đè lên cùng lúc để vật cản vỡ (dot bị chặn, không bị tiêu hao).")]
+            [Min(1)] public int requiredDots = 10;
+        }
+
         /// <summary>Cuối băng <see cref="from"/> -> đầu băng <see cref="to"/> (index trong <see cref="conveyors"/>).</summary>
         [Serializable]
         public class ConveyorLink
@@ -98,6 +108,7 @@ namespace FruitSort
         public List<BucketData> buckets = new List<BucketData>();
         public List<SpawnerData> spawners = new List<SpawnerData>();
         public List<ColumnData> columns = new List<ColumnData>();
+        public List<ObstacleData> obstacles = new List<ObstacleData>();
 
         /// <summary>
         /// Hash các thông số gameplay của level. Snapshot tiến trình lưu hash này lúc chụp;
@@ -133,6 +144,11 @@ namespace FruitSort
                     {
                         hash = HashSpawner(hash, columnSpawners[j]);
                     }
+                }
+
+                for (int i = 0; i < data.obstacles.Count; i++)
+                {
+                    hash = hash * 31 + data.obstacles[i].requiredDots;
                 }
 
                 hash = hash * 31 + data.conveyors.Count;

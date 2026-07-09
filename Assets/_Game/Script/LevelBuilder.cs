@@ -69,7 +69,31 @@ namespace FruitSort
             for (int i = 0; i < data.columns.Count; i++)
                 BuildColumn(data, data.columns[i], i, root.transform);
 
+            if (data.obstacles.Count > 0 && data.obstaclePrefab == null)
+                Debug.LogError("[LevelBuilder] Level có obstacle nhưng chưa gán obstaclePrefab.", data);
+            else
+                for (int i = 0; i < data.obstacles.Count; i++)
+                    BuildObstacle(data, data.obstacles[i], i, root.transform);
+
             return root;
+        }
+
+        static void BuildObstacle(LevelData data, LevelData.ObstacleData od, int index, Transform parent)
+        {
+            var go = Spawn(data.obstaclePrefab.gameObject, parent);
+            go.name = $"Obstacle_{index}";
+            go.transform.position = od.position;
+
+            var obstacle = go.GetComponent<DotObstacle>();
+            if (obstacle == null)
+            {
+                Debug.LogError("[LevelBuilder] obstaclePrefab không có component DotObstacle.", data);
+                return;
+            }
+            obstacle.requiredDots = Mathf.Max(1, od.requiredDots);
+            // OnEnable đã chạy lúc Instantiate với config của prefab -> reset theo LevelData.
+            obstacle.ReinitializeFromConfig();
+            MarkModified(obstacle);
         }
 
         static ConveyorSpline BuildConveyor(LevelData data, LevelData.ConveyorData cd, int index, Transform parent)
