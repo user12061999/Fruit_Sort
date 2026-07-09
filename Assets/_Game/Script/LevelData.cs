@@ -98,5 +98,57 @@ namespace FruitSort
         public List<BucketData> buckets = new List<BucketData>();
         public List<SpawnerData> spawners = new List<SpawnerData>();
         public List<ColumnData> columns = new List<ColumnData>();
+
+        /// <summary>
+        /// Hash các thông số gameplay của level. Snapshot tiến trình lưu hash này lúc chụp;
+        /// khi restore mà hash hiện tại khác (designer đã sửa totalDots/spawnCount/moveLimit...)
+        /// thì snapshot bị coi là cũ và bỏ đi, tránh đè giá trị cũ lên data mới.
+        /// </summary>
+        public static int ComputeConfigHash(LevelData data)
+        {
+            if (data == null) return 0;
+
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + data.moveLimit;
+                hash = hash * 31 + Mathf.RoundToInt(data.timeLimit * 100f);
+
+                for (int i = 0; i < data.buckets.Count; i++)
+                {
+                    BucketData b = data.buckets[i];
+                    hash = hash * 31 + b.colorId;
+                    hash = hash * 31 + b.maxFill;
+                }
+
+                for (int i = 0; i < data.spawners.Count; i++)
+                {
+                    hash = HashSpawner(hash, data.spawners[i]);
+                }
+
+                for (int i = 0; i < data.columns.Count; i++)
+                {
+                    List<SpawnerData> columnSpawners = data.columns[i].spawners;
+                    for (int j = 0; j < columnSpawners.Count; j++)
+                    {
+                        hash = HashSpawner(hash, columnSpawners[j]);
+                    }
+                }
+
+                hash = hash * 31 + data.conveyors.Count;
+                return hash;
+            }
+        }
+
+        static int HashSpawner(int hash, SpawnerData s)
+        {
+            unchecked
+            {
+                hash = hash * 31 + s.fixedColorId;
+                hash = hash * 31 + s.totalDots;
+                hash = hash * 31 + s.spawnCount;
+                return hash;
+            }
+        }
     }
 }

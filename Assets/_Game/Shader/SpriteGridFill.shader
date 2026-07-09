@@ -65,12 +65,13 @@ Shader "Custom/SpriteGridFill"
             float2 scaled = safeUV * gridSize;
             float2 cell = floor(scaled);
             float2 cellUV = frac(scaled);
-            float rowProgress = saturate(saturate(_FillAmount) * rows - cell.y);
+            float cellIndex = cell.y * columns + cell.x;
 
-            // Fill whole rows from bottom to top; decreasing fill empties top to bottom.
-            half fillMask = step(cellUV.y, rowProgress) * step(0.00001, rowProgress);
+            float progress = saturate(_FillAmount) * columns * rows;
+            float cellProgress = saturate(progress - cellIndex);
 
             // step riêng thứ hai loại bỏ vạch 1 pixel khi Fill Amount = 0.
+            half fillMask = step(cellUV.x, cellProgress) * step(0.00001, cellProgress);
             float2 edgeDistance = min(cellUV, 1.0 - cellUV);
             half gapMask = step(saturate(_CellGap), min(edgeDistance.x, edgeDistance.y));
             return fillMask * gapMask;

@@ -110,6 +110,20 @@ namespace FruitSort
             }
         }
 
+        /// <summary>
+        /// Tính lại gói theo totalClicks hiện tại. LevelBuilder PHẢI gọi sau khi gán config
+        /// lúc runtime: Object.Instantiate đã chạy OnEnable TRƯỚC khi builder gán totalClicks,
+        /// nên _dotsLeft lúc đó bị chốt theo giá trị mặc định của prefab.
+        /// </summary>
+        public void ReinitializePackage()
+        {
+            _dotsLeft = Mathf.Max(1, totalClicks);
+            _reservedDots = 0;
+            _depleted = false;
+            clicksLeftDebug = _dotsLeft;
+            RefreshVisuals();
+        }
+
         /// <summary>Bật khi spawner được 1 ModelDotSpawnerColumn quản lý: nó sẽ KHÔNG tự xử lý
         /// click nữa (cột sẽ gọi DoClick thay).</summary>
         [System.NonSerialized] public bool managedExternally;

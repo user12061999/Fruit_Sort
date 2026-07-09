@@ -194,7 +194,9 @@ namespace FruitSort
             if (sd.launchDirection.sqrMagnitude > 0.0001f) s.launchDirection = sd.launchDirection;
             s.launchSpeed = Mathf.Max(0.1f, sd.launchSpeed);
             if (s.fruitDatabase == null) s.fruitDatabase = data.fruitDatabase;
-            s.RefreshVisuals();
+            // OnEnable đã chạy lúc Instantiate với totalClicks của prefab -> tính lại
+            // _dotsLeft theo totalDots của LevelData (kèm RefreshVisuals bên trong).
+            s.ReinitializePackage();
             MarkModified(s);
             MarkModified(s.packageSprite);
         }

@@ -684,8 +684,47 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         // Mua thêm giờ để chơi tiếp sau khi thua -> mở lại cache tiến trình.
         isLost = false;
         ClassicProgressSaveData.SetCaptureProvider(this);
+        // GamePlayManager cũng phải revive, nếu không state kẹt Lost -> CanUseMove = false.
+        if (gamePlayManager != null) gamePlayManager.ReviveWithTime(amount);
         timer.AddTime(amount);
         timer.Resume();
+    }
+
+    /// <summary>Mua thêm lượt move để chơi tiếp sau khi thua do hết move.</summary>
+    public virtual void AddMoreMoves(int amount)
+    {
+        isLost = false;
+        ClassicProgressSaveData.SetCaptureProvider(this);
+        if (gamePlayManager != null) gamePlayManager.ReviveWithMoves(amount);
+        // Thua do hết move đã pause đồng hồ -> chạy tiếp nếu level có giới hạn giờ.
+        if (CurrentLevelData != null && CurrentLevelData.timeLimit > 0f) timer.Resume();
+    }
+
+    /// <summary>
+    /// Đóng băng gameplay khi có popup đè lên GamePanel: dừng đồng hồ
+    /// (LevelTimer chạy ignoreTimeScale nên phải Pause tường minh) và dừng mọi chuyển động.
+    /// </summary>
+    public void PauseGameplay()
+    {
+        Time.timeScale = 0f;
+        if (timer != null) timer.Pause();
+        if (gamePlayManager != null) gamePlayManager.SetTimeCounting(false);
+    }
+
+    /// <summary>Chạy lại gameplay khi popup trên cùng đóng và GamePanel trở lại top.</summary>
+    public void ResumeGameplay()
+    {
+        Time.timeScale = 1f;
+        if (isWon || isLost) return;
+
+        if (!isWaitingForFirstInteraction)
+        {
+            timer.Resume();
+            if (gamePlayManager != null && gamePlayManager.HasStartedInteraction)
+            {
+                gamePlayManager.SetTimeCounting(true);
+            }
+        }
     }
 
 
@@ -863,6 +902,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
 
         data.BeginCapture(
             currentLevelNumber,
+            FruitSort.LevelData.ComputeConfigHash(CurrentLevelData),
             gamePlayManager.HasMoveLimit ? gamePlayManager.MovesLeft : 0,
             gamePlayManager.HasTimeLimit ? gamePlayManager.TimeLeft : 0f,
             gamePlayManager.score,
@@ -939,6 +979,14 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         if (saved == null || !saved.HasProgress) return;
         if (saved.Level != level) return; // snapshot của level khác -> giữ nguyên, chơi level này từ đầu
         if (loadedLevelRoot == null || gamePlayManager == null) return;
+
+        // LevelData đã bị sửa sau khi chụp (totalDots/spawnCount/moveLimit/timeLimit...)
+        // -> snapshot cũ vô nghĩa, bỏ đi để level load đúng theo data mới.
+        if (saved.ConfigHash != FruitSort.LevelData.ComputeConfigHash(CurrentLevelData))
+        {
+            GameData.ClassicProgress.Clear();
+            return;
+        }
 
         FruitSort.Bucket[] liveBuckets = loadedLevelRoot.GetComponentsInChildren<FruitSort.Bucket>(true);
         FruitSort.ModelDotSpawner[] liveSpawners = loadedLevelRoot.GetComponentsInChildren<FruitSort.ModelDotSpawner>(true);

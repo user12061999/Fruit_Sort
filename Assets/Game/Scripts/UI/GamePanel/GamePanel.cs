@@ -64,6 +64,26 @@ public class GamePanel : UIFrame
         PauseGame();
     }
 
+    // UIManager gọi Pause/Resume cho frame ngay dưới top mỗi khi push/đóng popup
+    // -> mọi popup (PausePanel, WinPanel, LosePanel, Dialog...) đều tự đóng băng ingame.
+    protected override void OnPause()
+    {
+        base.OnPause();
+        if (ClassicLevelController.instance != null)
+        {
+            ClassicLevelController.instance.PauseGameplay();
+        }
+    }
+
+    protected override void OnResume()
+    {
+        base.OnResume();
+        if (ClassicLevelController.instance != null)
+        {
+            ClassicLevelController.instance.ResumeGameplay();
+        }
+    }
+
     private void PauseGame()
     {
         UIManager.Instance.Push<PausePanel>();

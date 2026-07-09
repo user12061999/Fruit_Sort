@@ -15,6 +15,16 @@ public class LosePanel : GameUIFrame
     [SerializeField] private Transform rewardViewContainer;
     [SerializeField] private ItemView priceView; [SerializeField] private ItemStack priceItem;
     [SerializeField] private Button btnReviveAds, btnReviveGold;
+    [Header("[Revive]")]
+    [Tooltip("Số giây cộng thêm khi revive sau thua do hết giờ.")]
+    [SerializeField] private int reviveSeconds = 20;
+    [Tooltip("Số lượt move cộng thêm khi revive sau thua do hết move.")]
+    [SerializeField] private int reviveMoves = 5;
+    [Header("[Lose Reason UI]")]
+    [Tooltip("Object UI hiển thị khi thua do hết giờ (lý do thua + phần thưởng revive).")]
+    [SerializeField] private GameObject loseByTimeUI;
+    [Tooltip("Object UI hiển thị khi thua do hết lượt move (lý do thua + phần thưởng revive).")]
+    [SerializeField] private GameObject loseByMovesUI;
 
     private int itemId;
     private Action<bool> callback;
@@ -35,8 +45,24 @@ public class LosePanel : GameUIFrame
     protected override void OnShow(bool instant = false)
     {
         base.OnShow(instant);
+        UpdateLoseReasonUI();
 
         //GameAnalytics.LogEvent(GameAnalytics.GameEvent.Create("iap_show").Add("position", "ingame"));
+    }
+
+    /// <summary>Thua do hết move? (mặc định false = thua do hết giờ, kể cả khi thua qua LevelTimer).</summary>
+    private bool IsLostByMoves()
+    {
+        FruitSort.GamePlayManager gamePlayManager = FruitSort.GamePlayManager.Instance;
+        return gamePlayManager != null &&
+            gamePlayManager.LastLoseReason == FruitSort.GamePlayManager.LoseReason.OutOfMoves;
+    }
+
+    private void UpdateLoseReasonUI()
+    {
+        bool byMoves = IsLostByMoves();
+        if (loseByTimeUI != null) loseByTimeUI.SetActive(!byMoves);
+        if (loseByMovesUI != null) loseByMovesUI.SetActive(byMoves);
     }
     protected override void OnShowCompleted()
     {
@@ -118,15 +144,20 @@ public class LosePanel : GameUIFrame
         }
     }
 
-    public void OnRevive(int time = 20)
+    public void OnRevive()
     {
-        // ClassicLevelController levelController = GameController.Instance.LevelController as ClassicLevelController;
-        // if (levelController = null) return;
-        ClassicLevelController.instance.AddMoreSeconds(time);
+        ClassicLevelController controller = ClassicLevelController.instance;
+        if (controller == null) return;
 
-        // ClassicLevelController.instance.GamePanels.SetCountdownTime(time);
-        // ClassicLevelController.instance.Timer.Resume();
-
+        // Revive theo đúng lý do thua: hết move -> cộng move, còn lại -> cộng giờ.
+        if (IsLostByMoves())
+        {
+            controller.AddMoreMoves(reviveMoves);
+        }
+        else
+        {
+            controller.AddMoreSeconds(reviveSeconds);
+        }
     }
     private void OnAdsPurchase()
     {

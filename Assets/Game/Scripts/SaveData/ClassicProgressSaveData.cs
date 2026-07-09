@@ -52,6 +52,7 @@ public class ClassicProgressSaveData : SaveData {
 
     [SerializeField] private bool hasProgress;
     [SerializeField] private int level;
+    [SerializeField] private int configHash;   // LevelData.ComputeConfigHash lúc chụp
     [SerializeField] private int movesLeft;
     [SerializeField] private float timeLeft;
     [SerializeField] private int score;
@@ -64,6 +65,7 @@ public class ClassicProgressSaveData : SaveData {
 
     public bool HasProgress => hasProgress;
     public int Level => level;
+    public int ConfigHash => configHash;
     public int MovesLeft => movesLeft;
     public float TimeLeft => timeLeft;
     public int Score => score;
@@ -84,9 +86,10 @@ public class ClassicProgressSaveData : SaveData {
     }
 
     /// <summary>Bắt đầu một snapshot mới: ghi thông số chung và xoá dữ liệu cũ.</summary>
-    public void BeginCapture(int level, int movesLeft, float timeLeft, int score,
+    public void BeginCapture(int level, int configHash, int movesLeft, float timeLeft, int score,
                              int bucketCount, int spawnerCount, int conveyorCount) {
         this.level = level;
+        this.configHash = configHash;
         this.movesLeft = movesLeft;
         this.timeLeft = timeLeft;
         this.score = score;
@@ -132,6 +135,7 @@ public class ClassicProgressSaveData : SaveData {
     public void Clear() {
         hasProgress = false;
         level = 0;
+        configHash = 0;
         movesLeft = 0;
         timeLeft = 0f;
         score = 0;

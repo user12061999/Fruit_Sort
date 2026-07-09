@@ -528,6 +528,8 @@ MonoBehaviour:
   contentRoot: {fileID: 0}
   jumpPower: 0.7
   dropDuration: 0.35
+  receivePunch: 0.06
+  releaseOnlyWrongColor: 1
   wrongColorLerpDuration: 0.25
   releaseHintIcon: {fileID: 0}
   wrongColorBlink: 0.35

@@ -17,6 +17,13 @@ namespace FruitSort
             Lost
         }
 
+        public enum LoseReason
+        {
+            None,
+            OutOfTime,
+            OutOfMoves
+        }
+
         public static GamePlayManager Instance { get; private set; }
 
         [Header("Refs")]
@@ -63,6 +70,7 @@ namespace FruitSort
         bool _hasStartedInteraction;
         bool _progressRestored;
         PlayState _state = PlayState.Playing;
+        LoseReason _loseReason = LoseReason.None;
 
         public int MovesLeft => HasMoveLimit ? _movesLeft : int.MaxValue;
         public bool HasMoveLimit => moveLimit > 0;
@@ -75,6 +83,7 @@ namespace FruitSort
         public bool HasWon => _state == PlayState.Won;
         public bool HasLost => _state == PlayState.Lost;
         public PlayState State => _state;
+        public LoseReason LastLoseReason => _loseReason;
 
         void Awake()
         {
@@ -132,6 +141,7 @@ namespace FruitSort
         public void RestoreProgress(int savedMovesLeft, float savedTimeLeft, int savedScore)
         {
             _state = PlayState.Playing;
+            _loseReason = LoseReason.None;
             _hasStartedInteraction = false;
             _timeCounting = false;
 
@@ -155,6 +165,7 @@ namespace FruitSort
             _movesLeft = Mathf.Max(0, moveLimit);
             movesLeftDebug = _movesLeft;
             _state = PlayState.Playing;
+            _loseReason = LoseReason.None;
             _lastMovesLeft = int.MinValue;
             DispatchMovesChanged();
         }
@@ -214,7 +225,7 @@ namespace FruitSort
 
             _timeLeft = Mathf.Max(0f, _timeLeft - Time.deltaTime);
             timeLeftDebug = _timeLeft;
-            if (_timeLeft <= 0f) Lose();
+            if (_timeLeft <= 0f) Lose(LoseReason.OutOfTime);
         }
 
         public void OnDotSorted(Dot d)
@@ -245,7 +256,7 @@ namespace FruitSort
             }
 
             if (CanStillCompleteAnyBucket()) return;
-            Lose();
+            Lose(LoseReason.OutOfMoves);
         }
 
         bool AreAllBucketsFull()
@@ -290,14 +301,62 @@ namespace FruitSort
         {
             if (_state != PlayState.Playing) return;
             _state = PlayState.Won;
+            _loseReason = LoseReason.None;
             onWin?.Invoke();
         }
 
-        void Lose()
+        void Lose(LoseReason reason)
         {
             if (_state != PlayState.Playing) return;
             _state = PlayState.Lost;
+            _loseReason = reason;
             onLose?.Invoke();
+        }
+
+        /// <summary>
+        /// Revive sau khi thua do hết move: cộng thêm lượt và cho chơi tiếp.
+        /// Nới moveLimit theo để movesLeft không bị clamp mất khi save/restore.
+        /// </summary>
+        public void ReviveWithMoves(int amount)
+        {
+            if (amount <= 0 || !HasMoveLimit || _state == PlayState.Won) return;
+
+            _movesLeft += amount;
+            if (_movesLeft > moveLimit) moveLimit = _movesLeft;
+            movesLeftDebug = _movesLeft;
+
+            if (_state == PlayState.Lost)
+            {
+                _state = PlayState.Playing;
+                _loseReason = LoseReason.None;
+            }
+
+            if (_hasStartedInteraction) SetTimeCounting(true);
+            DispatchMovesChanged();
+            RefreshUI();
+        }
+
+        /// <summary>
+        /// Revive sau khi thua do hết giờ: cộng thêm giây và cho chơi tiếp.
+        /// LevelTimer (đồng hồ UI) cộng riêng qua ClassicLevelController.AddMoreSeconds.
+        /// </summary>
+        public void ReviveWithTime(float seconds)
+        {
+            if (seconds <= 0f || !HasTimeLimit || _state == PlayState.Won) return;
+
+            _timeLeft += seconds;
+            if (_timeLeft > timeLimit) timeLimit = _timeLeft;
+            timeLeftDebug = _timeLeft;
+            _lastTimeLeftSeconds = int.MinValue;
+
+            if (_state == PlayState.Lost)
+            {
+                _state = PlayState.Playing;
+                _loseReason = LoseReason.None;
+            }
+
+            if (_hasStartedInteraction) SetTimeCounting(true);
+            RefreshUI();
         }
 
         void RefreshUI()
