@@ -144,6 +144,9 @@ namespace FruitSort
 
         void Update()
         {
+            // Popup đang đè -> không nhận click gameplay (input là polling, UI không chặn được).
+            if (GameplayPause.IsPaused) return;
+
             // Cho phép click cả khi mới chỉ có dot ĐANG BAY TỚI (_reserved) để hủy kịp.
             if (_full || (currentFill <= 0 && _reserved.Count == 0) ||
                 !PointerInput.PressedThisFrame())
@@ -355,6 +358,9 @@ namespace FruitSort
 
             for (int i = 0; i < returning.Count; i++)
             {
+                // Popup đè lên giữa lúc nhả -> đứng chờ, không phóng dot trong lúc pause.
+                while (GameplayPause.IsPaused) yield return null;
+
                 // Giảm dần fill theo từng dot.
                 currentFill = Mathf.Max(0, currentFill - 1);
                 _visibleFill = Mathf.Max(0, _visibleFill - 1);

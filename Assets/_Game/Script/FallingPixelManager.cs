@@ -223,6 +223,9 @@ namespace FruitSort
 
         void Update()
         {
+            // Popup đang đè lên GamePanel -> đóng băng toàn bộ chuyển động dot.
+            if (GameplayPause.IsPaused) return;
+
             float dt = Time.deltaTime;
             if (dt <= 0f || _dots.Count == 0) return;
 

@@ -197,6 +197,9 @@ namespace FruitSort
 
         void Update()
         {
+            // Popup đang đè -> không nhận click gameplay (input là polling, UI không chặn được).
+            if (GameplayPause.IsPaused) return;
+
             // Cột quản lý -> không tự xử lý click.
             if (managedExternally) return;
 
@@ -427,6 +430,9 @@ namespace FruitSort
             var wait = new WaitForSeconds(spawnInterval);
             for (int i = 0; i < spawnCount; i++)
             {
+                // Popup đè lên giữa loạt spawn -> đứng chờ, không sinh dot trong lúc pause.
+                while (GameplayPause.IsPaused) yield return null;
+
                 SpawnOne();
                 yield return wait;
             }
