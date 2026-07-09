@@ -25,9 +25,9 @@ namespace FruitSort.EditorTools
     /// </summary>
     public class LevelEditorWindow : EditorWindow
     {
-        enum Mode { Select, Bucket, Spawner, Column, Conveyor, EditBelt, Delete }
+        enum Mode { Select, Bucket, Spawner, Column, Conveyor, EditBelt, Obstacle, Delete }
 
-        static readonly string[] ModeLabels = { "Select", "Bucket", "Spawner", "Column", "Conveyor", "Edit Belt", "Delete" };
+        static readonly string[] ModeLabels = { "Select", "Bucket", "Spawner", "Column", "Conveyor", "Edit Belt", "Obstacle", "Delete" };
 
         LevelData _level;
         Mode _mode = Mode.Select;
@@ -44,6 +44,8 @@ namespace FruitSort.EditorTools
         float _spawnerLaunchSpeed = 10f;
         bool _attachSpawnerToColumn = true;
         float _attachRadius = 2.5f;
+
+        int _obstacleRequiredDots = 10;
 
         float _newBeltWidth = 3f;
         bool _newBeltClosed = false;
@@ -127,6 +129,7 @@ namespace FruitSort.EditorTools
             var spawner = (ModelDotSpawner)EditorGUILayout.ObjectField("Spawner", _level.spawnerPrefab, typeof(ModelDotSpawner), false);
             var column = (ModelDotSpawnerColumn)EditorGUILayout.ObjectField("Column", _level.columnPrefab, typeof(ModelDotSpawnerColumn), false);
             var conveyor = (ConveyorSpline)EditorGUILayout.ObjectField("Conveyor (tuỳ chọn)", _level.conveyorPrefab, typeof(ConveyorSpline), false);
+            var obstacle = (DotObstacle)EditorGUILayout.ObjectField("Obstacle (tuỳ chọn)", _level.obstaclePrefab, typeof(DotObstacle), false);
             var db = (FruitDatabase)EditorGUILayout.ObjectField("Fruit Database", _level.fruitDatabase, typeof(FruitDatabase), false);
             if (EditorGUI.EndChangeCheck())
             {
@@ -135,6 +138,7 @@ namespace FruitSort.EditorTools
                 _level.spawnerPrefab = spawner;
                 _level.columnPrefab = column;
                 _level.conveyorPrefab = conveyor;
+                _level.obstaclePrefab = obstacle;
                 _level.fruitDatabase = db;
                 EditorUtility.SetDirty(_level);
             }
@@ -165,7 +169,8 @@ namespace FruitSort.EditorTools
                 case Mode.Column: return "Click để đặt Column (cột spawner). Sau đó dùng mode Spawner đặt các gói vào cột.";
                 case Mode.Conveyor: return "Click liên tiếp để thêm knot cho băng mới. ENTER chốt băng, ESC huỷ băng đang vẽ.";
                 case Mode.EditBelt: return "Click 1 băng để chọn, kéo handle tròn ở mỗi knot để uốn. Panel bên dưới chỉnh width/loop/bo góc.";
-                case Mode.Delete: return "Click gần 1 entity (bucket/spawner/column/băng) để xoá nó.";
+                case Mode.Obstacle: return "Click để đặt vật cản. Dot bị chặn (không tiêu hao); đủ số dot đè lên cùng lúc thì vật cản vỡ.";
+                case Mode.Delete: return "Click gần 1 entity (bucket/spawner/column/băng/vật cản) để xoá nó.";
                 default: return "";
             }
         }
@@ -191,6 +196,11 @@ namespace FruitSort.EditorTools
                     _attachSpawnerToColumn = EditorGUILayout.Toggle("Gắn vào Column gần", _attachSpawnerToColumn);
                     if (_attachSpawnerToColumn)
                         _attachRadius = EditorGUILayout.Slider("Bán kính gắn", _attachRadius, 0.5f, 8f);
+                    break;
+
+                case Mode.Obstacle:
+                    EditorGUILayout.LabelField("Vật cản mới", EditorStyles.boldLabel);
+                    _obstacleRequiredDots = Mathf.Max(1, EditorGUILayout.IntField("Số dot đè lên để vỡ", _obstacleRequiredDots));
                     break;
 
                 case Mode.Conveyor:
@@ -339,6 +349,7 @@ namespace FruitSort.EditorTools
                     case Mode.Bucket: PlaceBucket(wp); e.Use(); break;
                     case Mode.Spawner: PlaceSpawner(wp); e.Use(); break;
                     case Mode.Column: PlaceColumn(wp); e.Use(); break;
+                    case Mode.Obstacle: PlaceObstacle(wp); e.Use(); break;
                     case Mode.Conveyor: PlaceKnot(wp); e.Use(); break;
                     case Mode.EditBelt: _editing = PickConveyor(raw); Repaint(); e.Use(); break;
                     case Mode.Delete: DeleteAt(raw); e.Use(); break;
@@ -445,6 +456,24 @@ namespace FruitSort.EditorTools
             Undo.RegisterCreatedObjectUndo(go, "Place Column");
             go.name = "SpawnerColumn";
             go.transform.position = pos;
+
+            Selection.activeGameObject = go;
+            MarkDirty();
+        }
+
+        void PlaceObstacle(Vector3 pos)
+        {
+            if (_level.obstaclePrefab == null) { Notify("Chưa gán Obstacle prefab trong LevelData"); return; }
+
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(_level.obstaclePrefab.gameObject);
+            Undo.RegisterCreatedObjectUndo(go, "Place Obstacle");
+            go.transform.position = pos;
+            go.name = $"Obstacle_x{_obstacleRequiredDots}";
+
+            var o = go.GetComponent<DotObstacle>();
+            o.requiredDots = _obstacleRequiredDots;
+            MarkPrefabOverride(o);
+            MarkPrefabOverride(o.body);
 
             Selection.activeGameObject = go;
             MarkDirty();
@@ -627,6 +656,11 @@ namespace FruitSort.EditorTools
                 float d = Vector2.Distance(c.transform.position, wp);
                 if (d < best) { best = d; target = c.gameObject; }
             }
+            foreach (var o in Object.FindObjectsByType<DotObstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                float d = Vector2.Distance(o.transform.position, wp);
+                if (d < best) { best = d; target = o.gameObject; }
+            }
             foreach (var c in Object.FindObjectsByType<ConveyorSpline>(FindObjectsSortMode.None))
             {
                 float d = DistanceToSpline(c, wp);
@@ -711,6 +745,17 @@ namespace FruitSort.EditorTools
                 Handles.DrawWireCube(col.transform.position, new Vector3(1f, 1f, 0f));
                 int n = col.GetComponentsInChildren<ModelDotSpawner>(true).Length;
                 Handles.Label(col.transform.position + Vector3.up * 0.8f, $"Column ({n} gói)", LabelStyle(Color.gray));
+            }
+
+            // Obstacle: khung AABB vùng chặn + label
+            foreach (var o in Object.FindObjectsByType<DotObstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Color col = new Color(1f, 0.35f, 0.35f);
+                Handles.color = col;
+                if (o.TryGetWorldBounds(out Bounds b))
+                    Handles.DrawWireCube(b.center, new Vector3(b.size.x, b.size.y, 0f));
+                Handles.Label(o.transform.position + Vector3.up * 0.6f,
+                    $"Obstacle x{o.requiredDots}", LabelStyle(col));
             }
         }
 
@@ -817,6 +862,7 @@ namespace FruitSort.EditorTools
                 a.spawnerPrefab = _level.spawnerPrefab;
                 a.columnPrefab = _level.columnPrefab;
                 a.conveyorPrefab = _level.conveyorPrefab;
+                a.obstaclePrefab = _level.obstaclePrefab;
                 a.fruitDatabase = _level.fruitDatabase;
             }
             AssetDatabase.CreateAsset(a, path);
@@ -832,6 +878,7 @@ namespace FruitSort.EditorTools
             _level.buckets.Clear();
             _level.spawners.Clear();
             _level.columns.Clear();
+            _level.obstacles.Clear();
 
             // ---- Conveyors + links ----
             var conveyors = new List<ConveyorSpline>(
@@ -900,10 +947,20 @@ namespace FruitSort.EditorTools
                 _level.spawners.Add(ToSpawnerData(s, s.transform.position));
             }
 
+            // ---- Obstacles ----
+            foreach (var o in Object.FindObjectsByType<DotObstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                _level.obstacles.Add(new LevelData.ObstacleData
+                {
+                    position = o.transform.position,
+                    requiredDots = o.requiredDots,
+                });
+            }
+
             EditorUtility.SetDirty(_level);
             AssetDatabase.SaveAssets();
             Notify($"Đã lưu: {_level.buckets.Count} bucket, {_level.spawners.Count} spawner, " +
-                   $"{_level.columns.Count} column, {_level.conveyors.Count} băng");
+                   $"{_level.columns.Count} column, {_level.conveyors.Count} băng, {_level.obstacles.Count} vật cản");
         }
 
         static LevelData.SpawnerData ToSpawnerData(ModelDotSpawner s, Vector3 position)
@@ -945,7 +1002,7 @@ namespace FruitSort.EditorTools
         void ClearSceneEntities(bool confirm)
         {
             if (confirm && !EditorUtility.DisplayDialog("Xoá level",
-                "Xoá toàn bộ Bucket / Spawner / Column / Conveyor trong scene?", "Xoá", "Huỷ"))
+                "Xoá toàn bộ Bucket / Spawner / Column / Conveyor / Obstacle trong scene?", "Xoá", "Huỷ"))
                 return;
 
             var doomed = new HashSet<GameObject>();
@@ -957,6 +1014,8 @@ namespace FruitSort.EditorTools
                 doomed.Add(b.gameObject);
             foreach (var c in Object.FindObjectsByType<ConveyorSpline>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 doomed.Add(c.gameObject);
+            foreach (var o in Object.FindObjectsByType<DotObstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                doomed.Add(o.gameObject);
             // Root rỗng còn sót lại từ lần load trước.
             foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
                 if (go != null && go.name.StartsWith(LevelBuilder.RootName)) doomed.Add(go);
@@ -1022,6 +1081,15 @@ namespace FruitSort.EditorTools
                 for (int k = 0; k < kids.Length && k < cd.spawners.Count; k++)
                     ApplySpawnerData(kids[k], cd.spawners[k]);
             }
+
+            var obstacles = root.GetComponentsInChildren<DotObstacle>(true);
+            for (int i = 0; i < obstacles.Length && i < _level.obstacles.Count; i++)
+            {
+                var od = _level.obstacles[i];
+                obstacles[i].transform.position = od.position;
+                obstacles[i].requiredDots = Mathf.Max(1, od.requiredDots);
+                MarkPrefabOverride(obstacles[i]);
+            }
         }
 
         void ApplySpawnerData(ModelDotSpawner s, LevelData.SpawnerData sd)
@@ -1042,6 +1110,7 @@ namespace FruitSort.EditorTools
             foreach (var b in root.GetComponentsInChildren<Bucket>(true)) MarkPrefabOverride(b);
             foreach (var s in root.GetComponentsInChildren<ModelDotSpawner>(true)) MarkPrefabOverride(s);
             foreach (var c in root.GetComponentsInChildren<ModelDotSpawnerColumn>(true)) MarkPrefabOverride(c);
+            foreach (var o in root.GetComponentsInChildren<DotObstacle>(true)) MarkPrefabOverride(o);
             foreach (var c in root.GetComponentsInChildren<ConveyorSpline>(true))
             {
                 MarkPrefabOverride(c);

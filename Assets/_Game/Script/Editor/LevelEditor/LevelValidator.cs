@@ -48,6 +48,21 @@ namespace FruitSort.EditorTools
             var conveyors = Object.FindObjectsByType<ConveyorSpline>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             var spawners = Object.FindObjectsByType<ModelDotSpawner>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             var columns = Object.FindObjectsByType<ModelDotSpawnerColumn>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var obstacles = Object.FindObjectsByType<DotObstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            // ---- Obstacle ----
+            if (obstacles.Length > 0 && level.obstaclePrefab == null)
+                issues.Add(new LevelIssue(MessageType.Error,
+                    "Scene có vật cản nhưng LevelData chưa gán Obstacle prefab — runtime sẽ không dựng được.", level));
+            foreach (var o in obstacles)
+            {
+                // Ngưỡng vỡ là số dot ĐÈ LÊN CÙNG LÚC -> phải đạt được bằng 1 loạt spawn.
+                int maxBurst = 0;
+                foreach (var s in spawners) maxBurst = Mathf.Max(maxBurst, s.spawnCount);
+                if (maxBurst > 0 && o.requiredDots > maxBurst)
+                    issues.Add(new LevelIssue(MessageType.Warning,
+                        $"Vật cản '{o.name}' cần {o.requiredDots} dot đè lên cùng lúc nhưng loạt spawn lớn nhất chỉ có {maxBurst} dot — có thể không phá nổi.", o));
+            }
 
             // ---- Tồn tại tối thiểu ----
             if (buckets.Length == 0)
