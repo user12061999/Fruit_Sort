@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem; // Project dùng Input System (New)
 
 namespace FruitSort
 {
@@ -25,7 +24,6 @@ namespace FruitSort
         public int currentIndexDebug;
 
         readonly List<ModelDotSpawner> _members = new List<ModelDotSpawner>();
-        bool _wasPressed;
 
         void Awake()
         {
@@ -56,23 +54,23 @@ namespace FruitSort
 
         void Update()
         {
-            if (Mouse.current == null) return;
-
-            bool pressed = Mouse.current.leftButton.isPressed;
-            // Edge nhấn xuống mới tính (tránh spawn liên tục khi giữ chuột).
-            if (pressed && !_wasPressed) TryClick();
-            _wasPressed = pressed;
+            // Edge nhấn xuống mới tính (tránh spawn liên tục khi giữ chuột/touch).
+            if (PointerInput.PressedThisFrame()) TryClick();
 
             currentIndexDebug = ActiveIndex();
         }
 
         void TryClick()
         {
+            // UI đang đè lên -> không cho click xuyên qua xuống cột spawner.
+            if (UIPointerGuard.IsPointerOverUI()) return;
+
             int idx = ActiveIndex();
             if (idx < 0) return;
             ModelDotSpawner active = _members[idx];
 
-            Vector3 sp = Mouse.current.position.ReadValue();
+            if (!PointerInput.TryGetPosition(out Vector2 pointerPos)) return;
+            Vector3 sp = pointerPos;
 
             bool hit;
             if (clickAnywhereInColumn)

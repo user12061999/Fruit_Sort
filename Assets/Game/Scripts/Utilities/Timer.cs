@@ -21,11 +21,11 @@ public class Timer {
     }
 
     public void Pause() {
-        tween.Pause();
+        tween?.Pause();
     }
 
     public void Resume() {
-        tween.Play();
+        tween?.Play();
     }
 
     public void Stop() {

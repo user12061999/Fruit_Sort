@@ -95,7 +95,12 @@ public class PausePanel : UIFrame
             else
             {
                 //RETRY
+                // DestroyGame trước để controller gỡ capture provider, rồi mới xoá snapshot
+                // (tránh auto-save lúc chuyển scene chụp lại trạng thái cũ).
                 GameController.Instance.DestroyGame();
+                // Retry = chơi lại từ đầu -> bỏ tiến trình đã cache của level.
+                GameData.ClassicProgress.Clear();
+                HAVIGAME.SaveLoad.SaveLoadManager.Save();
                 int levelToPlay = GameData.Classic.LevelUnlocked;
                 GameSceneController.pendingLoadLevelOption = LoadLevelOption.Create(levelToPlay);
                 ScenesManager.Instance.LoadSceneAsyn(GameScene.ByIndex.Game);

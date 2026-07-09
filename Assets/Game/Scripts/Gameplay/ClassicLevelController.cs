@@ -7,7 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ClassicLevelController : LevelController
+public class ClassicLevelController : LevelController, ClassicProgressSaveData.ICaptureProvider
 {
     //singleton
     public static ClassicLevelController instance;
@@ -33,6 +33,11 @@ public class ClassicLevelController : LevelController
     private GameObject loadedLevelRoot;
     private int totalBuckets;
     private int filledBuckets;
+    private bool isLost;
+    private bool isWaitingForFirstInteraction;
+    private FruitSort.GamePlayManager gamePlayManager;
+    private int currentLevelNumber;
+    private bool resumedFromSave;
 
     public GamePanel GamePanels => gamePanel;
     public LevelTimer Timer => timer;
@@ -73,12 +78,16 @@ public class ClassicLevelController : LevelController
     {
         EventDispatcher.AddListener<GameEvent.DestroyBlockShape>(OnBlockShapeChange);
         FruitSort.Bucket.OnBucketFull += HandleBucketFull;
+        FruitSort.GamePlayManager.onInteractionRecorded += HandleInteractionRecorded;
     }
 
     private void OnDestroy()
     {
         EventDispatcher.RemoveListener<GameEvent.DestroyBlockShape>(OnBlockShapeChange);
         FruitSort.Bucket.OnBucketFull -= HandleBucketFull;
+        FruitSort.GamePlayManager.onInteractionRecorded -= HandleInteractionRecorded;
+        ClassicProgressSaveData.RemoveCaptureProvider(this);
+        UnbindGamePlayManagerLose();
 
         if (instance == this)
         {
@@ -107,9 +116,19 @@ public class ClassicLevelController : LevelController
     {
         isResolving = false;
         isWon = false;
+        isLost = false;
+        resumedFromSave = false;
+        currentLevelNumber = level;
         dictBooster = new Dictionary<int, int>();
 
-        LoadLevelData(level);
+        if (LoadLevelData(level))
+        {
+            // Có tiến trình lưu dở của đúng level này -> khôi phục để chơi tiếp.
+            TryRestoreProgress(level);
+            // Đăng ký làm nguồn chụp snapshot: mọi SaveLoadManager.Save() (sau action,
+            // khi app pause/quit) sẽ tự chụp trạng thái sống qua CaptureTo.
+            ClassicProgressSaveData.SetCaptureProvider(this);
+        }
 
         CheckHideTutorial();
     }
@@ -147,17 +166,56 @@ public class ClassicLevelController : LevelController
 
         loadedLevelRoot.transform.SetParent(transform, true);
         CurrentLevelData = data;
+        BindGamePlayManager(data);
+
         totalBuckets = loadedLevelRoot.GetComponentsInChildren<FruitSort.Bucket>(true).Length;
         filledBuckets = 0;
 
         UpdateCameraToLoadedLevel();
 
-        if (generator != null && data.timeLimit > 0f)
+        if (generator != null)
         {
-            generator.Duration = Mathf.CeilToInt(data.timeLimit);
+            generator.Duration = Mathf.CeilToInt(Mathf.Max(0f, data.timeLimit));
         }
 
         return true;
+    }
+
+    private void BindGamePlayManager(FruitSort.LevelData data)
+    {
+        UnbindGamePlayManagerLose();
+
+        gamePlayManager = FruitSort.GamePlayManager.Instance;
+        if (gamePlayManager == null)
+        {
+            gamePlayManager = FindAnyObjectByType<FruitSort.GamePlayManager>();
+        }
+
+        if (gamePlayManager == null)
+        {
+            return;
+        }
+
+        gamePlayManager.ConfigureFromLevel(data);
+        gamePlayManager.SetTimeCounting(false);
+        gamePlayManager.onLose.RemoveListener(HandleGamePlayLose);
+        gamePlayManager.onLose.AddListener(HandleGamePlayLose);
+    }
+
+    private void UnbindGamePlayManagerLose()
+    {
+        if (gamePlayManager == null)
+        {
+            return;
+        }
+
+        gamePlayManager.onLose.RemoveListener(HandleGamePlayLose);
+        gamePlayManager = null;
+    }
+
+    private void HandleGamePlayLose()
+    {
+        LoseLevel();
     }
 
     private void HandleBucketFull(FruitSort.Bucket bucket)
@@ -186,17 +244,29 @@ public class ClassicLevelController : LevelController
         UpdateCameraToLoadedLevel();
         startedTime = Time.time;
         TotalMove = 0;
-        GameData.Inventory.Remove(new ItemStack(ItemID.Heart, 1));
+        // Resume level chơi dở -> không trừ tim lần nữa (đã trừ khi bắt đầu lượt gốc).
+        if (!resumedFromSave) GameData.Inventory.Remove(new ItemStack(ItemID.Heart, 1));
         gamePanel = UIManager.Instance.Push<GamePanel>();
         gamePanel.SetCountdownTime(generator.Duration);
         gamePanel.Interactable = true;
         countBuyTime = 0;
         GameAdvertising.TryShowBannerAd(GameAdvertising.GameAdPosition.BottomCenter);
         int seconds = generator.Duration;
-
-
-        StartCountdown(seconds);
-        PauseCountdown(false);
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.SetTimeCounting(false);
+        }
+        if (seconds > 0)
+        {
+            StartCountdown(seconds);
+            PauseCountdown(false);
+            isWaitingForFirstInteraction = true;
+        }
+        else
+        {
+            timer.Stop();
+            isWaitingForFirstInteraction = false;
+        }
         if (GameData.Classic.LevelUnlocked >= 3)
         {
             StartShowInterstitialAd();
@@ -282,6 +352,7 @@ public class ClassicLevelController : LevelController
         base.OnWinLevel(isWinBySkip);
 
         isWon = true;
+        ClearSavedProgress();
         timer.Stop();
         gamePanel.Interactable = false;
         Time.timeScale = 1;
@@ -326,9 +397,11 @@ public class ClassicLevelController : LevelController
     protected override void OnLoseLevel()
     {
         base.OnLoseLevel();
-        if (isWon) return;
-        timer.Pause();
-        gamePanel.Interactable = false;
+        if (isWon || isLost) return;
+        isLost = true;
+        ClearSavedProgress();
+        if (timer != null) timer.Pause();
+        if (gamePanel != null) gamePanel.Interactable = false;
         CheckHideTutorial();
         StopShowInterstitialAd();
         Time.timeScale = 1;
@@ -338,7 +411,7 @@ public class ClassicLevelController : LevelController
         DOVirtual.DelayedCall(1.5f, () =>
         {
             if (isWon) return;
-            gamePanel.Interactable = true;
+            if (gamePanel != null) gamePanel.Interactable = true;
             LosePanel losePanel = UIManager.Instance.Push<LosePanel>();
             losePanel.SetCoin(new ItemStack(ItemID.Coin, 250 * countBuyTime));
             losePanel.CheckButton();
@@ -364,7 +437,9 @@ public class ClassicLevelController : LevelController
     {
         base.OnDestroyLevel();
 
+        ClassicProgressSaveData.RemoveCaptureProvider(this);
         timer.Stop();
+        UnbindGamePlayManagerLose();
 
         if (highlightVFX != null)
         {
@@ -479,6 +554,22 @@ public class ClassicLevelController : LevelController
         timer.Countdown(seconds, LoseLevel);
     }
 
+    public void StartCountdownOnFirstInteraction()
+    {
+        if (!isWaitingForFirstInteraction)
+        {
+            return;
+        }
+
+        isWaitingForFirstInteraction = false;
+        ResumeCountdown(false);
+
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.SetTimeCounting(true);
+        }
+    }
+
 
     
 
@@ -590,6 +681,9 @@ public class ClassicLevelController : LevelController
 
     public virtual void AddMoreSeconds(int amount)
     {
+        // Mua thêm giờ để chơi tiếp sau khi thua -> mở lại cache tiến trình.
+        isLost = false;
+        ClassicProgressSaveData.SetCaptureProvider(this);
         timer.AddTime(amount);
         timer.Resume();
     }
@@ -738,6 +832,225 @@ public class ClassicLevelController : LevelController
     }
 
     private Coroutine intersitialAdCoroutine;
+
+    #region SAVE / RESTORE PROGRESS
+
+    // Sau MỖI action (click spawner / nhả bucket): ghi save ngay xuống disk.
+    // OnBeforeSave của ClassicProgressSaveData sẽ tự gọi CaptureTo bên dưới để chụp trạng thái.
+    private void HandleInteractionRecorded()
+    {
+        HAVIGAME.SaveLoad.SaveLoadManager.Save();
+    }
+
+    private void ClearSavedProgress()
+    {
+        ClassicProgressSaveData.RemoveCaptureProvider(this);
+        GameData.ClassicProgress.Clear();
+        HAVIGAME.SaveLoad.SaveLoadManager.Save();
+    }
+
+    /// <summary>Chụp trạng thái ingame hiện tại vào save data (ICaptureProvider).</summary>
+    public bool CaptureTo(ClassicProgressSaveData data)
+    {
+        if (this == null || isWon || isLost || loadedLevelRoot == null || CurrentLevelData == null)
+            return false;
+        if (gamePlayManager == null || gamePlayManager.HasWon || gamePlayManager.HasLost)
+            return false;
+
+        FruitSort.Bucket[] liveBuckets = loadedLevelRoot.GetComponentsInChildren<FruitSort.Bucket>(true);
+        FruitSort.ModelDotSpawner[] liveSpawners = loadedLevelRoot.GetComponentsInChildren<FruitSort.ModelDotSpawner>(true);
+        FruitSort.ConveyorSpline[] conveyors = loadedLevelRoot.GetComponentsInChildren<FruitSort.ConveyorSpline>(true);
+
+        data.BeginCapture(
+            currentLevelNumber,
+            gamePlayManager.HasMoveLimit ? gamePlayManager.MovesLeft : 0,
+            gamePlayManager.HasTimeLimit ? gamePlayManager.TimeLeft : 0f,
+            gamePlayManager.score,
+            totalBuckets,
+            liveSpawners.Length,
+            conveyors.Length);
+
+        // Bucket map theo index dựng trong tên "Bucket_{i}_c{color}" (LevelBuilder đặt),
+        // vì bucket đầy có thể đã bị worker destroy -> thứ tự hierarchy không còn đủ.
+        bool[] captured = new bool[Mathf.Max(0, totalBuckets)];
+        List<int> colorBuffer = new List<int>(16);
+        for (int i = 0; i < liveBuckets.Length; i++)
+        {
+            FruitSort.Bucket bucket = liveBuckets[i];
+            if (bucket == null) continue;
+            int index = ParseBucketBuildIndex(bucket.name, i);
+            if (index >= 0 && index < captured.Length) captured[index] = true;
+
+            colorBuffer.Clear();
+            bucket.GetContainedColorIds(colorBuffer);
+            data.AddBucketState(index, bucket.IsFull, colorBuffer);
+
+            // Dot đang nhả dở (coroutine ReleaseContents) -> lưu như dot bay tại miệng giỏ.
+            colorBuffer.Clear();
+            bucket.AppendPendingReleaseColors(colorBuffer);
+            Vector2 releaseVelocity = bucket.launchDirection.sqrMagnitude > 0.0001f
+                ? bucket.launchDirection.normalized * bucket.launchSpeed
+                : Vector2.down * bucket.launchSpeed;
+            for (int c = 0; c < colorBuffer.Count; c++)
+                data.AddFlyingDot(colorBuffer[c], bucket.MouthPosition, releaseVelocity);
+        }
+
+        // Bucket đã đầy và bị dọn khỏi scene -> đánh dấu done để restore không bắt chơi lại.
+        for (int i = 0; i < captured.Length; i++)
+            if (!captured[i]) data.AddBucketState(i, true, null);
+
+        for (int i = 0; i < liveSpawners.Length; i++)
+            data.AddSpawnerState(liveSpawners[i] != null ? liveSpawners[i].DotsLeft : 0);
+
+        FruitSort.FallingPixelManager fm = FruitSort.FallingPixelManager.Instance;
+        if (fm != null)
+        {
+            IReadOnlyList<FruitSort.Dot> dots = fm.Dots;
+            for (int i = 0; i < dots.Count; i++)
+            {
+                FruitSort.Dot dot = dots[i];
+                if (dot == null || dot.markedForRemoval || dot.capturedByBucket) continue;
+
+                int conveyorIndex = System.Array.IndexOf(conveyors, dot.conveyor);
+                bool onBelt = conveyorIndex >= 0 &&
+                    (dot.state == FruitSort.DotState.OnBelt || dot.state == FruitSort.DotState.Attracting);
+
+                if (onBelt)
+                {
+                    data.AddBeltDot(dot.colorId, conveyorIndex, dot.beltProgress, dot.lateralOffset);
+                }
+                else
+                {
+                    Vector2 velocity = dot.state == FruitSort.DotState.Launched
+                        ? dot.launchVelocity
+                        : new Vector2(0f, -Mathf.Max(2f, dot.fallSpeed));
+                    data.AddFlyingDot(dot.colorId, dot.transform.position, velocity);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Áp snapshot đã lưu lên level vừa dựng (nếu có và khớp level).</summary>
+    private void TryRestoreProgress(int level)
+    {
+        ClassicProgressSaveData saved = GameData.ClassicProgress;
+        if (saved == null || !saved.HasProgress) return;
+        if (saved.Level != level) return; // snapshot của level khác -> giữ nguyên, chơi level này từ đầu
+        if (loadedLevelRoot == null || gamePlayManager == null) return;
+
+        FruitSort.Bucket[] liveBuckets = loadedLevelRoot.GetComponentsInChildren<FruitSort.Bucket>(true);
+        FruitSort.ModelDotSpawner[] liveSpawners = loadedLevelRoot.GetComponentsInChildren<FruitSort.ModelDotSpawner>(true);
+        FruitSort.ConveyorSpline[] conveyors = loadedLevelRoot.GetComponentsInChildren<FruitSort.ConveyorSpline>(true);
+
+        // Cấu trúc level phải khớp snapshot (đề phòng level data đổi sau khi update game).
+        if (saved.BucketCount != totalBuckets ||
+            saved.SpawnerCount != liveSpawners.Length ||
+            saved.ConveyorCount != conveyors.Length)
+        {
+            GameData.ClassicProgress.Clear();
+            return;
+        }
+
+        // Prefab + scale dot để dựng lại dot trong giỏ và trên băng chuyền.
+        FruitSort.Dot dotPrefab = null;
+        float dotScale = 0.5f;
+        for (int i = 0; i < liveSpawners.Length && dotPrefab == null; i++)
+        {
+            if (liveSpawners[i] == null || liveSpawners[i].dotPrefab == null) continue;
+            dotPrefab = liveSpawners[i].dotPrefab;
+            dotScale = liveSpawners[i].dotScale;
+        }
+        if (dotPrefab == null && CurrentLevelData.spawnerPrefab != null)
+            dotPrefab = CurrentLevelData.spawnerPrefab.dotPrefab;
+
+        // ---- Spawner (thứ tự GetComponentsInChildren = thứ tự dựng, spawner không bị destroy) ----
+        for (int i = 0; i < liveSpawners.Length; i++)
+        {
+            if (liveSpawners[i] == null) continue;
+            liveSpawners[i].RestoreDotsLeft(saved.Spawners[i].dotsLeft);
+        }
+
+        // ---- Bucket (map theo index trong tên) ----
+        var bucketByIndex = new Dictionary<int, FruitSort.Bucket>(liveBuckets.Length);
+        for (int i = 0; i < liveBuckets.Length; i++)
+        {
+            if (liveBuckets[i] == null) continue;
+            bucketByIndex[ParseBucketBuildIndex(liveBuckets[i].name, i)] = liveBuckets[i];
+        }
+
+        for (int i = 0; i < saved.Buckets.Count; i++)
+        {
+            ClassicProgressSaveData.BucketState state = saved.Buckets[i];
+            if (!bucketByIndex.TryGetValue(state.index, out FruitSort.Bucket bucket) || bucket == null)
+                continue;
+
+            if (state.done)
+            {
+                // Bucket đã hoàn thành trước khi save -> tính vào tiến độ win và dọn khỏi scene
+                // (không qua OnBucketFull để khỏi kích hoạt hiệu ứng/kiểm tra win giữa chừng).
+                filledBuckets++;
+                Destroy(bucket.gameObject);
+            }
+            else
+            {
+                bucket.RestoreContents(state.colors, dotPrefab, dotScale);
+            }
+        }
+
+        // ---- Dot trên băng chuyền / đang bay ----
+        FruitSort.FallingPixelManager fm = FruitSort.FallingPixelManager.Instance;
+        if (fm != null && dotPrefab != null)
+        {
+            FruitSort.FruitDatabase db = CurrentLevelData.fruitDatabase;
+            for (int i = 0; i < saved.Dots.Count; i++)
+            {
+                ClassicProgressSaveData.DotSnapshot snap = saved.Dots[i];
+                FruitSort.Dot dot = Instantiate(dotPrefab);
+                FruitSort.FruitData fruit = db != null ? db.GetById(snap.colorId) : null;
+                dot.Init(snap.colorId, fruit != null ? fruit.color : Color.white, 1, new Vector2Int(-1, -1));
+                dot.transform.localScale = Vector3.one * dotScale;
+
+                if (snap.conveyorIndex >= 0 && snap.conveyorIndex < conveyors.Length)
+                {
+                    fm.PlaceDotOnBelt(dot, conveyors[snap.conveyorIndex], snap.progress, snap.lateral);
+                }
+                else
+                {
+                    Vector2 velocity = snap.velocity.sqrMagnitude > 0.01f ? snap.velocity : Vector2.down * 2f;
+                    fm.LaunchDot(dot, snap.position, velocity.normalized, velocity.magnitude, 0f);
+                }
+            }
+        }
+
+        // ---- Moves / time / score ----
+        gamePlayManager.RestoreProgress(saved.MovesLeft, saved.TimeLeft, saved.Score);
+        if (CurrentLevelData.timeLimit > 0f && generator != null)
+        {
+            // OnStartLevel đọc generator.Duration để set đồng hồ -> ghi đè bằng giờ còn lại.
+            generator.Duration = Mathf.Clamp(
+                Mathf.CeilToInt(saved.TimeLeft),
+                1,
+                Mathf.CeilToInt(CurrentLevelData.timeLimit));
+        }
+
+        resumedFromSave = true;
+    }
+
+    // Tên bucket do LevelBuilder đặt: "Bucket_{index}_c{colorId}". Lỗi parse -> dùng fallback.
+    private static int ParseBucketBuildIndex(string name, int fallback)
+    {
+        const string prefix = "Bucket_";
+        if (string.IsNullOrEmpty(name) || !name.StartsWith(prefix)) return fallback;
+
+        int start = prefix.Length;
+        int end = name.IndexOf('_', start);
+        string token = end > start ? name.Substring(start, end - start) : name.Substring(start);
+        return int.TryParse(token, out int index) ? index : fallback;
+    }
+
+    #endregion
 
     #region FUNC RELATE SHOW ADS
 

@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using DG.Tweening;
 
 namespace FruitSort
@@ -74,8 +73,13 @@ namespace FruitSort
         public float jumpPower = 0.7f;
         [Tooltip("Thời lượng dot bay vào ô của nó.")]
         public float dropDuration = 0.35f;
+        [Tooltip("Cường độ punch scale của giỏ mỗi khi 1 dot vào ô (0 = tắt).")]
+        [Range(0f, 0.3f)] public float receivePunch = 0.06f;
 
         [Header("Wrong color")]
+        [Tooltip("BẬT (mặc định): chỉ cho click-nhả khi giỏ đang chứa SAI màu. " +
+                 "Chặn misclick đổ nhầm giỏ đúng màu (vừa tốn move vừa mất tiến độ).")]
+        public bool releaseOnlyWrongColor = true;
         [Min(0f)] public float wrongColorLerpDuration = 0.25f;
         [Tooltip("Icon gợi ý click-để-nhả (tuỳ chọn, kéo SpriteRenderer con vào). " +
                  "Tự hiện + nhấp nháy khi bucket chứa dot sai màu.")]
@@ -96,6 +100,8 @@ namespace FruitSort
         // ---- runtime ----
         readonly List<Dot> _contained = new List<Dot>();
         readonly HashSet<Dot> _reserved = new HashSet<Dot>();
+        readonly Dictionary<int, int> _pendingReleaseByColor = new Dictionary<int, int>();
+        static readonly List<Bucket> s_all = new List<Bucket>();
         int _containedColorId = -1;
         int _visibleFill;
         bool _full;
@@ -105,11 +111,20 @@ namespace FruitSort
         public float FillRatio => maxFill > 0 ? Mathf.Clamp01(currentFill / (float)maxFill) : 1f;
         public Vector3 MouthPosition => mouth != null ? mouth.position : transform.position;
         public int ContainedColorId => _containedColorId;
+        public bool IsFull => _full;
+        public int RemainingFillForWin => Mathf.Max(0, maxFill - currentFill);
+        public bool CanStillFillForWin =>
+            isActiveAndEnabled && !_full && !_releasing && currentFill < maxFill &&
+            (_containedColorId < 0 || _containedColorId == colorId);
         public bool IsReadyForPickup { get; private set; }
         public static event System.Action<Bucket> OnBucketFull;
 
+        /// <summary>Mọi bucket đang bật trong scene (registry — thay cho FindObjectsByType mỗi frame).</summary>
+        public static IReadOnlyList<Bucket> All => s_all;
+
         void OnEnable()
         {
+            if (!s_all.Contains(this)) s_all.Add(this);
             _containedColorId = currentFill > 0 ? colorId : -1;
             _visibleFill = Mathf.Clamp(currentFill, 0, Mathf.Max(1, maxFill));
             ApplyVisual();
@@ -118,14 +133,22 @@ namespace FruitSort
 
         void Update()
         {
-            if (_full || currentFill <= 0 || Mouse.current == null ||
-                !Mouse.current.leftButton.wasPressedThisFrame)
+            // Cho phép click cả khi mới chỉ có dot ĐANG BAY TỚI (_reserved) để hủy kịp.
+            if (_full || (currentFill <= 0 && _reserved.Count == 0) ||
+                !PointerInput.PressedThisFrame())
                 return;
+
+            // Giỏ đang giữ ĐÚNG màu -> nhả ra chỉ có hại (tốn move + mất tiến độ).
+            if (releaseOnlyWrongColor && _containedColorId == colorId) return;
+
+            // UI đang đè lên -> không cho click xuyên qua xuống bucket.
+            if (UIPointerGuard.IsPointerOverUI()) return;
 
             Camera cam = Camera.main;
             if (cam == null) return;
+            if (!PointerInput.TryGetPosition(out Vector2 pointerPos)) return;
 
-            Vector3 screen = Mouse.current.position.ReadValue();
+            Vector3 screen = pointerPos;
             screen.z = Mathf.Abs(cam.transform.position.z - transform.position.z);
             if (Contains(cam.ScreenToWorldPoint(screen)))
                 ReleaseContents();
@@ -138,6 +161,8 @@ namespace FruitSort
 
         void OnDisable()
         {
+            s_all.Remove(this);
+            _pendingReleaseByColor.Clear();
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
         }
 
@@ -245,6 +270,14 @@ namespace FruitSort
             {
                 if (dot.Sr != null) dot.Sr.enabled = false;
             }
+
+            // Punch nhẹ mỗi khi 1 dot vào ô. KHÔNG chạy khi đã full để không đè lên
+            // cú punch lớn của DoFull.
+            if (!_full && receivePunch > 0f)
+            {
+                transform.DOKill(true); // hoàn tất punch dở để không lệch scale gốc
+                transform.DOPunchScale(Vector3.one * receivePunch, 0.15f, 6, 0.7f);
+            }
         }
 
         /// <summary>Tăng fill. Đầy -> punch scale rồi Destroy.</summary>
@@ -260,6 +293,10 @@ namespace FruitSort
 
         public bool ReleaseContents()
         {
+            GamePlayManager gamePlay = GamePlayManager.Instance;
+            if (gamePlay != null && !gamePlay.CanUseMove)
+                return false;
+
             if (_full || _releasing ||
                 (currentFill <= 0 && _contained.Count == 0 && _reserved.Count == 0))
                 return false;
@@ -289,11 +326,14 @@ namespace FruitSort
                     else Destroy(returning[i].gameObject);
                 }
                 ResetAfterRelease();
+                if (gamePlay != null) gamePlay.RecordInteraction();
                 return true;
             }
 
             // Nhả DẦN: mỗi dot ra zone thì fill vơi đúng 1/n (như ModelDotSpawner).
+            TrackPendingRelease(returning);
             StartCoroutine(ReleaseDotsRoutine(returning, manager));
+            if (gamePlay != null) gamePlay.RecordInteraction();
             return true;
         }
 
@@ -309,13 +349,112 @@ namespace FruitSort
                 _visibleFill = Mathf.Max(0, _visibleFill - 1);
                 UpdateFillVisual();
 
+                UntrackPendingRelease(returning[i]);
                 LaunchReleasedDot(returning[i], manager);
 
                 if (wait != null && i + 1 < returning.Count) yield return wait;
             }
 
+            _pendingReleaseByColor.Clear();
             ResetAfterRelease();
             _releasing = false;
+        }
+
+        void TrackPendingRelease(List<Dot> returning)
+        {
+            _pendingReleaseByColor.Clear();
+            for (int i = 0; i < returning.Count; i++)
+            {
+                Dot dot = returning[i];
+                if (dot == null) continue;
+                if (_pendingReleaseByColor.TryGetValue(dot.colorId, out int count))
+                    _pendingReleaseByColor[dot.colorId] = count + 1;
+                else
+                    _pendingReleaseByColor.Add(dot.colorId, 1);
+            }
+        }
+
+        void UntrackPendingRelease(Dot dot)
+        {
+            if (dot == null) return;
+            if (!_pendingReleaseByColor.TryGetValue(dot.colorId, out int count)) return;
+
+            if (count <= 1) _pendingReleaseByColor.Remove(dot.colorId);
+            else _pendingReleaseByColor[dot.colorId] = count - 1;
+        }
+
+        public static int CountPendingReleaseDotsForColor(int colorId)
+        {
+            int total = 0;
+            for (int i = 0; i < s_all.Count; i++)
+            {
+                Bucket bucket = s_all[i];
+                if (bucket == null || !bucket.isActiveAndEnabled) continue;
+                if (bucket._pendingReleaseByColor.TryGetValue(colorId, out int count))
+                    total += count;
+            }
+            return total;
+        }
+
+        /// <summary>Ghi colorId các dot ĐÃ nằm trong giỏ vào buffer (phục vụ save tiến trình).</summary>
+        public void GetContainedColorIds(List<int> buffer)
+        {
+            if (buffer == null) return;
+            for (int i = 0; i < _contained.Count; i++)
+                if (_contained[i] != null) buffer.Add(_contained[i].colorId);
+        }
+
+        /// <summary>
+        /// Ghi colorId các dot đang chờ nhả dở (coroutine <see cref="ReleaseContents"/>) vào buffer.
+        /// Các dot này KHÔNG còn trong _contained và CHƯA lên belt -> save như dot bay tại miệng giỏ.
+        /// </summary>
+        public void AppendPendingReleaseColors(List<int> buffer)
+        {
+            if (buffer == null) return;
+            foreach (KeyValuePair<int, int> kv in _pendingReleaseByColor)
+                for (int i = 0; i < kv.Value; i++) buffer.Add(kv.Key);
+        }
+
+        /// <summary>
+        /// Khôi phục dot trong giỏ từ save: tạo dot ở trạng thái đã "nhận nuôi" xong
+        /// (nằm đúng ô, sprite ẩn, shader fill hiện ô) — không chạy hiệu ứng bay vào.
+        /// Gọi ngay sau khi level vừa dựng (giỏ đang rỗng).
+        /// </summary>
+        public void RestoreContents(IList<int> containedColorIds, Dot dotPrefab, float dotScale)
+        {
+            if (containedColorIds == null || containedColorIds.Count == 0 || dotPrefab == null) return;
+
+            Transform root = contentRoot != null ? contentRoot : transform;
+            int count = Mathf.Min(containedColorIds.Count, maxFill - currentFill);
+            for (int i = 0; i < count; i++)
+            {
+                int cid = containedColorIds[i];
+                if (_containedColorId < 0) _containedColorId = cid;
+
+                Dot d = Instantiate(dotPrefab);
+                FruitData fruit = fruitDatabase != null ? fruitDatabase.GetById(cid) : null;
+                d.Init(cid, fruit != null ? fruit.color : color, 1, new Vector2Int(-1, -1));
+                d.transform.localScale = Vector3.one * Mathf.Max(0.01f, dotScale);
+                d.capturedByBucket = true;
+                d.sortScoreAwarded = true; // điểm của dot này đã nằm trong score lưu kèm save
+                d.transform.SetParent(root, true);
+                d.transform.position = gridFill != null ? gridFill.GetCellWorldPosition(_contained.Count) : MouthPosition;
+                d.transform.rotation = Quaternion.identity;
+                if (d.Sr != null) d.Sr.enabled = false; // như CompleteDotVisual khi dot đã vào ô
+
+                _contained.Add(d);
+                currentFill++;
+                _visibleFill++;
+            }
+
+            UpdateFillVisual();
+
+            // Giỏ đang giữ màu sai -> tint lại như lúc nhận dot sai màu (kèm blink gợi ý nhả).
+            if (_containedColorId >= 0 && _containedColorId != colorId)
+            {
+                FruitData wrong = fruitDatabase != null ? fruitDatabase.GetById(_containedColorId) : null;
+                SetBodyColor(wrong != null ? wrong.color : Color.gray, 0f);
+            }
         }
 
         void ResetAfterRelease()
@@ -331,6 +470,13 @@ namespace FruitSort
         {
             if (dot == null) return;
             manager.LaunchDot(dot, MouthPosition, launchDirection, launchSpeed, launchSpread, this);
+
+            // Pop scale nhẹ để dot "bật" ra khỏi giỏ thay vì hiện đột ngột.
+            Vector3 fullScale = dot.transform.localScale;
+            dot.transform.localScale = fullScale * 0.6f;
+            dot.transform.DOScale(fullScale, 0.18f)
+               .SetEase(Ease.OutBack)
+               .SetLink(dot.gameObject);
         }
 
         void DoFull()

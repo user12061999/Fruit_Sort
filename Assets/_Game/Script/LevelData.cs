@@ -30,6 +30,8 @@ namespace FruitSort
         [Header("Luật chơi")]
         [Tooltip("Giới hạn thời gian (giây) cho level. 0 = không giới hạn.")]
         [Min(0f)] public float timeLimit = 0f;
+        [Tooltip("So luot tuong tac voi bucket/spawner. 0 = khong gioi han.")]
+        [Min(0)] public int moveLimit = 0;
 
         [Serializable]
         public class BucketData

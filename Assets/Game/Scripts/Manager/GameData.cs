@@ -4,6 +4,7 @@ public static class GameData {
     private static DataHolder<SaveDataInfo> info;
     private static DataHolder<PlayerSaveData> player;
     private static DataHolder<ClassicSaveData> classic;
+    private static DataHolder<ClassicProgressSaveData> classicProgress;
     private static DataHolder<InventorySaveData> inventory;
     private static DataHolder<DailyRewardSaveData> dailyReward;
     private static DataHolder<LuckySpinSaveData> luckySpin;
@@ -12,6 +13,7 @@ public static class GameData {
     public static SaveDataInfo Info => info.Data;
     public static PlayerSaveData Player => player.Data;
     public static ClassicSaveData Classic => classic.Data;
+    public static ClassicProgressSaveData ClassicProgress => classicProgress.Data;
     public static InventorySaveData Inventory => inventory.Data;
     public static DailyRewardSaveData DailyReward => dailyReward.Data;
     public static LuckySpinSaveData LuckySpin => luckySpin.Data;
@@ -22,6 +24,7 @@ public static class GameData {
         info = SaveLoadManager.Create<SaveDataInfo>("info", folder);
         player = SaveLoadManager.Create<PlayerSaveData>("player", folder);
         classic = SaveLoadManager.Create<ClassicSaveData>("classic", folder);
+        classicProgress = SaveLoadManager.Create<ClassicProgressSaveData>("classic_progress", folder);
         inventory = SaveLoadManager.Create<InventorySaveData>("inventory", folder);
         dailyReward = SaveLoadManager.Create<DailyRewardSaveData>("daily_reward", folder);
         luckySpin = SaveLoadManager.Create<LuckySpinSaveData>("lucky_spin", folder);

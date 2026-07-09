@@ -35,6 +35,11 @@ namespace FruitSort
                 return;
             }
             level = data;
+            GamePlayManager gamePlay = GamePlayManager.Instance;
+            if (gamePlay == null)
+                gamePlay = FindAnyObjectByType<GamePlayManager>();
+            if (gamePlay != null)
+                gamePlay.ConfigureFromLevel(data);
             Clear();
             _root = LevelBuilder.Build(data);
         }

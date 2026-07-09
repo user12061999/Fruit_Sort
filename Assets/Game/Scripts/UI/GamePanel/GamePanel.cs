@@ -4,6 +4,7 @@ using HAVIGAME.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using FruitSort;
 
 public class GamePanel : UIFrame
 {
@@ -11,17 +12,20 @@ public class GamePanel : UIFrame
     [SerializeField] private TextMeshProUGUI txtLevel;
     [SerializeField] private Button btnPause;
     [SerializeField] private TextMeshProUGUI txtCountDownTime;
+    [SerializeField] private TextMeshProUGUI txtMovesLeft;
     [SerializeField] private Image circle,rectangle,pause;
     [SerializeField] private Sprite[] circleSprites, rectangleSprites,pauseSprites;
     private void Start()
     {
         btnPause.onClick.AddListener(PauseGame);
         EventDispatcher.AddListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
+        EventDispatcher.AddListener<GameEvent.LevelMovesChanged>(UpdateMovesLeft);
         EventDispatcher.AddListener<GameEvent.LevelCountdownChanged>(LevelCountdownChanged);
     }
     private void OnDestroy()
     {
         EventDispatcher.RemoveListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
+        EventDispatcher.RemoveListener<GameEvent.LevelMovesChanged>(UpdateMovesLeft);
         EventDispatcher.RemoveListener<GameEvent.LevelCountdownChanged>(LevelCountdownChanged);
     }
     private void LevelCountdownChanged(GameEvent.LevelCountdownChanged args)
@@ -44,10 +48,15 @@ public class GamePanel : UIFrame
     protected override void OnShow(bool instant = false)
     {
         base.OnShow(instant);
+        EnsureMovesText();
         txtLevel.text = string.Format("LEVEL{0}", GameController.Instance.LoadLevelOption.Level);
         int currentLevel = GameData.Classic.LevelUnlocked;
         string paths = $"LevelSO/Level_{currentLevel}";
-        
+        GamePlayManager gamePlayManager = GamePlayManager.Instance;
+        if (gamePlayManager != null)
+        {
+            SetMovesText(gamePlayManager.HasMoveLimit, gamePlayManager.MovesLeft);
+        }
     }
 
     protected override void OnBack()
@@ -90,5 +99,36 @@ public class GamePanel : UIFrame
             txtCountDownTime.color = Color.white;
             //warringVfx.SetActive(false);
         }
+    }
+
+    public void UpdateMovesLeft(GameEvent.LevelMovesChanged args)
+    {
+        SetMovesText(args.HasMoveLimit, args.RemainingMoves);
+    }
+
+    private void SetMovesText(bool hasMoveLimit, int remainingMoves)
+    {
+        EnsureMovesText();
+        if (txtMovesLeft == null)
+        {
+            return;
+        }
+
+        txtMovesLeft.text = hasMoveLimit ? $"Moves: {remainingMoves}" : "Moves: --";
+    }
+
+    private void EnsureMovesText()
+    {
+        if (txtMovesLeft != null || txtCountDownTime == null)
+        {
+            return;
+        }
+
+        txtMovesLeft = Instantiate(txtCountDownTime, txtCountDownTime.transform.parent);
+        txtMovesLeft.name = "txtMovesLeft_Auto";
+        txtMovesLeft.fontSize = Mathf.Max(28f, txtCountDownTime.fontSize * 0.7f);
+        txtMovesLeft.alignment = TextAlignmentOptions.Center;
+        txtMovesLeft.rectTransform.anchoredPosition =
+            txtCountDownTime.rectTransform.anchoredPosition + new Vector2(0f, -52f);
     }
 }

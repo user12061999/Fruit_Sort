@@ -56,13 +56,13 @@ MonoBehaviour:
   clicksLeftDebug: 0
   gridFill: {fileID: 221697749607100103}
   gridColumns: 16
-  cellGap: 0.02
+  cellGap: 0
   spawnCount: 50
   spawnOrigin: {fileID: 0}
   spawnSpread: 0
   dotScale: 0.3
   dotHP: 1
-  spawnInterval: 0
+  spawnInterval: 0.02
   launchDirection: {x: 0, y: -1}
   launchSpeed: 10
   launchSpread: 3
@@ -173,9 +173,9 @@ BoxCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0}
-    oldSize: {x: 1.0318182, y: 1.0863637}
+    border: {x: 0.1171875, y: 0.1171875, z: 0.1171875, w: 0.1171875}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
     newSize: {x: 0.16, y: 0.16}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -198,4 +198,4 @@ MonoBehaviour:
   columns: 16
   rows: 1
   fillAmount: 1
-  cellGap: 0.02
+  cellGap: 0

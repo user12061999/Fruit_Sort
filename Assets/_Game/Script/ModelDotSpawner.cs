@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.InputSystem; // Project dùng Input System (New)
 using DG.Tweening;
 
 namespace FruitSort
@@ -90,10 +89,26 @@ namespace FruitSort
         int _dotsLeft;
         int _reservedDots;
         bool _depleted;
-        bool _wasPressed;
 
         /// <summary>Spawner đã rỗng gói chưa.</summary>
         public bool IsDepleted => _depleted;
+
+        /// <summary>Số dot còn lại trong gói (phục vụ save tiến trình).</summary>
+        public int DotsLeft => _dotsLeft;
+
+        /// <summary>Khôi phục số dot còn lại từ save. 0 -> ẩn gói ngay, không hiệu ứng.</summary>
+        public void RestoreDotsLeft(int dotsLeft)
+        {
+            _dotsLeft = Mathf.Clamp(dotsLeft, 0, Mathf.Max(1, totalClicks));
+            _reservedDots = 0;
+            clicksLeftDebug = _dotsLeft;
+            UpdateFillVisual();
+            if (_dotsLeft <= 0 && !_depleted)
+            {
+                _depleted = true;
+                gameObject.SetActive(false);
+            }
+        }
 
         /// <summary>Bật khi spawner được 1 ModelDotSpawnerColumn quản lý: nó sẽ KHÔNG tự xử lý
         /// click nữa (cột sẽ gọi DoClick thay).</summary>
@@ -159,14 +174,11 @@ namespace FruitSort
         {
             // Cột quản lý -> không tự xử lý click.
             if (managedExternally) return;
-            if (Mouse.current == null) return;
 
-            bool pressed = Mouse.current.leftButton.isPressed;
-            // Chỉ kích hoạt ở frame NHẤN XUỐNG (edge), tránh spawn liên tục khi giữ chuột.
+            // Chỉ kích hoạt ở frame NHẤN XUỐNG (edge), tránh spawn liên tục khi giữ.
             // Xử lý TẬP TRUNG: bất kỳ instance nào phát hiện edge cũng gọi handler chung,
             // handler tự bảo đảm chỉ chạy 1 lần/frame.
-            if (pressed && !_wasPressed) HandleGlobalClick();
-            _wasPressed = pressed;
+            if (PointerInput.PressedThisFrame()) HandleGlobalClick();
         }
 
         /// <summary>
@@ -179,8 +191,10 @@ namespace FruitSort
             if (s_lastClickFrame == Time.frameCount) return; // đã xử lý frame này rồi
             s_lastClickFrame = Time.frameCount;
 
-            if (Mouse.current == null) return;
-            Vector3 screenPos = Mouse.current.position.ReadValue();
+            // UI đang đè lên -> không cho click xuyên qua xuống gói.
+            if (UIPointerGuard.IsPointerOverUI()) return;
+            if (!PointerInput.TryGetPosition(out Vector2 pointerPos)) return;
+            Vector3 screenPos = pointerPos;
 
             ModelDotSpawner best = null;
             for (int i = 0; i < s_all.Count; i++)
@@ -234,6 +248,10 @@ namespace FruitSort
         {
             if (_depleted) return;
 
+            GamePlayManager gamePlay = GamePlayManager.Instance;
+            if (gamePlay != null && !gamePlay.CanUseMove)
+                return;
+
             int available = Mathf.Max(0, _dotsLeft - _reservedDots);
             int count = Mathf.Min(Mathf.Max(1, spawnCount), available);
             if (count <= 0) return;
@@ -255,6 +273,8 @@ namespace FruitSort
             {
                 StartCoroutine(SpawnAndConsumeRoutine(count));
             }
+
+            if (gamePlay != null) gamePlay.RecordInteraction();
         }
 
         void Deplete()
@@ -359,6 +379,13 @@ namespace FruitSort
             d.Init(colorId, c, dotHP, new Vector2Int(-1, -1), spr);
 
             fm.LaunchDot(d, pos, launchDirection, launchSpeed, launchSpread);
+
+            // Pop scale để dot xuất hiện mềm thay vì bật ra đột ngột (thêm SAU LaunchDot
+            // vì LaunchDot có DOKill transform).
+            d.transform.localScale = Vector3.zero;
+            d.transform.DOScale(Vector3.one * dotScale, 0.15f)
+             .SetEase(Ease.OutBack)
+             .SetLink(d.gameObject);
             return true;
         }
 
@@ -415,6 +442,57 @@ namespace FruitSort
             resolvedColorId = Random.Range(0, fallbackLength);
             resolvedColor = palette[resolvedColorId];
             return true;
+        }
+
+        public static int CountPendingDotsForColor(int colorId)
+        {
+            int count = 0;
+            for (int i = 0; i < s_all.Count; i++)
+            {
+                ModelDotSpawner spawner = s_all[i];
+                if (spawner == null || !spawner.isActiveAndEnabled || spawner._depleted)
+                    continue;
+                if (spawner._reservedDots <= 0)
+                    continue;
+                if (spawner.TryGetFixedSpawnColorId(out int fixedId) && fixedId == colorId)
+                    count += spawner._reservedDots;
+                else if (spawner.fixedColorId < 0 && spawner.CanRandomlySpawnColor(colorId))
+                    count += spawner._reservedDots;
+            }
+            return count;
+        }
+
+        bool TryGetFixedSpawnColorId(out int resolvedColorId)
+        {
+            resolvedColorId = 0;
+            if (fixedColorId < 0) return false;
+
+            FruitData fruit = fruitDatabase != null ? fruitDatabase.GetById(fixedColorId) : null;
+            if (fruit != null)
+            {
+                resolvedColorId = fruit.colorId;
+                return true;
+            }
+
+            int paletteLength = palette != null ? palette.Length : 0;
+            if (paletteLength <= 0) return false;
+            resolvedColorId = Mathf.Clamp(fixedColorId, 0, paletteLength - 1);
+            return true;
+        }
+
+        bool CanRandomlySpawnColor(int colorId)
+        {
+            if (fruitDatabase != null && fruitDatabase.fruits != null)
+            {
+                for (int i = 0; i < fruitDatabase.fruits.Length; i++)
+                {
+                    FruitData fruit = fruitDatabase.fruits[i];
+                    if (fruit != null && fruit.colorId == colorId)
+                        return true;
+                }
+            }
+
+            return palette != null && colorId >= 0 && colorId < palette.Length;
         }
 
         void OnValidate()

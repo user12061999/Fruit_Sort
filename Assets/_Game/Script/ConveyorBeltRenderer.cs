@@ -72,6 +72,7 @@ namespace FruitSort
         Material[] _scrollMats;      // material instances dùng để cuộn lúc play
         float _scroll;
         float _vTiles = 1f;
+        bool _rebuildQueued;         // sửa field trên Inspector LÚC PLAY -> rebuild ở Update kế tiếp
 
         // Bộ đệm dựng mesh (tái dùng để giảm GC).
         readonly List<Vector3> _verts = new List<Vector3>();
@@ -92,14 +93,21 @@ namespace FruitSort
 
         void OnValidate()
         {
-            // Rebuild mesh khi sửa field trên Inspector (segments, zOffset, tilesAcrossWidth...)
-            if (this == null || !Application.isPlaying)
+            if (this == null) return;
+
+            // Đang PLAY: không đụng Renderer/material ngay trong OnValidate (Unity cấm/cảnh báo).
+            // Đặt cờ để Update frame kế tiếp rebuild mesh + nạp lại material.
+            if (Application.isPlaying)
             {
-                BuildMesh();
-#if UNITY_EDITOR
-                SceneView.RepaintAll();
-#endif
+                _rebuildQueued = true;
+                return;
             }
+
+            // Edit mode: rebuild ngay khi sửa field trên Inspector (segments, zOffset, tiles...).
+            BuildMesh();
+#if UNITY_EDITOR
+            SceneView.RepaintAll();
+#endif
         }
 
         void OnDisable()
@@ -272,6 +280,14 @@ namespace FruitSort
 
         void Update()
         {
+            // Có chỉnh sửa từ Inspector lúc play -> dựng lại mesh và xả material instances cũ
+            // (Update sẽ tự tạo lại instances cuộn từ material mới ở khối bên dưới).
+            if (_rebuildQueued)
+            {
+                _rebuildQueued = false;
+                RebuildMeshAndMaterials();
+            }
+
             if (_mr == null) return;
 
             if (Application.isPlaying)

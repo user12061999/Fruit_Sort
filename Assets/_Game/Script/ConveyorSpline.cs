@@ -65,6 +65,7 @@ namespace FruitSort
         float _bakedLength = 1f;
         bool _baked = false;
         int _bakedRes = -1;
+        bool _rebakeQueued; // sửa field trên Inspector LÚC PLAY -> re-bake ở Update kế tiếp
 
         // Buffer tái dùng khi dựng polyline bo góc (tránh alloc mỗi lần bake).
         readonly List<Vector3> _pathPts = new List<Vector3>(256);
@@ -86,18 +87,34 @@ namespace FruitSort
 
         void OnValidate()
         {
-            // Re-bake khi sửa field trên Inspector (beltWidth, bakeResolution, cornerRadius...)
-            if (this == null || !Application.isPlaying)
+            if (this == null) return;
+
+            // Đang PLAY: đặt cờ, Update frame kế tiếp sẽ re-bake + dựng lại mesh renderer.
+            if (Application.isPlaying)
             {
-                Bake();
-#if UNITY_EDITOR
-                SceneView.RepaintAll();
-#endif
+                _rebakeQueued = true;
+                return;
             }
+
+            // Edit mode: re-bake ngay khi sửa field (beltWidth, bakeResolution, cornerRadius...).
+            Bake();
+#if UNITY_EDITOR
+            SceneView.RepaintAll();
+#endif
         }
 
         void Update()
         {
+            // Có chỉnh sửa từ Inspector lúc play -> re-bake LUT và dựng lại mesh băng
+            // (một lần theo cờ, KHÔNG re-bake mỗi frame).
+            if (_rebakeQueued)
+            {
+                _rebakeQueued = false;
+                Bake();
+                var beltRenderer = GetComponent<ConveyorBeltRenderer>();
+                if (beltRenderer != null) beltRenderer.RebuildMeshAndMaterials();
+            }
+
             // Lúc PLAY: mặc định KHÔNG auto re-bake để tránh 256 evaluate/frame nếu hasChanged
             // bị bật liên tục. Băng chuyền tĩnh -> bake 1 lần ở Awake/OnEnable là đủ.
             if (Application.isPlaying && !autoRebakeAtRuntime) return;

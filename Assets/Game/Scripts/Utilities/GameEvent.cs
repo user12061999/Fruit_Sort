@@ -31,6 +31,18 @@ public static class GameEvent {
         }
     }
 
+    public struct LevelMovesChanged : IEventArgs {
+        public bool HasMoveLimit { get; private set; }
+        public int RemainingMoves { get; private set; }
+        public int TotalMoves { get; private set; }
+
+        public LevelMovesChanged(bool hasMoveLimit, int remainingMoves, int totalMoves) {
+            HasMoveLimit = hasMoveLimit;
+            RemainingMoves = remainingMoves;
+            TotalMoves = totalMoves;
+        }
+    }
+
     public struct HeartRegenChanged : IEventArgs {
         public int TotalSeconds { get; private set; }
         public int ElapsedSeconds { get; private set; }

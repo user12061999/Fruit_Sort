@@ -18,6 +18,7 @@ MonoBehaviour:
   conveyorPrefab: {fileID: 8734211276015217555, guid: 3cac9b7b6eabe7c409e9905b9eda177d, type: 3}
   fruitDatabase: {fileID: 11400000, guid: 667ce4a834fb82c4f94a141d2cdbbf8b, type: 2}
   timeLimit: 0
+  moveLimit: 5
   conveyors:
   - name: Belt_Feeder
     beltWidth: 1

@@ -68,6 +68,19 @@ namespace FruitSort
         /// <summary>Danh sách dot đang quản lý (chỉ đọc — KHÔNG Destroy trực tiếp phần tử).</summary>
         public IReadOnlyList<Dot> Dots => _dots;
 
+        public int CountActiveDotsByColor(int colorId)
+        {
+            int count = 0;
+            for (int i = 0; i < _dots.Count; i++)
+            {
+                Dot dot = _dots[i];
+                if (dot == null || dot.markedForRemoval || dot.capturedByBucket)
+                    continue;
+                if (dot.colorId == colorId) count++;
+            }
+            return count;
+        }
+
         void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(this); return; }
@@ -166,6 +179,46 @@ namespace FruitSort
             }
             d.ApplyColor();
             if (!alreadyManaged) _dots.Add(d);
+        }
+
+        /// <summary>
+        /// Đặt dot lên băng chuyền tại progress/lateral cho trước (khôi phục từ save).
+        /// Dot được đưa thẳng vào state OnBelt, vị trí sync ngay theo spline.
+        /// </summary>
+        public void PlaceDotOnBelt(Dot d, ConveyorSpline belt, float progress, float lateralOffset)
+        {
+            if (d == null) return;
+            if (belt == null) belt = conveyor;
+            if (belt == null) { Destroy(d.gameObject); return; }
+
+            d.transform.DOKill();
+            d.transform.SetParent(transform, true);
+            d.state = DotState.OnBelt;
+            d.conveyor = belt;
+            d.beltProgress = Mathf.Repeat(Mathf.Max(0f, progress), 1f);
+            d.lateralOffset = Mathf.Clamp(lateralOffset, -belt.HalfWidth, belt.HalfWidth);
+            d.fallSpeed = 0f;
+            d.targetBucket = null;
+            d.ignoredBucket = null;
+            d.markedForRemoval = false;
+            d.capturedByBucket = false;
+            d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+            d.spin = Random.Range(-maxSpin, maxSpin);
+
+            if (belt.TrySampleCenterline(d.beltProgress, out Vector3 center, out Vector3 tan))
+            {
+                Vector3 nrm = new Vector3(-tan.y, tan.x, 0f);
+                d.transform.position = center + nrm * d.lateralOffset;
+            }
+
+            if (d.Sr != null)
+            {
+                d.Sr.enabled = true;
+                d.Sr.sortingLayerID = 0;
+                d.Sr.sortingOrder = 0;
+            }
+            d.ApplyColor();
+            if (!_dots.Contains(d)) _dots.Add(d);
         }
 
         void Update()
