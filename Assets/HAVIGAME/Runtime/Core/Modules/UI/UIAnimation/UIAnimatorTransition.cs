@@ -19,6 +19,11 @@ namespace HAVIGAME.UI {
         public override void Initialize() {
             showTriggerHash = Animator.StringToHash(showAnimationClip);
             hideTriggerHash = Animator.StringToHash(hideAnimationClip);
+
+            // UI transition phải chạy UNSCALED: popup hiện lên là ingame pause (Time.timeScale = 0),
+            // animator scaled sẽ đứng im -> OnShowCompleted không chạy -> panel kẹt Interactable = false.
+            if (animator == null) animator = GetComponent<Animator>();
+            if (animator != null) animator.updateMode = AnimatorUpdateMode.UnscaledTime;
         }
 
         public override void PlayHideAnimation(Action onCompleted) {

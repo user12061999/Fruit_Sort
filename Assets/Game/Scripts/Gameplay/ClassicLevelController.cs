@@ -19,6 +19,12 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
     [Tooltip("Data theo thứ tự level 1, 2, 3...")]
     [SerializeField] private FruitSort.LevelData[] levels;
 
+    [Header("[Star Rating]")]
+    [Tooltip("Tỷ lệ tài nguyên (move/giờ) còn lại tối thiểu để đạt 3 sao.")]
+    [SerializeField, Range(0f, 1f)] private float threeStarThreshold = 0.5f;
+    [Tooltip("Tỷ lệ tài nguyên còn lại tối thiểu để đạt 2 sao.")]
+    [SerializeField, Range(0f, 1f)] private float twoStarThreshold = 0.25f;
+
 
     protected ParticleSystem highlightVFX;
     protected GamePanel gamePanel;
@@ -39,6 +45,9 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
     private FruitSort.GamePlayManager gamePlayManager;
     private int currentLevelNumber;
     private bool resumedFromSave;
+    private bool isTimeFrozen;
+    private Coroutine freezeCoroutine;
+    private int lastStarsEarned;
 
     public GamePanel GamePanels => gamePanel;
     public LevelTimer Timer => timer;
@@ -354,7 +363,11 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         base.OnWinLevel(isWinBySkip);
 
         isWon = true;
+        // Tính sao TRƯỚC khi dừng đồng hồ để lấy đúng giờ/move còn lại lúc thắng.
+        lastStarsEarned = CalculateStars();
+        GameData.Classic.SetLevelStars(currentLevelNumber, lastStarsEarned);
         ClearSavedProgress();
+        StopTimeFreeze();
         timer.Stop();
         gamePanel.Interactable = false;
         Time.timeScale = 1;
@@ -370,6 +383,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
             gamePanel.Interactable = true;
             GameData.Classic.OnLevelCompleted(GameController.Instance.LoadLevelOption.Level);
             WinPanel winPanel = UIManager.Instance.Push<WinPanel>();
+            winPanel.SetStars(lastStarsEarned);
 
             //winPanel.SetRewards(new ItemStack[] { new ItemStack(ItemID.Coin, ConfigDatabase.Instance.CoinWin) });
 
@@ -402,6 +416,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         if (isWon || isLost) return;
         isLost = true;
         ClearSavedProgress();
+        StopTimeFreeze();
         if (timer != null) timer.Pause();
         if (gamePanel != null) gamePanel.Interactable = false;
         CheckHideTutorial();
@@ -440,6 +455,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         base.OnDestroyLevel();
 
         ClassicProgressSaveData.RemoveCaptureProvider(this);
+        StopTimeFreeze();
         timer.Stop();
         UnbindGamePlayManagerLose();
 
@@ -453,6 +469,8 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         StopShowInterstitialAd();
 
         Time.timeScale = 1;
+        // Cờ pause là static -> phải clear khi rời level, kẻo dính sang lượt chơi sau.
+        FruitSort.GameplayPause.Set(false);
 
         if (loadedLevelRoot != null)
         {
@@ -703,12 +721,12 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
     }
 
     /// <summary>
-    /// Đóng băng gameplay khi có popup đè lên GamePanel: dừng đồng hồ
-    /// (LevelTimer chạy ignoreTimeScale nên phải Pause tường minh) và dừng mọi chuyển động.
+    /// Đóng băng gameplay khi có popup đè lên GamePanel: dừng đồng hồ + set cờ
+    /// GameplayPause (KHÔNG dùng Time.timeScale — các hệ gameplay tự check cờ).
     /// </summary>
     public void PauseGameplay()
     {
-        Time.timeScale = 0f;
+        FruitSort.GameplayPause.Set(true);
         if (timer != null) timer.Pause();
         if (gamePlayManager != null) gamePlayManager.SetTimeCounting(false);
     }
@@ -716,10 +734,12 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
     /// <summary>Chạy lại gameplay khi popup trên cùng đóng và GamePanel trở lại top.</summary>
     public void ResumeGameplay()
     {
-        Time.timeScale = 1f;
+        // Clear cờ TRƯỚC các early-return: kể cả khi đã win/lose, gameplay không được kẹt pause.
+        FruitSort.GameplayPause.Set(false);
         if (isWon || isLost) return;
 
-        if (!isWaitingForFirstInteraction)
+        // Đang đóng băng giờ (booster) -> KHÔNG resume đồng hồ; coroutine freeze sẽ tự resume.
+        if (!isWaitingForFirstInteraction && !isTimeFrozen)
         {
             timer.Resume();
             if (gamePlayManager != null && gamePlayManager.HasStartedInteraction)
@@ -727,6 +747,116 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
                 gamePlayManager.SetTimeCounting(true);
             }
         }
+    }
+
+    // ================= STAR RATING =================
+
+    /// <summary>
+    /// Sao khi thắng theo tỷ lệ tài nguyên còn lại (move và giờ, lấy MIN nếu có cả hai).
+    /// Level không giới hạn gì -> luôn 3 sao.
+    /// </summary>
+    private int CalculateStars()
+    {
+        if (gamePlayManager == null) return 3;
+
+        float ratio = 1f;
+        bool hasAnyLimit = false;
+
+        if (gamePlayManager.HasMoveLimit)
+        {
+            ratio = Mathf.Min(ratio,
+                gamePlayManager.MovesLeft / (float)Mathf.Max(1, gamePlayManager.moveLimit));
+            hasAnyLimit = true;
+        }
+        if (gamePlayManager.HasTimeLimit)
+        {
+            ratio = Mathf.Min(ratio,
+                gamePlayManager.TimeLeft / Mathf.Max(1f, gamePlayManager.timeLimit));
+            hasAnyLimit = true;
+        }
+
+        if (!hasAnyLimit || ratio >= threeStarThreshold) return 3;
+        if (ratio >= twoStarThreshold) return 2;
+        return 1;
+    }
+
+    // ================= TIME FREEZE BOOSTER =================
+
+    public bool IsTimeFrozen => isTimeFrozen;
+
+    /// <summary>Chỉ freeze được khi đồng hồ đang thực sự chạy.</summary>
+    public bool CanFreezeTime =>
+        !isWon && !isLost && !isTimeFrozen && !isWaitingForFirstInteraction &&
+        CurrentLevelData != null && CurrentLevelData.timeLimit > 0f;
+
+    /// <summary>
+    /// Đóng băng đồng hồ trong <paramref name="seconds"/> giây (booster).
+    /// Đếm bằng scaled time -> mở popup (timeScale = 0) thì thời gian freeze cũng dừng theo.
+    /// </summary>
+    public bool FreezeCountdown(float seconds)
+    {
+        if (!CanFreezeTime || seconds <= 0f) return false;
+
+        isTimeFrozen = true;
+        RecordBoosterUse(ItemID.TimeFreezeBooster);
+        timer.Pause();
+        if (gamePlayManager != null) gamePlayManager.SetTimeCounting(false);
+        EventDispatcher.Dispatch(new GameEvent.LevelCountdownChanged(true));
+
+        if (freezeCoroutine != null) StopCoroutine(freezeCoroutine);
+        freezeCoroutine = StartCoroutine(IEFreezeCountdown(seconds));
+        return true;
+    }
+
+    private IEnumerator IEFreezeCountdown(float seconds)
+    {
+        // Đếm tay thay vì WaitForSeconds: popup đè lên (GameplayPause) thì giờ freeze
+        // cũng đứng yên — người chơi không bị mất giây freeze trong lúc xem popup.
+        float remaining = seconds;
+        while (remaining > 0f)
+        {
+            yield return null;
+            if (!FruitSort.GameplayPause.IsPaused) remaining -= Time.deltaTime;
+        }
+        freezeCoroutine = null;
+        EndTimeFreeze();
+    }
+
+    private void EndTimeFreeze()
+    {
+        if (!isTimeFrozen) return;
+        isTimeFrozen = false;
+        EventDispatcher.Dispatch(new GameEvent.LevelCountdownChanged(false));
+
+        if (isWon || isLost || isWaitingForFirstInteraction) return;
+        timer.Resume();
+        if (gamePlayManager != null && gamePlayManager.HasStartedInteraction)
+        {
+            gamePlayManager.SetTimeCounting(true);
+        }
+    }
+
+    /// <summary>Hủy freeze không resume đồng hồ (gọi khi win/lose/destroy level).</summary>
+    private void StopTimeFreeze()
+    {
+        if (freezeCoroutine != null)
+        {
+            StopCoroutine(freezeCoroutine);
+            freezeCoroutine = null;
+        }
+        if (isTimeFrozen)
+        {
+            isTimeFrozen = false;
+            EventDispatcher.Dispatch(new GameEvent.LevelCountdownChanged(false));
+        }
+    }
+
+    /// <summary>Ghi nhận dùng booster (phục vụ analytics level_end).</summary>
+    public void RecordBoosterUse(int boosterId)
+    {
+        boosterUsed++;
+        if (dictBooster == null) dictBooster = new Dictionary<int, int>();
+        dictBooster[boosterId] = GetBoosterUsed(boosterId) + 1;
     }
 
 

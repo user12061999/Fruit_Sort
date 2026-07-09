@@ -19,6 +19,12 @@ public class WinPanel : UIFrame
     [SerializeField] private ItemView rewardViewPrefab;
     [SerializeField] private Transform rewardViewContainer;
 
+    [Header("[Stars]")]
+    [Tooltip("3 icon sao theo thứ tự trái->phải; bật theo số sao đạt được. Để trống nếu prefab chưa có UI sao.")]
+    [SerializeField] private GameObject[] starIcons;
+    [Tooltip("Giãn cách giữa các sao khi hiện lần lượt (giây). 0 = hiện cùng lúc.")]
+    [SerializeField] private float starRevealInterval = 0.25f;
+
     private Sequence sequence;
     private Sequence sequences;
 
@@ -64,6 +70,35 @@ public class WinPanel : UIFrame
     {
         views.SetModels(rewards).Show();
     }
+
+    /// <summary>Hiện số sao đạt được (1-3), từng sao pop lần lượt.</summary>
+    public void SetStars(int stars)
+    {
+        if (starIcons == null || starIcons.Length == 0) return;
+
+        for (int i = 0; i < starIcons.Length; i++)
+        {
+            GameObject icon = starIcons[i];
+            if (icon == null) continue;
+
+            bool earned = i < stars;
+            if (!earned)
+            {
+                icon.SetActive(false);
+                continue;
+            }
+
+            icon.SetActive(true);
+            icon.transform.DOKill();
+            icon.transform.localScale = Vector3.zero;
+            // SetUpdate(true): WinPanel hiện lên là ingame pause (timeScale = 0),
+            // tween phải chạy unscaled nếu không sao sẽ đứng im ở scale 0.
+            icon.transform.DOScale(1f, 0.3f)
+                .SetEase(Ease.OutBack)
+                .SetDelay(0.3f + i * Mathf.Max(0f, starRevealInterval))
+                .SetUpdate(true);
+        }
+    }
     void ShowClaimButton()
     {
         btnClaim.gameObject.SetActive(false);
@@ -71,12 +106,15 @@ public class WinPanel : UIFrame
         sequences?.Kill();
 
         // Create new sequence for delayed button activation
+        // SetUpdate(true): WinPanel hiện lên là ingame pause (timeScale = 0) —
+        // không có nó thì interval 3s đứng im và btnClaim không bao giờ hiện.
         sequences = DOTween.Sequence()
             .AppendInterval(3f)  // Wait for 3 seconds
             .AppendCallback(() =>
             {
                 btnClaim.gameObject.SetActive(true);
-            });
+            })
+            .SetUpdate(true);
     }
 
     private void OnButtonClaimClicked()

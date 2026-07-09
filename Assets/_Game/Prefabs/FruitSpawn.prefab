@@ -60,6 +60,8 @@ MonoBehaviour:
   countText: {fileID: 625454979706163506}
   countTextOffset: {x: 0, y: 0}
   countTextSize: 1
+  countTextPop: 0.35
+  countTextPopDuration: 0.2
   spawnCount: 50
   spawnOrigin: {fileID: 0}
   spawnSpread: 0

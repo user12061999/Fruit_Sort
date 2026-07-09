@@ -15,35 +15,78 @@ public class GamePanel : UIFrame
     [SerializeField] private TextMeshProUGUI txtMovesLeft;
     [SerializeField] private Image circle,rectangle,pause;
     [SerializeField] private Sprite[] circleSprites, rectangleSprites,pauseSprites;
+
+    [Header("[Time Freeze Booster]")]
+    [Tooltip("Nút dùng booster đóng băng giờ. Để trống nếu chưa có UI.")]
+    [SerializeField] private Button btnFreezeTime;
+    [Tooltip("Text hiển thị số booster đang có (con của nút).")]
+    [SerializeField] private TextMeshProUGUI txtFreezeCount;
+    [Tooltip("Số giây đóng băng mỗi lần dùng.")]
+    [SerializeField] private float freezeDuration = 10f;
+
+    private static readonly Color FreezeClockColor = new Color(0.45f, 0.85f, 1f);
+
     private void Start()
     {
         btnPause.onClick.AddListener(PauseGame);
+        if (btnFreezeTime != null) btnFreezeTime.onClick.AddListener(OnClickFreezeTime);
         EventDispatcher.AddListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
         EventDispatcher.AddListener<GameEvent.LevelMovesChanged>(UpdateMovesLeft);
         EventDispatcher.AddListener<GameEvent.LevelCountdownChanged>(LevelCountdownChanged);
+        EventDispatcher.AddListener<GameEvent.PlayerInventoryChanged>(OnInventoryChanged);
     }
     private void OnDestroy()
     {
         EventDispatcher.RemoveListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
         EventDispatcher.RemoveListener<GameEvent.LevelMovesChanged>(UpdateMovesLeft);
         EventDispatcher.RemoveListener<GameEvent.LevelCountdownChanged>(LevelCountdownChanged);
+        EventDispatcher.RemoveListener<GameEvent.PlayerInventoryChanged>(OnInventoryChanged);
     }
     private void LevelCountdownChanged(GameEvent.LevelCountdownChanged args)
     {
-        /*if (args.IsPaused) {
-            spinTime.gameObject.SetActive(true);
-            spinTime.SetAnim(0, "frezee", null);
-            MoveVFX();
-        } else {
+        // Đồng hồ chuyển màu băng khi bị đóng băng; nút freeze khoá trong lúc đang freeze.
+        if (txtCountDownTime != null)
+            txtCountDownTime.color = args.IsPaused ? FreezeClockColor : Color.white;
+        if (btnFreezeTime != null)
+            btnFreezeTime.interactable = !args.IsPaused;
+    }
 
-            spinTime.SetAnim(0, "frezee2", () => {
-                spinTime.gameObject.SetActive(false);
-            });
+    private void OnInventoryChanged(GameEvent.PlayerInventoryChanged args)
+    {
+        if (args.ItemStackChange.Id == ItemID.TimeFreezeBooster) RefreshFreezeCount();
+    }
 
+    private void OnClickFreezeTime()
+    {
+        ClassicLevelController controller = ClassicLevelController.instance;
+        if (controller == null || !controller.CanFreezeTime) return;
+
+        ItemStack cost = new ItemStack(ItemID.TimeFreezeBooster, 1);
+        if (GameData.Inventory.IsEnought(cost))
+        {
+            if (controller.FreezeCountdown(freezeDuration))
+            {
+                GameData.Inventory.Remove(cost, "booster");
+                RefreshFreezeCount();
+            }
         }
-        freezeVfx.SetActive(args.IsPaused);
-        */
+        else
+        {
+            // Hết booster -> xem ad thưởng để dùng 1 lần.
+            GameAdvertising.TryShowRewardedAd(() =>
+            {
+                ClassicLevelController c = ClassicLevelController.instance;
+                if (c != null) c.FreezeCountdown(freezeDuration);
+            });
+        }
+    }
 
+    private void RefreshFreezeCount()
+    {
+        if (txtFreezeCount == null) return;
+        int count = GameData.Inventory.GetCount(ItemID.TimeFreezeBooster);
+        // Hết booster -> hiện icon ad thay số (dùng qua rewarded ad).
+        txtFreezeCount.text = count > 0 ? count.ToString() : "AD";
     }
     protected override void OnShow(bool instant = false)
     {
@@ -56,6 +99,17 @@ public class GamePanel : UIFrame
         if (gamePlayManager != null)
         {
             SetMovesText(gamePlayManager.HasMoveLimit, gamePlayManager.MovesLeft);
+        }
+        RefreshFreezeCount();
+        // Level không giới hạn giờ -> ẩn nút freeze.
+        if (btnFreezeTime != null)
+        {
+            ClassicLevelController controller = ClassicLevelController.instance;
+            bool hasTimeLimit = controller != null &&
+                controller.CurrentLevelData != null &&
+                controller.CurrentLevelData.timeLimit > 0f;
+            btnFreezeTime.gameObject.SetActive(hasTimeLimit);
+            btnFreezeTime.interactable = true;
         }
     }
 

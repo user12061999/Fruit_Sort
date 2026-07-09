@@ -526,6 +526,8 @@ MonoBehaviour:
   countText: {fileID: 2213684603122154034}
   countTextOffset: {x: 0, y: 0}
   countTextSize: 1
+  countTextPop: 0.35
+  countTextPopDuration: 0.2
   punchScale: 0.35
   punchDuration: 0.4
   contentRoot: {fileID: 0}
