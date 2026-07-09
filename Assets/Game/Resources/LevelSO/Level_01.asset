@@ -16,6 +16,7 @@ MonoBehaviour:
   spawnerPrefab: {fileID: 7586780288578330236, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
   columnPrefab: {fileID: 2732737590822570767, guid: 0140749776e76c544a08ff732eb76360, type: 3}
   conveyorPrefab: {fileID: 8734211276015217555, guid: 3cac9b7b6eabe7c409e9905b9eda177d, type: 3}
+  obstaclePrefab: {fileID: 7155311856979371079, guid: a9da21c10f063ce48aa14fce28997892, type: 3}
   fruitDatabase: {fileID: 11400000, guid: 667ce4a834fb82c4f94a141d2cdbbf8b, type: 2}
   timeLimit: 50
   moveLimit: 10
@@ -33,12 +34,12 @@ MonoBehaviour:
     - {x: -2.2, y: 4.7, z: 0}
   conveyorLinks: []
   buckets:
-  - position: {x: -1.2, y: 5.9, z: 0}
-    colorId: 0
-    maxFill: 100
-    launchDirection: {x: 0, y: -1}
   - position: {x: 1.2, y: 5.9, z: 0}
     colorId: 1
+    maxFill: 100
+    launchDirection: {x: 0, y: -1}
+  - position: {x: -1.2, y: 5.9, z: 0}
+    colorId: 0
     maxFill: 100
     launchDirection: {x: 0, y: -1}
   spawners:
@@ -55,3 +56,6 @@ MonoBehaviour:
     launchDirection: {x: 0, y: 1}
     launchSpeed: 10
   columns: []
+  obstacles:
+  - position: {x: 2.151, y: 4, z: 0}
+    requiredDots: 10
