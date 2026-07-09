@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using TMPro;
 
 namespace FruitSort
 {
@@ -55,10 +56,20 @@ namespace FruitSort
         public SpriteRenderer body;
         [Tooltip("Component điều khiển shader grid fill trên cùng object với Body.")]
         public SpriteGridFill gridFill;
-        [Tooltip("Số ô mỗi hàng; số hàng tự tính từ Dots For Full Sprite.")]
-        [Min(1)] public int gridColumns = 5;
         [Tooltip("Khoảng trong suốt giữa các ô.")]
         [Range(0f, 0.45f)] public float cellGap = 0.02f;
+
+        [Header("Hiển thị số dot")]
+        [Tooltip("Text hiển thị 'số dot hiện tại/max'. Để trống = tự tạo TextMeshPro con lúc play.")]
+        public TMP_Text countText;
+        [Tooltip("Vị trí local của text so với tâm bucket (chỉ dùng khi text tự tạo).")]
+        public Vector2 countTextOffset = Vector2.zero;
+        [Tooltip("Cỡ chữ world-space của text tự tạo.")]
+        [Min(0.5f)] public float countTextSize = 3f;
+        [Tooltip("Cường độ punch scale của text khi số thay đổi (0 = tắt).")]
+        [Range(0f, 1f)] public float countTextPop = 0.35f;
+        [Tooltip("Thời lượng punch của text.")]
+        [Min(0.05f)] public float countTextPopDuration = 0.2f;
 
         [Header("Hành động khi đầy")]
         [Tooltip("Cường độ punch scale khi đầy.")]
@@ -251,7 +262,7 @@ namespace FruitSort
                 }
             }
 
-            Vector3 targetWorld = gridFill != null ? gridFill.GetCellWorldPosition(slot) : MouthPosition;
+            Vector3 targetWorld = gridFill != null ? gridFill.GetCellWorldPosition(GetLandingCellIndex(slot)) : MouthPosition;
             Vector3 targetLocal = root.InverseTransformPoint(targetWorld);
             d.transform.DOLocalJump(targetLocal, jumpPower, 1, dropDuration)
                        .SetEase(Ease.OutQuad)
@@ -438,7 +449,7 @@ namespace FruitSort
                 d.capturedByBucket = true;
                 d.sortScoreAwarded = true; // điểm của dot này đã nằm trong score lưu kèm save
                 d.transform.SetParent(root, true);
-                d.transform.position = gridFill != null ? gridFill.GetCellWorldPosition(_contained.Count) : MouthPosition;
+                d.transform.position = gridFill != null ? gridFill.GetCellWorldPosition(GetLandingCellIndex(_contained.Count)) : MouthPosition;
                 d.transform.rotation = Quaternion.identity;
                 if (d.Sr != null) d.Sr.enabled = false; // như CompleteDotVisual khi dot đã vào ô
 
@@ -603,14 +614,71 @@ namespace FruitSort
             }
         }
 
+        /// <summary>
+        /// Map index dot (0..maxFill-1) sang index ô trên lưới cân bằng: lưới có thể nhiều ô
+        /// hơn số dot, nên dot phải đáp vào ô nằm tại mép fill tương ứng của shader.
+        /// </summary>
+        int GetLandingCellIndex(int slot)
+        {
+            if (gridFill == null) return slot;
+            int totalCells = Mathf.Max(1, gridFill.Columns * gridFill.Rows);
+            int max = Mathf.Max(1, maxFill);
+            return Mathf.Clamp(Mathf.FloorToInt((slot + 0.5f) * totalCells / max), 0, totalCells - 1);
+        }
+
         void UpdateFillVisual()
         {
+            UpdateCountText();
             if (gridFill == null) return;
-            int columns = Mathf.Max(1, gridColumns);
-            int rows = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(1, maxFill) / (float)columns));
-            gridFill.SetGrid(columns, rows);
+            // Lưới vuông cân bằng (rows = columns), không cần khớp đúng số dot.
+            gridFill.SetBalancedGrid(maxFill);
             gridFill.CellGap = cellGap;
             gridFill.FillAmount = Mathf.Clamp01(_visibleFill / (float)Mathf.Max(1, maxFill));
+        }
+
+        int _lastShownCount = int.MinValue;
+
+        void UpdateCountText()
+        {
+            EnsureCountText();
+            if (countText == null) return;
+
+            int shown = Mathf.Clamp(_visibleFill, 0, maxFill);
+            countText.text = $"{shown}/{maxFill}";
+
+            // Pop khi GIÁ TRỊ đổi (bỏ qua lần set đầu để không pop lúc vừa dựng level).
+            if (Application.isPlaying && countTextPop > 0f &&
+                _lastShownCount != int.MinValue && shown != _lastShownCount)
+            {
+                countText.transform.DOKill(true); // hoàn tất punch dở để không lệch scale gốc
+                countText.transform.DOPunchScale(Vector3.one * countTextPop, countTextPopDuration, 6, 0.7f);
+            }
+            _lastShownCount = shown;
+        }
+
+        // Tự tạo TextMeshPro world-space khi chưa gán trong prefab (chỉ lúc play,
+        // tránh đẻ object rác vào scene/prefab trong edit mode).
+        void EnsureCountText()
+        {
+            if (countText != null || !Application.isPlaying) return;
+
+            var go = new GameObject("CountText");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = (Vector3)countTextOffset;
+
+            TextMeshPro tmp = go.AddComponent<TextMeshPro>();
+            tmp.fontSize = countTextSize;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.rectTransform.sizeDelta = new Vector2(2f, 1f);
+
+            MeshRenderer textRenderer = go.GetComponent<MeshRenderer>();
+            if (textRenderer != null && body != null)
+            {
+                textRenderer.sortingLayerID = body.sortingLayerID;
+                textRenderer.sortingOrder = body.sortingOrder + 20;
+            }
+
+            countText = tmp;
         }
 
         void OnValidate()
@@ -624,7 +692,6 @@ namespace FruitSort
             }
             if (zone == null) zone = GetComponent<Collider2D>();
             maxFill = Mathf.Max(1, maxFill);
-            gridColumns = Mathf.Max(1, gridColumns);
             cellGap = Mathf.Clamp(cellGap, 0f, 0.45f);
             wrongColorLerpDuration = Mathf.Max(0f, wrongColorLerpDuration);
             launchSpeed = Mathf.Max(0.1f, launchSpeed);

@@ -42,10 +42,10 @@ Material:
     m_Ints: []
     m_Floats:
     - PixelSnap: 0
-    - _CellGap: 0
+    - _CellGap: 0.377
     - _Columns: 10
     - _EnableExternalAlpha: 0
-    - _FillAmount: 1
+    - _FillAmount: 0.867
     - _Rows: 4
     - _ZWrite: 0
     m_Colors:

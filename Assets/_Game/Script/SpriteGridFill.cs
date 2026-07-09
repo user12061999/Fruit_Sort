@@ -72,6 +72,22 @@ public sealed class SpriteGridFill : MonoBehaviour
         Apply(force: true);
     }
 
+    /// <summary>
+    /// Cạnh lưới vuông cân bằng: rows = columns = ceil(sqrt(count)).
+    /// Lưới KHÔNG cần đúng bằng số dot — chỉ là độ phân giải hiển thị fill.
+    /// </summary>
+    public static int GetBalancedGridSize(int count)
+    {
+        return Mathf.Max(1, Mathf.CeilToInt(Mathf.Sqrt(Mathf.Max(1, count))));
+    }
+
+    /// <summary>Đặt lưới vuông cân bằng theo <see cref="GetBalancedGridSize"/>.</summary>
+    public void SetBalancedGrid(int count)
+    {
+        int size = GetBalancedGridSize(count);
+        SetGrid(size, size);
+    }
+
     /// <summary>World position ở tâm của một ô, theo đúng thứ tự trái->phải và dưới->trên.</summary>
     public Vector3 GetCellWorldPosition(int cellIndex)
     {

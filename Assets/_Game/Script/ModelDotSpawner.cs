@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using DG.Tweening;
+using TMPro;
 
 namespace FruitSort
 {
@@ -34,10 +35,20 @@ namespace FruitSort
         [Header("Sprite Grid")]
         [Tooltip("Component điều khiển shader grid fill trên Package Sprite.")]
         public SpriteGridFill gridFill;
-        [Tooltip("Số ô mỗi hàng; số hàng tự tính từ Dots For Full Sprite.")]
-        [Min(1)] public int gridColumns = 16;
         [Tooltip("Khoảng trong suốt giữa các ô.")]
         [Range(0f, 0.45f)] public float cellGap = 0.02f;
+
+        [Header("Hiển thị số dot")]
+        [Tooltip("Text hiển thị số dot còn lại trong gói. Để trống = tự tạo TextMeshPro con lúc play.")]
+        public TMP_Text countText;
+        [Tooltip("Vị trí local của text so với tâm gói (chỉ dùng khi text tự tạo).")]
+        public Vector2 countTextOffset = Vector2.zero;
+        [Tooltip("Cỡ chữ world-space của text tự tạo.")]
+        [Min(0.5f)] public float countTextSize = 3f;
+        [Tooltip("Cường độ punch scale của text khi số thay đổi (0 = tắt).")]
+        [Range(0f, 1f)] public float countTextPop = 0.35f;
+        [Tooltip("Thời lượng punch của text.")]
+        [Min(0.05f)] public float countTextPopDuration = 0.2f;
 
         [Header("Cấu hình spawn (mỗi lần click)")]
         [Tooltip("SỐ LƯỢNG dot sinh ra mỗi lần click.")]
@@ -310,18 +321,65 @@ namespace FruitSort
 
         void UpdateFillVisual()
         {
+            UpdateCountText();
+
             if (gridFill == null && packageSprite != null)
                 gridFill = packageSprite.GetComponent<SpriteGridFill>();
             if (gridFill == null) return;
 
-            int columns = Mathf.Max(1, gridColumns);
-            int rows = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(1, totalClicks) / (float)columns));
-            gridFill.SetGrid(columns, rows);
+            // Lưới vuông cân bằng (rows = columns), không cần khớp đúng số dot.
+            gridFill.SetBalancedGrid(totalClicks);
             gridFill.CellGap = cellGap;
             // Edit mode: _dotsLeft (biến runtime) = 0 -> luôn hiển thị gói ĐẦY để preview.
             gridFill.FillAmount = Application.isPlaying
                 ? Mathf.Clamp01(_dotsLeft / (float)Mathf.Max(1, totalClicks))
                 : 1f;
+        }
+
+        int _lastShownCount = int.MinValue;
+
+        void UpdateCountText()
+        {
+            EnsureCountText();
+            if (countText == null) return;
+
+            // Edit mode: hiển thị tổng gói để preview (giống fill luôn đầy).
+            int shown = Application.isPlaying ? _dotsLeft : Mathf.Max(1, totalClicks);
+            countText.text = shown.ToString();
+
+            // Pop khi GIÁ TRỊ đổi (bỏ qua lần set đầu để không pop lúc vừa dựng level).
+            if (Application.isPlaying && countTextPop > 0f &&
+                _lastShownCount != int.MinValue && shown != _lastShownCount)
+            {
+                countText.transform.DOKill(true); // hoàn tất punch dở để không lệch scale gốc
+                countText.transform.DOPunchScale(Vector3.one * countTextPop, countTextPopDuration, 6, 0.7f);
+            }
+            _lastShownCount = shown;
+        }
+
+        // Tự tạo TextMeshPro world-space khi chưa gán trong prefab (chỉ lúc play,
+        // tránh đẻ object rác vào scene/prefab trong edit mode).
+        void EnsureCountText()
+        {
+            if (countText != null || !Application.isPlaying) return;
+
+            var go = new GameObject("CountText");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = (Vector3)countTextOffset;
+
+            TextMeshPro tmp = go.AddComponent<TextMeshPro>();
+            tmp.fontSize = countTextSize;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.rectTransform.sizeDelta = new Vector2(2f, 1f);
+
+            MeshRenderer textRenderer = go.GetComponent<MeshRenderer>();
+            if (textRenderer != null && packageSprite != null)
+            {
+                textRenderer.sortingLayerID = packageSprite.sortingLayerID;
+                textRenderer.sortingOrder = packageSprite.sortingOrder + 20;
+            }
+
+            countText = tmp;
         }
 
         /// <summary>Sinh loạt dot (1 lần click).</summary>
@@ -512,7 +570,6 @@ namespace FruitSort
         void OnValidate()
         {
             totalClicks = Mathf.Max(1, totalClicks);
-            gridColumns = Mathf.Max(1, gridColumns);
             cellGap = Mathf.Clamp(cellGap, 0f, 0.45f);
             launchSpeed = Mathf.Max(0.1f, launchSpeed);
             launchSpread = Mathf.Clamp(launchSpread, 0f, 45f);

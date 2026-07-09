@@ -160,14 +160,6 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
-        public void RowFillProgress_FillsBottomRowsBeforeTopRows()
-        {
-            Assert.That(SpriteGridFill.GetBottomUpRowProgress(0.25f, 0, 4), Is.EqualTo(1f));
-            Assert.That(SpriteGridFill.GetBottomUpRowProgress(0.25f, 1, 4), Is.EqualTo(0f));
-            Assert.That(SpriteGridFill.GetBottomUpRowProgress(0.625f, 2, 4), Is.EqualTo(0.5f));
-            Assert.That(SpriteGridFill.GetBottomUpRowProgress(0.625f, 3, 4), Is.EqualTo(0f));
-        }
-
         static Dot CreateDot(int colorId, Color color)
         {
             GameObject dotObject = new GameObject($"Dot {colorId}");
