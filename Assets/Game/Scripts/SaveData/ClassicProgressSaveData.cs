@@ -59,9 +59,13 @@ public class ClassicProgressSaveData : SaveData {
     [SerializeField] private int bucketCount;
     [SerializeField] private int spawnerCount;
     [SerializeField] private int conveyorCount;
+    [SerializeField] private int obstacleCount;
     [SerializeField] private List<BucketState> buckets = new List<BucketState>();
     [SerializeField] private List<SpawnerState> spawners = new List<SpawnerState>();
     [SerializeField] private List<DotSnapshot> dots = new List<DotSnapshot>();
+    // Index (theo tên "Obstacle_{i}" LevelBuilder đặt) của các vật cản ĐÃ VỠ trước khi save.
+    // Vật cản còn sống không cần state: số dot đang đè là per-frame, tự tính lại từ dot khôi phục.
+    [SerializeField] private List<int> brokenObstacles = new List<int>();
 
     public bool HasProgress => hasProgress;
     public int Level => level;
@@ -72,9 +76,11 @@ public class ClassicProgressSaveData : SaveData {
     public int BucketCount => bucketCount;
     public int SpawnerCount => spawnerCount;
     public int ConveyorCount => conveyorCount;
+    public int ObstacleCount => obstacleCount;
     public IReadOnlyList<BucketState> Buckets => buckets;
     public IReadOnlyList<SpawnerState> Spawners => spawners;
     public IReadOnlyList<DotSnapshot> Dots => dots;
+    public IReadOnlyList<int> BrokenObstacles => brokenObstacles;
 
     // Đang trong level (có provider) -> luôn coi là changed để mọi auto-save
     // (pause / quit / sau action) đều chụp lại trạng thái mới nhất.
@@ -87,7 +93,7 @@ public class ClassicProgressSaveData : SaveData {
 
     /// <summary>Bắt đầu một snapshot mới: ghi thông số chung và xoá dữ liệu cũ.</summary>
     public void BeginCapture(int level, int configHash, int movesLeft, float timeLeft, int score,
-                             int bucketCount, int spawnerCount, int conveyorCount) {
+                             int bucketCount, int spawnerCount, int conveyorCount, int obstacleCount) {
         this.level = level;
         this.configHash = configHash;
         this.movesLeft = movesLeft;
@@ -96,11 +102,17 @@ public class ClassicProgressSaveData : SaveData {
         this.bucketCount = bucketCount;
         this.spawnerCount = spawnerCount;
         this.conveyorCount = conveyorCount;
+        this.obstacleCount = obstacleCount;
         buckets.Clear();
         spawners.Clear();
         dots.Clear();
+        brokenObstacles.Clear();
         hasProgress = true;
         SetChanged();
+    }
+
+    public void AddBrokenObstacle(int index) {
+        brokenObstacles.Add(index);
     }
 
     public void AddBucketState(int index, bool done, List<int> containedColors) {
@@ -142,9 +154,11 @@ public class ClassicProgressSaveData : SaveData {
         bucketCount = 0;
         spawnerCount = 0;
         conveyorCount = 0;
+        obstacleCount = 0;
         buckets.Clear();
         spawners.Clear();
         dots.Clear();
+        brokenObstacles.Clear();
         SetChanged();
     }
 }

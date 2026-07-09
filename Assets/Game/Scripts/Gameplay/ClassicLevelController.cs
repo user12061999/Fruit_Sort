@@ -32,6 +32,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
     private int countBuyTime;
     private GameObject loadedLevelRoot;
     private int totalBuckets;
+    private int totalObstacles;
     private int filledBuckets;
     private bool isLost;
     private bool isWaitingForFirstInteraction;
@@ -169,6 +170,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         BindGamePlayManager(data);
 
         totalBuckets = loadedLevelRoot.GetComponentsInChildren<FruitSort.Bucket>(true).Length;
+        totalObstacles = loadedLevelRoot.GetComponentsInChildren<FruitSort.DotObstacle>(true).Length;
         filledBuckets = 0;
 
         UpdateCameraToLoadedLevel();
@@ -908,7 +910,23 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
             gamePlayManager.score,
             totalBuckets,
             liveSpawners.Length,
-            conveyors.Length);
+            conveyors.Length,
+            totalObstacles);
+
+        // Obstacle: đã vỡ (hoặc đã bị destroy khỏi scene) -> lưu index để restore gỡ luôn.
+        // Vật cản còn sống không cần state: số dot đang đè tự tính lại từ dot khôi phục.
+        FruitSort.DotObstacle[] liveObstacles = loadedLevelRoot.GetComponentsInChildren<FruitSort.DotObstacle>(true);
+        bool[] obstacleAlive = new bool[Mathf.Max(0, totalObstacles)];
+        for (int i = 0; i < liveObstacles.Length; i++)
+        {
+            FruitSort.DotObstacle obstacle = liveObstacles[i];
+            if (obstacle == null || obstacle.IsBroken) continue;
+            int obstacleIndex = ParseBuildIndex(obstacle.name, "Obstacle_", i);
+            if (obstacleIndex >= 0 && obstacleIndex < obstacleAlive.Length)
+                obstacleAlive[obstacleIndex] = true;
+        }
+        for (int i = 0; i < obstacleAlive.Length; i++)
+            if (!obstacleAlive[i]) data.AddBrokenObstacle(i);
 
         // Bucket map theo index dựng trong tên "Bucket_{i}_c{color}" (LevelBuilder đặt),
         // vì bucket đầy có thể đã bị worker destroy -> thứ tự hierarchy không còn đủ.
@@ -918,7 +936,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         {
             FruitSort.Bucket bucket = liveBuckets[i];
             if (bucket == null) continue;
-            int index = ParseBucketBuildIndex(bucket.name, i);
+            int index = ParseBuildIndex(bucket.name, "Bucket_", i);
             if (index >= 0 && index < captured.Length) captured[index] = true;
 
             colorBuffer.Clear();
@@ -995,10 +1013,32 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         // Cấu trúc level phải khớp snapshot (đề phòng level data đổi sau khi update game).
         if (saved.BucketCount != totalBuckets ||
             saved.SpawnerCount != liveSpawners.Length ||
-            saved.ConveyorCount != conveyors.Length)
+            saved.ConveyorCount != conveyors.Length ||
+            saved.ObstacleCount != totalObstacles)
         {
             GameData.ClassicProgress.Clear();
             return;
+        }
+
+        // ---- Obstacle đã vỡ trước khi save -> gỡ khỏi level vừa dựng (không hiệu ứng) ----
+        if (saved.BrokenObstacles.Count > 0)
+        {
+            FruitSort.DotObstacle[] liveObstacles = loadedLevelRoot.GetComponentsInChildren<FruitSort.DotObstacle>(true);
+            var obstacleByIndex = new Dictionary<int, FruitSort.DotObstacle>(liveObstacles.Length);
+            for (int i = 0; i < liveObstacles.Length; i++)
+            {
+                if (liveObstacles[i] == null) continue;
+                obstacleByIndex[ParseBuildIndex(liveObstacles[i].name, "Obstacle_", i)] = liveObstacles[i];
+            }
+
+            for (int i = 0; i < saved.BrokenObstacles.Count; i++)
+            {
+                if (obstacleByIndex.TryGetValue(saved.BrokenObstacles[i], out FruitSort.DotObstacle broken) &&
+                    broken != null)
+                {
+                    Destroy(broken.gameObject);
+                }
+            }
         }
 
         // Prefab + scale dot để dựng lại dot trong giỏ và trên băng chuyền.
@@ -1025,7 +1065,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         for (int i = 0; i < liveBuckets.Length; i++)
         {
             if (liveBuckets[i] == null) continue;
-            bucketByIndex[ParseBucketBuildIndex(liveBuckets[i].name, i)] = liveBuckets[i];
+            bucketByIndex[ParseBuildIndex(liveBuckets[i].name, "Bucket_", i)] = liveBuckets[i];
         }
 
         for (int i = 0; i < saved.Buckets.Count; i++)
@@ -1086,10 +1126,10 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         resumedFromSave = true;
     }
 
-    // Tên bucket do LevelBuilder đặt: "Bucket_{index}_c{colorId}". Lỗi parse -> dùng fallback.
-    private static int ParseBucketBuildIndex(string name, int fallback)
+    // Tên do LevelBuilder đặt: "{prefix}{index}..." (vd "Bucket_3_c1", "Obstacle_0").
+    // Lỗi parse -> dùng fallback.
+    private static int ParseBuildIndex(string name, string prefix, int fallback)
     {
-        const string prefix = "Bucket_";
         if (string.IsNullOrEmpty(name) || !name.StartsWith(prefix)) return fallback;
 
         int start = prefix.Length;
