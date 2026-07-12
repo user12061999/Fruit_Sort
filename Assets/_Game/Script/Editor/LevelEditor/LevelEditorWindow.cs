@@ -712,6 +712,17 @@ namespace FruitSort.EditorTools
                         Handles.DrawLine(end, nx.GetPositionOnSpline(0f, 0f));
                     }
                 }
+
+                // Switch định tuyến: vòng vàng + label tại cuối băng.
+                var routeSwitch = c.GetComponent<ConveyorSwitch>();
+                if (routeSwitch != null)
+                {
+                    Color swCol = new Color(1f, 0.85f, 0.2f);
+                    Handles.color = swCol;
+                    Handles.DrawWireDisc(end, Vector3.forward, routeSwitch.clickRadius);
+                    Handles.Label(end + Vector3.up * (routeSwitch.clickRadius + 0.2f),
+                        $"Switch ({routeSwitch.ValidBranchCount} nhánh)", LabelStyle(swCol));
+                }
             }
 
             // Bucket: vòng tròn màu + label
@@ -895,6 +906,7 @@ namespace FruitSort.EditorTools
                     name = c.name,
                     beltWidth = c.beltWidth,
                     closed = spline.Closed,
+                    hasSwitch = c.GetComponent<ConveyorSwitch>() != null,
                     straightEdges = c.straightEdges,
                     cornerRadius = c.cornerRadius,
                     cornerSegments = c.cornerSegments,

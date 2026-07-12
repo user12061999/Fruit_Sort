@@ -86,6 +86,21 @@ namespace FruitSort.EditorTools
                         if (conn.next[i] == null)
                             issues.Add(new LevelIssue(MessageType.Warning,
                                 $"Băng chuyền '{c.name}' có link 'next[{i}]' bị null.", c));
+
+                // ---- Switch định tuyến ----
+                var routeSwitch = c.GetComponent<ConveyorSwitch>();
+                bool closed = spline != null && spline.Closed;
+                int branches = routeSwitch != null ? routeSwitch.ValidBranchCount
+                             : (conn != null ? CountValidNext(conn) : 0);
+                if (routeSwitch != null && closed)
+                    issues.Add(new LevelIssue(MessageType.Warning,
+                        $"Băng chuyền '{c.name}' KHÉP KÍN nhưng có ConveyorSwitch — dot không bao giờ rời băng kín, switch vô dụng.", c));
+                if (routeSwitch != null && !closed && branches < 2)
+                    issues.Add(new LevelIssue(MessageType.Warning,
+                        $"Băng chuyền '{c.name}' có ConveyorSwitch nhưng chỉ có {branches} nhánh next — cần >= 2 nhánh để switch có nghĩa.", c));
+                if (routeSwitch == null && !closed && branches >= 2)
+                    issues.Add(new LevelIssue(MessageType.Info,
+                        $"Băng chuyền '{c.name}' có {branches} nhánh next mà không có ConveyorSwitch — dot sẽ chia nhánh NGẪU NHIÊN."));
             }
 
             // ---- Spawner ----
@@ -122,6 +137,14 @@ namespace FruitSort.EditorTools
             CheckSupplyDemand(buckets, spawners, issues);
 
             return issues;
+        }
+
+        static int CountValidNext(ConveyorConnections conn)
+        {
+            int n = 0;
+            for (int i = 0; i < conn.next.Count; i++)
+                if (conn.next[i] != null) n++;
+            return n;
         }
 
         /// <summary>Bucket có nằm trong tầm bắt của ít nhất 1 băng chuyền không (bề rộng/2 + attractRadius + dư 1u).</summary>

@@ -45,8 +45,26 @@ namespace FruitSort.EditorTools
             w.Show();
         }
 
-        void OnEnable() { SceneView.duringSceneGui += OnSceneGUI; }
-        void OnDisable() { SceneView.duringSceneGui -= OnSceneGUI; }
+        void OnEnable()
+        {
+            SceneView.duringSceneGui += OnSceneGUI;
+            Undo.undoRedoPerformed += RebuildConveyorMeshesAfterUndo;
+        }
+
+        void OnDisable()
+        {
+            SceneView.duringSceneGui -= OnSceneGUI;
+            Undo.undoRedoPerformed -= RebuildConveyorMeshesAfterUndo;
+        }
+
+        static void RebuildConveyorMeshesAfterUndo()
+        {
+            ConveyorBeltRenderer[] renderers =
+                Object.FindObjectsByType<ConveyorBeltRenderer>(FindObjectsSortMode.None);
+            foreach (ConveyorBeltRenderer renderer in renderers)
+                renderer.RebuildMeshAndMaterials();
+            SceneView.RepaintAll();
+        }
 
         // ---------------- Window UI ----------------
 
@@ -309,6 +327,8 @@ namespace FruitSort.EditorTools
                 sf.SetTangentMode(sf.Count - 1, TangentMode.AutoSmooth);
                 from.Bake();
             }
+            var beltRenderer = from.GetComponent<ConveyorBeltRenderer>();
+            if (beltRenderer != null) beltRenderer.RebuildMeshAndMaterials();
             MarkDirty();
         }
 

@@ -48,6 +48,24 @@ namespace FruitSort
                     conn.next.Add(conveyors[link.to]);
             }
 
+            // Connection-aware meshes must be built after the complete link topology exists.
+            foreach (ConveyorSpline conveyor in conveyors)
+            {
+                if (conveyor == null) continue;
+                ConveyorBeltRenderer beltRenderer = conveyor.GetComponent<ConveyorBeltRenderer>();
+                if (beltRenderer != null) beltRenderer.RebuildMeshAndMaterials();
+            }
+
+            // Switch định tuyến: gắn SAU khi nối link để OnEnable thấy đủ nhánh.
+            for (int i = 0; i < data.conveyors.Count; i++)
+            {
+                if (!data.conveyors[i].hasSwitch || conveyors[i] == null) continue;
+                var go = conveyors[i].gameObject;
+                var routeSwitch = go.GetComponent<ConveyorSwitch>();
+                if (routeSwitch == null) routeSwitch = go.AddComponent<ConveyorSwitch>();
+                MarkModified(routeSwitch);
+            }
+
             if (data.buckets.Count > 0 && data.bucketPrefab == null)
                 Debug.LogError("[LevelBuilder] Level có bucket nhưng chưa gán bucketPrefab.", data);
             else

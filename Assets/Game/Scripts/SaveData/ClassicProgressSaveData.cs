@@ -31,6 +31,12 @@ public class ClassicProgressSaveData : SaveData {
     }
 
     [System.Serializable]
+    public class SwitchState {
+        public int conveyorIndex;                    // index băng trong thứ tự dựng của LevelBuilder
+        public int activeIndex;                      // nhánh đang chọn của ConveyorSwitch
+    }
+
+    [System.Serializable]
     public class DotSnapshot {
         public int colorId;
         public int conveyorIndex = -1;               // >=0: đang trên băng chuyền; -1: đang bay
@@ -66,6 +72,8 @@ public class ClassicProgressSaveData : SaveData {
     // Index (theo tên "Obstacle_{i}" LevelBuilder đặt) của các vật cản ĐÃ VỠ trước khi save.
     // Vật cản còn sống không cần state: số dot đang đè là per-frame, tự tính lại từ dot khôi phục.
     [SerializeField] private List<int> brokenObstacles = new List<int>();
+    // Trạng thái các ConveyorSwitch (nhánh đang chọn) — chỉ băng nào có switch mới có entry.
+    [SerializeField] private List<SwitchState> switches = new List<SwitchState>();
 
     public bool HasProgress => hasProgress;
     public int Level => level;
@@ -81,6 +89,7 @@ public class ClassicProgressSaveData : SaveData {
     public IReadOnlyList<SpawnerState> Spawners => spawners;
     public IReadOnlyList<DotSnapshot> Dots => dots;
     public IReadOnlyList<int> BrokenObstacles => brokenObstacles;
+    public IReadOnlyList<SwitchState> Switches => switches;
 
     // Đang trong level (có provider) -> luôn coi là changed để mọi auto-save
     // (pause / quit / sau action) đều chụp lại trạng thái mới nhất.
@@ -107,12 +116,17 @@ public class ClassicProgressSaveData : SaveData {
         spawners.Clear();
         dots.Clear();
         brokenObstacles.Clear();
+        switches.Clear();
         hasProgress = true;
         SetChanged();
     }
 
     public void AddBrokenObstacle(int index) {
         brokenObstacles.Add(index);
+    }
+
+    public void AddSwitchState(int conveyorIndex, int activeIndex) {
+        switches.Add(new SwitchState { conveyorIndex = conveyorIndex, activeIndex = activeIndex });
     }
 
     public void AddBucketState(int index, bool done, List<int> containedColors) {
@@ -159,6 +173,7 @@ public class ClassicProgressSaveData : SaveData {
         spawners.Clear();
         dots.Clear();
         brokenObstacles.Clear();
+        switches.Clear();
         SetChanged();
     }
 }

@@ -5,4 +5,5 @@ public static class ItemID {
     public const int Gem = 2;
     public const int Heart = 3;
     public const int TimeFreezeBooster = 4;
+    public const int MagnetBooster = 5;
 }

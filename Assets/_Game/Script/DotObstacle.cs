@@ -26,7 +26,8 @@ namespace FruitSort
         [Tooltip("Collider2D làm vùng chặn (AABB bounds). Để trống = dùng bounds của Body, " +
                  "không có nữa thì fallback hộp vuông theo bán kính.")]
         public Collider2D zone;
-        [Tooltip("Sprite thân vật cản. Để trống = tự lấy SpriteRenderer trên object.")]
+        [Tooltip("Sprite thân vật cản. Để trốn" +
+                 "g = tự lấy SpriteRenderer trên object.")]
         public SpriteRenderer body;
         [Tooltip("Nửa cạnh hộp fallback khi không có zone lẫn body.")]
         [Min(0.05f)] public float fallbackRadius = 0.5f;

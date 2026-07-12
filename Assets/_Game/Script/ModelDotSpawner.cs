@@ -522,6 +522,33 @@ namespace FruitSort
             return true;
         }
 
+        /// <summary>
+        /// Đếm dot còn NẰM TRONG GÓI (chưa click) có thể ra màu <paramref name="colorId"/>.
+        /// Dùng cho CẢNH BÁO cung/cầu của GamePlayManager khi người chơi CÒN move — khác
+        /// <see cref="CountPendingDotsForColor"/> (chỉ đếm dot đã click chờ spawn, dùng cho
+        /// check thua khi HẾT move vì mở gói mới cần move).
+        /// Gói random được tính đủ (lạc quan) để không báo động oan.
+        /// </summary>
+        public static int CountPackagedDotsForColor(int colorId)
+        {
+            int count = 0;
+            for (int i = 0; i < s_all.Count; i++)
+            {
+                ModelDotSpawner spawner = s_all[i];
+                if (spawner == null || !spawner.isActiveAndEnabled || spawner._depleted)
+                    continue;
+
+                int packaged = Mathf.Max(0, spawner._dotsLeft - spawner._reservedDots);
+                if (packaged <= 0) continue;
+
+                if (spawner.TryGetFixedSpawnColorId(out int fixedId) && fixedId == colorId)
+                    count += packaged;
+                else if (spawner.fixedColorId < 0 && spawner.CanRandomlySpawnColor(colorId))
+                    count += packaged;
+            }
+            return count;
+        }
+
         public static int CountPendingDotsForColor(int colorId)
         {
             int count = 0;

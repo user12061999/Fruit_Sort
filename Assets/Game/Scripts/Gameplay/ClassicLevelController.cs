@@ -89,6 +89,8 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         EventDispatcher.AddListener<GameEvent.DestroyBlockShape>(OnBlockShapeChange);
         FruitSort.Bucket.OnBucketFull += HandleBucketFull;
         FruitSort.GamePlayManager.onInteractionRecorded += HandleInteractionRecorded;
+        // Đổi trạng thái ngoài move (vd bật ConveyorSwitch) cũng phải chụp lại save.
+        FruitSort.GamePlayManager.onStateChangedForSave += HandleInteractionRecorded;
     }
 
     private void OnDestroy()
@@ -96,6 +98,7 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         EventDispatcher.RemoveListener<GameEvent.DestroyBlockShape>(OnBlockShapeChange);
         FruitSort.Bucket.OnBucketFull -= HandleBucketFull;
         FruitSort.GamePlayManager.onInteractionRecorded -= HandleInteractionRecorded;
+        FruitSort.GamePlayManager.onStateChangedForSave -= HandleInteractionRecorded;
         ClassicProgressSaveData.RemoveCaptureProvider(this);
         UnbindGamePlayManagerLose();
 
@@ -851,6 +854,55 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         }
     }
 
+    // ================= MAGNET BOOSTER =================
+
+    /// <summary>Còn trong ván và level đã dựng -> cho phép thử dùng nam châm.</summary>
+    public bool CanUseMagnet => !isWon && !isLost && loadedLevelRoot != null;
+
+    /// <summary>
+    /// Booster nam châm: chọn giỏ SẮP ĐẦY NHẤT còn kiếm được dot đúng màu, hút mọi dot
+    /// màu đó đang tự do về giỏ (giỏ tự giới hạn số nhận qua reserve). Trả về false nếu
+    /// không hút được dot nào — caller KHÔNG trừ item trong trường hợp đó.
+    /// </summary>
+    public bool UseMagnetBooster()
+    {
+        if (!CanUseMagnet) return false;
+
+        FruitSort.FallingPixelManager fm = FruitSort.FallingPixelManager.Instance;
+        if (fm == null) return false;
+
+        // Ưu tiên giỏ còn thiếu ÍT dot nhất (đóng giỏ nhanh -> cảm giác đã tay nhất).
+        FruitSort.Bucket target = null;
+        int bestRemaining = int.MaxValue;
+        System.Collections.Generic.IReadOnlyList<FruitSort.Bucket> buckets = FruitSort.Bucket.All;
+        for (int i = 0; i < buckets.Count; i++)
+        {
+            FruitSort.Bucket bucket = buckets[i];
+            if (bucket == null || !bucket.IsActive || !bucket.CanStillFillForWin) continue;
+
+            int remaining = bucket.RemainingFillForWin;
+            if (remaining <= 0 || remaining >= bestRemaining) continue;
+            if (fm.CountActiveDotsByColor(bucket.colorId) <= 0) continue;
+
+            bestRemaining = remaining;
+            target = bucket;
+        }
+        if (target == null) return false;
+
+        int pulled = fm.MagnetPullToBucket(target);
+        if (pulled <= 0) return false;
+
+        RecordBoosterUse(ItemID.MagnetBooster);
+
+        // Feedback: giỏ mục tiêu nảy nhẹ (theo idiom DOKill(true) trước punch của Bucket).
+        target.transform.DOKill(true);
+        target.transform.DOPunchScale(Vector3.one * 0.12f, 0.25f, 6, 0.7f);
+
+        // Trạng thái đổi lớn (nhiều dot đổi hướng) -> chụp lại save ngay.
+        HAVIGAME.SaveLoad.SaveLoadManager.Save();
+        return true;
+    }
+
     /// <summary>Ghi nhận dùng booster (phục vụ analytics level_end).</summary>
     public void RecordBoosterUse(int boosterId)
     {
@@ -1043,6 +1095,14 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
             conveyors.Length,
             totalObstacles);
 
+        // Switch định tuyến: lưu nhánh đang chọn theo index băng (thứ tự dựng ổn định).
+        for (int i = 0; i < conveyors.Length; i++)
+        {
+            if (conveyors[i] == null) continue;
+            FruitSort.ConveyorSwitch routeSwitch = conveyors[i].GetComponent<FruitSort.ConveyorSwitch>();
+            if (routeSwitch != null) data.AddSwitchState(i, routeSwitch.ActiveIndex);
+        }
+
         // Obstacle: đã vỡ (hoặc đã bị destroy khỏi scene) -> lưu index để restore gỡ luôn.
         // Vật cản còn sống không cần state: số dot đang đè tự tính lại từ dot khôi phục.
         FruitSort.DotObstacle[] liveObstacles = loadedLevelRoot.GetComponentsInChildren<FruitSort.DotObstacle>(true);
@@ -1148,6 +1208,19 @@ public class ClassicLevelController : LevelController, ClassicProgressSaveData.I
         {
             GameData.ClassicProgress.Clear();
             return;
+        }
+
+        // ---- Switch định tuyến: áp lại nhánh người chơi đã chọn ----
+        for (int i = 0; i < saved.Switches.Count; i++)
+        {
+            ClassicProgressSaveData.SwitchState state = saved.Switches[i];
+            if (state.conveyorIndex < 0 || state.conveyorIndex >= conveyors.Length ||
+                conveyors[state.conveyorIndex] == null)
+                continue;
+
+            FruitSort.ConveyorSwitch routeSwitch =
+                conveyors[state.conveyorIndex].GetComponent<FruitSort.ConveyorSwitch>();
+            if (routeSwitch != null) routeSwitch.ActiveIndex = state.activeIndex;
         }
 
         // ---- Obstacle đã vỡ trước khi save -> gỡ khỏi level vừa dựng (không hiệu ứng) ----

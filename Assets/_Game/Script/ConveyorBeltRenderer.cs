@@ -81,6 +81,9 @@ namespace FruitSort
         readonly List<int> _triOuter = new List<int>();
         readonly List<int> _triInner = new List<int>();
 
+        const float JunctionZOffset = -0.01f;
+        const float RuleTileDirectionDotThreshold = 0.92f;
+
         ConveyorSpline Conveyor
         {
             get { if (_conveyor == null) _conveyor = GetComponent<ConveyorSpline>(); return _conveyor; }
@@ -224,6 +227,10 @@ namespace FruitSort
                 AppendStrip(n, +halfW + wallWidth, +halfW, zOffset + wallZOffset, wallTiles, 0f, _triOuter);
                 // Thành TRONG: từ (-halfW) về (-halfW - wallWidth).
                 AppendStrip(n, -halfW, -halfW - wallWidth, zOffset + wallZOffset, 0f, wallTiles, _triInner);
+
+                // Splitter: replace overlapping rails with a square rule tile, opened only toward linked arms.
+                AppendMultiLinkJunction(width);
+                AppendMultiIncomingJunction(width);
             }
 
             if (_mesh == null) _mesh = new Mesh { name = "ConveyorBeltMesh" };
@@ -276,6 +283,201 @@ namespace FruitSort
                 tris.Add(vi + 2);
                 tris.Add(vi + 3);
             }
+        }
+
+        void AppendMultiLinkJunction(float sourceWidth)
+        {
+            if (Conveyor.IsClosed) return;
+
+            ConveyorConnections connections = GetComponent<ConveyorConnections>();
+            if (connections == null || connections.next == null) return;
+
+            Vector3 center = Conveyor.GetPositionOnSpline(1f, 0f);
+            var targets = new List<ConveyorSpline>(connections.next.Count);
+            float maxHalfWidth = Conveyor.HalfWidth;
+            float maxWallWidth = Mathf.Abs(wallWidth);
+            float frontZOffset = zOffset + Mathf.Min(0f, wallZOffset) + JunctionZOffset;
+
+            foreach (ConveyorSpline target in connections.next)
+            {
+                if (target == null || target == Conveyor || targets.Contains(target)) continue;
+
+                Vector3 targetStart = target.GetPositionOnSpline(0f, 0f);
+                float snapTolerance = Mathf.Max(0.05f, Mathf.Max(sourceWidth, target.beltWidth) * 0.1f);
+                if (Vector2.Distance(center, targetStart) > snapTolerance) continue;
+
+                targets.Add(target);
+                maxHalfWidth = Mathf.Max(maxHalfWidth, target.HalfWidth);
+
+                ConveyorBeltRenderer targetRenderer = target.GetComponent<ConveyorBeltRenderer>();
+                if (targetRenderer != null && targetRenderer.showWalls)
+                {
+                    maxWallWidth = Mathf.Max(maxWallWidth, Mathf.Abs(targetRenderer.wallWidth));
+                    float targetFront = targetRenderer.zOffset + Mathf.Min(0f, targetRenderer.wallZOffset);
+                    frontZOffset = Mathf.Min(frontZOffset, targetFront + JunctionZOffset);
+                }
+            }
+
+            // A sequential link does not create a multi-arm overlap, so keep its current UV geometry.
+            if (targets.Count < 2) return;
+
+            AppendRuleTile(center, -Conveyor.GetTangent(1f), targets, true, sourceWidth,
+                maxHalfWidth, maxWallWidth, frontZOffset);
+        }
+
+        void AppendMultiIncomingJunction(float sourceWidth)
+        {
+            if (Conveyor.IsClosed) return;
+
+            Vector3 center = Conveyor.GetPositionOnSpline(0f, 0f);
+            ConveyorConnections[] connections = Object.FindObjectsByType<ConveyorConnections>(
+                FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var sources = new List<ConveyorSpline>();
+            float maxHalfWidth = Conveyor.HalfWidth;
+            float maxWallWidth = Mathf.Abs(wallWidth);
+            float frontZOffset = zOffset + Mathf.Min(0f, wallZOffset) + JunctionZOffset;
+
+            foreach (ConveyorConnections connection in connections)
+            {
+                if (connection == null || connection.next == null || !connection.next.Contains(Conveyor)) continue;
+
+                ConveyorSpline source = connection.GetComponent<ConveyorSpline>();
+                if (source == null || source == Conveyor || source.IsClosed || sources.Contains(source)) continue;
+
+                Vector3 sourceEnd = source.GetPositionOnSpline(1f, 0f);
+                float snapTolerance = Mathf.Max(0.05f, Mathf.Max(sourceWidth, source.beltWidth) * 0.1f);
+                if (Vector2.Distance(center, sourceEnd) > snapTolerance) continue;
+
+                sources.Add(source);
+                maxHalfWidth = Mathf.Max(maxHalfWidth, source.HalfWidth);
+
+                ConveyorBeltRenderer sourceRenderer = source.GetComponent<ConveyorBeltRenderer>();
+                if (sourceRenderer == null || !sourceRenderer.showWalls) continue;
+
+                maxWallWidth = Mathf.Max(maxWallWidth, Mathf.Abs(sourceRenderer.wallWidth));
+                float sourceFront = sourceRenderer.zOffset + Mathf.Min(0f, sourceRenderer.wallZOffset);
+                frontZOffset = Mathf.Min(frontZOffset, sourceFront + JunctionZOffset);
+            }
+
+            if (sources.Count < 2) return;
+            AppendRuleTile(center, Conveyor.GetTangent(0f), sources, false, sourceWidth,
+                maxHalfWidth, maxWallWidth, frontZOffset);
+        }
+
+        void AppendRuleTile(Vector3 center, Vector3 primaryDirection, List<ConveyorSpline> linkedArms,
+            bool linkedArmsStartAtZero, float sourceWidth, float maxHalfWidth, float maxWallWidth,
+            float frontZOffset)
+        {
+            Vector2 primary = primaryDirection;
+            if (primary.sqrMagnitude < 1e-6f) return;
+            primary.Normalize();
+
+            // Only render rule tiles for orthogonal layouts: straight, turn, T and cross rules.
+            Vector2 axisX = primary;
+            Vector2 axisY = new Vector2(-axisX.y, axisX.x);
+            bool[] openSides = new bool[4];
+            if (!MarkRuleTileSide(primary, axisX, axisY, openSides)) return;
+
+            foreach (ConveyorSpline linkedArm in linkedArms)
+            {
+                Vector3 armDirection = linkedArmsStartAtZero
+                    ? linkedArm.GetTangent(0f)
+                    : -linkedArm.GetTangent(1f);
+                if (!MarkRuleTileSide(armDirection, axisX, axisY, openSides)) return;
+            }
+
+            int openSideCount = 0;
+            foreach (bool open in openSides)
+                if (open) openSideCount++;
+            if (openSideCount < 3) return;
+
+            float halfExtent = Mathf.Max(maxHalfWidth + maxWallWidth * 0.5f, sourceWidth * 0.7f);
+            float uvScale = tilesAcrossWidth / Mathf.Max(1e-4f, sourceWidth);
+            AppendRuleTileBelt(center, axisX, axisY, halfExtent, frontZOffset, uvScale);
+
+            float tileWallWidth = Mathf.Min(maxWallWidth, halfExtent * 0.5f);
+            if (tileWallWidth <= 1e-4f) return;
+
+            Vector2[] sideDirections = { axisX, axisY, -axisX, -axisY };
+            for (int side = 0; side < sideDirections.Length; side++)
+            {
+                if (!openSides[side])
+                {
+                    // This is the exposed outer border of the rule tile, so it intentionally uses
+                    // the outer-wall material/submesh even when the two rail materials differ.
+                    AppendRuleTileWall(center, sideDirections[side], halfExtent, tileWallWidth,
+                        frontZOffset - 0.001f, uvScale);
+                }
+            }
+        }
+
+        static bool MarkRuleTileSide(Vector3 direction3, Vector2 axisX, Vector2 axisY, bool[] openSides)
+        {
+            Vector2 direction = direction3;
+            if (direction.sqrMagnitude < 1e-6f) return false;
+            direction.Normalize();
+
+            float dotX = Vector2.Dot(direction, axisX);
+            float dotY = Vector2.Dot(direction, axisY);
+            float absX = Mathf.Abs(dotX);
+            float absY = Mathf.Abs(dotY);
+            if (Mathf.Max(absX, absY) < RuleTileDirectionDotThreshold) return false;
+
+            int side = absX > absY ? (dotX >= 0f ? 0 : 2) : (dotY >= 0f ? 1 : 3);
+            openSides[side] = true;
+            return true;
+        }
+
+        void AppendRuleTileBelt(Vector3 center, Vector2 axisX, Vector2 axisY, float halfExtent,
+            float zoff, float uvScale)
+        {
+            int vi = _verts.Count;
+            float tileUvSize = halfExtent * 2f * uvScale;
+            AddJunctionVertex(center - (Vector3)(axisX + axisY) * halfExtent, zoff, Vector2.zero);
+            AddJunctionVertex(center + (Vector3)(axisX - axisY) * halfExtent, zoff,
+                new Vector2(tileUvSize, 0f));
+            AddJunctionVertex(center + (Vector3)(axisX + axisY) * halfExtent, zoff,
+                new Vector2(tileUvSize, tileUvSize));
+            AddJunctionVertex(center + (Vector3)(-axisX + axisY) * halfExtent, zoff,
+                new Vector2(0f, tileUvSize));
+
+            _triBelt.Add(vi);
+            _triBelt.Add(vi + 2);
+            _triBelt.Add(vi + 1);
+            _triBelt.Add(vi);
+            _triBelt.Add(vi + 3);
+            _triBelt.Add(vi + 2);
+        }
+
+        void AppendRuleTileWall(Vector3 center, Vector2 side, float halfExtent, float wallWidth,
+            float zoff, float uvScale)
+        {
+            int vi = _verts.Count;
+            Vector2 edge = new Vector2(-side.y, side.x);
+            Vector3 innerCenter = center + (Vector3)side * halfExtent;
+            Vector3 outerCenter = center + (Vector3)side * (halfExtent + wallWidth);
+            float tileUvSize = halfExtent * 2f * uvScale;
+            float wallUvWidth = wallWidth * uvScale;
+            AddJunctionVertex(innerCenter - (Vector3)edge * halfExtent, zoff, new Vector2(0f, 0f));
+            AddJunctionVertex(innerCenter + (Vector3)edge * halfExtent, zoff, new Vector2(0f, tileUvSize));
+            AddJunctionVertex(outerCenter + (Vector3)edge * halfExtent, zoff,
+                new Vector2(wallUvWidth, tileUvSize));
+            AddJunctionVertex(outerCenter - (Vector3)edge * halfExtent, zoff,
+                new Vector2(wallUvWidth, 0f));
+
+            _triOuter.Add(vi);
+            _triOuter.Add(vi + 1);
+            _triOuter.Add(vi + 2);
+            _triOuter.Add(vi);
+            _triOuter.Add(vi + 2);
+            _triOuter.Add(vi + 3);
+        }
+
+        void AddJunctionVertex(Vector3 world, float zoff, Vector2 uv)
+        {
+            world.z += zoff;
+            _verts.Add(transform.InverseTransformPoint(world));
+            _uvs.Add(uv);
         }
 
         void Update()

@@ -159,7 +159,6 @@ namespace FruitSort.EditorTests
             Object.DestroyImmediate(fallingObject);
         }
 
-        [Test]
         static Dot CreateDot(int colorId, Color color)
         {
             GameObject dotObject = new GameObject($"Dot {colorId}");

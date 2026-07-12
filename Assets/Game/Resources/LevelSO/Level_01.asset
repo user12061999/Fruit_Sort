@@ -18,44 +18,69 @@ MonoBehaviour:
   conveyorPrefab: {fileID: 8734211276015217555, guid: 3cac9b7b6eabe7c409e9905b9eda177d, type: 3}
   obstaclePrefab: {fileID: 7155311856979371079, guid: a9da21c10f063ce48aa14fce28997892, type: 3}
   fruitDatabase: {fileID: 11400000, guid: 667ce4a834fb82c4f94a141d2cdbbf8b, type: 2}
-  timeLimit: 50
+  timeLimit: 90
   moveLimit: 10
   conveyors:
-  - name: Belt_Track
+  - name: Belt_Feed
     beltWidth: 1
-    closed: 1
+    closed: 0
+    hasSwitch: 1
     straightEdges: 1
-    cornerRadius: 0.7
+    cornerRadius: 0.5
     cornerSegments: 12
     knots:
-    - {x: -2.2, y: 3.3, z: 0}
-    - {x: 2.2, y: 3.3, z: 0}
-    - {x: 2.2, y: 4.7, z: 0}
-    - {x: -2.2, y: 4.7, z: 0}
-  conveyorLinks: []
+    - {x: -2.6, y: 3, z: 0}
+    - {x: 2.6, y: 3, z: 0}
+    - {x: 2.6, y: 4.1, z: 0}
+  - name: Belt_Left
+    beltWidth: 1
+    closed: 0
+    hasSwitch: 0
+    straightEdges: 1
+    cornerRadius: 0.5
+    cornerSegments: 12
+    knots:
+    - {x: 2.6, y: 4.1, z: 0}
+    - {x: -0.3, y: 4.1, z: 0}
+    - {x: -0.7, y: 5.1, z: 0}
+    - {x: -2.6, y: 5.1, z: 0}
+  - name: Belt_Right
+    beltWidth: 1
+    closed: 0
+    hasSwitch: 0
+    straightEdges: 1
+    cornerRadius: 0.5
+    cornerSegments: 12
+    knots:
+    - {x: 2.6, y: 4.1, z: 0}
+    - {x: 2.6, y: 5.1, z: 0}
+    - {x: 0.4, y: 5.1, z: 0}
+  conveyorLinks:
+  - from: 0
+    to: 1
+  - from: 0
+    to: 2
   buckets:
-  - position: {x: 1.2, y: 5.9, z: 0}
+  - position: {x: 1.2, y: 6.2, z: 0}
     colorId: 1
-    maxFill: 100
+    maxFill: 30
     launchDirection: {x: 0, y: -1}
-  - position: {x: -1.2, y: 5.9, z: 0}
+  - position: {x: -1.2, y: 6.2, z: 0}
     colorId: 0
-    maxFill: 100
+    maxFill: 30
     launchDirection: {x: 0, y: -1}
   spawners:
   - position: {x: -1.2, y: 2.1, z: 0}
     fixedColorId: 0
     totalDots: 100
-    spawnCount: 50
+    spawnCount: 10
     launchDirection: {x: 0, y: 1}
     launchSpeed: 10
   - position: {x: 1.2, y: 2.1, z: 0}
     fixedColorId: 1
     totalDots: 100
-    spawnCount: 50
+    spawnCount: 10
     launchDirection: {x: 0, y: 1}
     launchSpeed: 10
   columns: []
-  obstacles:
-  - position: {x: 2.151, y: 4, z: 0}
-    requiredDots: 10
+  obstacles: []

@@ -1,0 +1,313 @@
+using System.Collections.Generic;
+using DG.Tweening;
+using UnityEngine;
+
+namespace FruitSort
+{
+    /// <summary>
+    /// Switch định tuyến tại CUỐI băng chuyền hở có >= 2 nhánh next (ConveyorConnections):
+    /// người chơi click quanh điểm cuối băng để đổi nhánh dot sẽ đi tiếp,
+    /// thay vì để FallingPixelManager chia nhánh ngẫu nhiên.
+    /// - KHÔNG tốn move (chỉ là quyết định định tuyến), nhưng vẫn notify save tiến trình.
+    /// - Input là POLLING (PointerInput) giống Bucket/ModelDotSpawner — không dùng Collider
+    ///   (dot/stream không có Rigidbody2D nên project không dùng OnTrigger).
+    /// Gắn CHUNG GameObject với ConveyorSpline + ConveyorConnections (LevelBuilder tự thêm
+    /// khi ConveyorData.hasSwitch = true).
+    /// </summary>
+    [RequireComponent(typeof(ConveyorSpline))]
+    [RequireComponent(typeof(ConveyorConnections))]
+    public class ConveyorSwitch : MonoBehaviour
+    {
+        [Tooltip("Bán kính vùng click quanh điểm cuối băng (world unit).")]
+        [Min(0.1f)] public float clickRadius = 1.1f;
+        [Tooltip("Màu mũi tên chỉ nhánh đang chọn.")]
+        public Color indicatorColor = new Color(1f, 0.85f, 0.2f);
+        [Tooltip("Chiều dài tối đa của mũi tên chỉ hướng (uốn theo nhánh được chọn).")]
+        [Min(0.2f)] public float indicatorLength = 1.6f;
+        [Tooltip("Bề rộng nét mũi tên.")]
+        [Min(0.02f)] public float indicatorWidth = 0.18f;
+
+        [Header("Nhánh chọn / không chọn")]
+        [Tooltip("Độ tối phủ lên nhánh KHÔNG được chọn (0 = không phủ, 1 = đen kịt). " +
+                 "Phủ bằng mesh overlay nên không phụ thuộc shader của băng.")]
+        [Range(0f, 1f)] public float inactiveDimAlpha = 0.45f;
+        [Tooltip("Đẩy nhánh không chọn ra sau theo Z (world) để nằm KHUẤT dưới nhánh đang chọn " +
+                 "và băng nguồn tại chỗ giao nhau.")]
+        [Min(0f)] public float inactiveBranchZOffset = 0.35f;
+
+        const string DimOverlayName = "SwitchDimOverlay";
+
+        ConveyorSpline _spline;
+        ConveyorConnections _conn;
+        LineRenderer _line;
+        Transform _indicatorRoot;
+        Material _dimMaterial;
+        int _activeIndex;
+        // Z gốc của từng nhánh (trước khi bị đẩy lùi) để trả lại khi được chọn.
+        readonly Dictionary<ConveyorSpline, float> _branchBaseZ = new Dictionary<ConveyorSpline, float>();
+
+        /// <summary>Index nhánh đang chọn trong ConveyorConnections.next (tự sanitize).</summary>
+        public int ActiveIndex
+        {
+            get { SanitizeIndex(); return _activeIndex; }
+            set { _activeIndex = Mathf.Max(0, value); SanitizeIndex(); RefreshIndicator(); }
+        }
+
+        /// <summary>Điểm cuối băng (t=1) — tâm vùng click và gốc mũi tên.</summary>
+        public Vector3 SwitchPosition
+        {
+            get
+            {
+                if (_spline == null) _spline = GetComponent<ConveyorSpline>();
+                if (_spline != null && _spline.TrySampleCenterline(1f, out Vector3 pos, out _))
+                    return pos;
+                return transform.position;
+            }
+        }
+
+        /// <summary>Số nhánh next khác null. Switch chỉ có nghĩa khi >= 2.</summary>
+        public int ValidBranchCount
+        {
+            get
+            {
+                if (_conn == null) _conn = GetComponent<ConveyorConnections>();
+                if (_conn == null || _conn.next == null) return 0;
+                int n = 0;
+                for (int i = 0; i < _conn.next.Count; i++)
+                    if (_conn.next[i] != null) n++;
+                return n;
+            }
+        }
+
+        void Awake()
+        {
+            _spline = GetComponent<ConveyorSpline>();
+            _conn = GetComponent<ConveyorConnections>();
+        }
+
+        void OnEnable()
+        {
+            RefreshIndicator();
+        }
+
+        void Update()
+        {
+            // Popup đang đè -> không nhận click gameplay (input là polling, UI không chặn được).
+            if (GameplayPause.IsPaused) return;
+            if (_spline == null || _conn == null) return;
+            // Băng khép kín không bao giờ Advance; < 2 nhánh thì không có gì để đổi.
+            if (_spline.IsClosed || ValidBranchCount < 2) return;
+            if (!PointerInput.PressedThisFrame()) return;
+
+            // UI đang đè lên -> không cho click xuyên qua xuống switch.
+            if (UIPointerGuard.IsPointerOverUI()) return;
+
+            Camera cam = Camera.main;
+            if (cam == null) return;
+            if (!PointerInput.TryGetPosition(out Vector2 pointerPos)) return;
+
+            Vector3 pivot = SwitchPosition;
+            Vector3 screen = pointerPos;
+            screen.z = Mathf.Abs(cam.transform.position.z - pivot.z);
+            Vector3 world = cam.ScreenToWorldPoint(screen);
+
+            float dx = world.x - pivot.x;
+            float dy = world.y - pivot.y;
+            if (dx * dx + dy * dy <= clickRadius * clickRadius) Toggle();
+        }
+
+        /// <summary>Nhánh đang chọn. Trả về false nếu không có nhánh hợp lệ (đích cuối).</summary>
+        public bool TryGetActiveNext(out ConveyorSpline next)
+        {
+            SanitizeIndex();
+            var list = _conn != null ? _conn.next : null;
+            next = list != null && _activeIndex >= 0 && _activeIndex < list.Count
+                ? list[_activeIndex]
+                : null;
+            return next != null;
+        }
+
+        /// <summary>Chuyển sang nhánh hợp lệ kế tiếp (vòng) + feedback + notify save.</summary>
+        public void Toggle()
+        {
+            var list = _conn != null ? _conn.next : null;
+            if (list == null || list.Count == 0) return;
+
+            for (int step = 1; step <= list.Count; step++)
+            {
+                int i = (_activeIndex + step) % list.Count;
+                if (list[i] != null) { _activeIndex = i; break; }
+            }
+
+            RefreshIndicator();
+
+            if (_indicatorRoot != null)
+            {
+                _indicatorRoot.DOKill(true); // hoàn tất punch dở để không lệch scale gốc
+                _indicatorRoot.localScale = Vector3.one;
+                _indicatorRoot.DOPunchScale(Vector3.one * 0.3f, 0.2f, 8, 0.8f);
+            }
+
+            // Trạng thái switch nằm trong save tiến trình -> ghi lại ngay sau khi đổi.
+            GamePlayManager.NotifyStateChangedForSave();
+        }
+
+        void SanitizeIndex()
+        {
+            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
+            var list = _conn != null ? _conn.next : null;
+            if (list == null || list.Count == 0) { _activeIndex = 0; return; }
+
+            _activeIndex = Mathf.Clamp(_activeIndex, 0, list.Count - 1);
+            if (list[_activeIndex] != null) return;
+
+            // Entry đang trỏ null (băng bị xoá) -> nhích tới entry hợp lệ gần nhất (vòng).
+            for (int step = 1; step < list.Count; step++)
+            {
+                int i = (_activeIndex + step) % list.Count;
+                if (list[i] != null) { _activeIndex = i; return; }
+            }
+        }
+
+        // ---- Mũi tên chỉ nhánh đang chọn (chỉ tạo lúc play, tránh đẻ object vào scene edit) ----
+
+        void EnsureIndicator()
+        {
+            if (!Application.isPlaying || _line != null) return;
+
+            var go = new GameObject("SwitchIndicator");
+            go.transform.SetParent(transform, false);
+            _indicatorRoot = go.transform;
+
+            _line = go.AddComponent<LineRenderer>();
+            _line.useWorldSpace = false; // local để punch scale root có tác dụng
+            _line.material = new Material(Shader.Find("Sprites/Default"));
+            _line.startWidth = _line.endWidth = indicatorWidth;
+            _line.numCapVertices = 4;
+            _line.numCornerVertices = 4;
+            _line.sortingOrder = 60; // nổi trên băng chuyền + dot
+        }
+
+        void RefreshIndicator()
+        {
+            if (!Application.isPlaying) return;
+            EnsureIndicator();
+            RefreshBranchVisuals();
+            if (_line == null) return;
+
+            bool show = _spline != null && !_spline.IsClosed &&
+                        ValidBranchCount >= 2 && TryGetActiveNext(out ConveyorSpline next);
+            _line.enabled = show;
+            if (!show) return;
+
+            TryGetActiveNext(out ConveyorSpline target);
+            Vector3 from = SwitchPosition;
+            _indicatorRoot.position = from;
+            _line.startColor = _line.endColor = indicatorColor;
+
+            // Mũi tên UỐN THEO chính nhánh được chọn (nhánh bắt đầu tại điểm cuối băng nguồn,
+            // nên hướng "điểm-tới-điểm" luôn suy biến — phải lấy mẫu dọc spline của nhánh).
+            const int shaftSegments = 6;
+            float targetLength = Mathf.Max(0.01f, target.GetSplineLength());
+            float tEnd = Mathf.Clamp01(indicatorLength / targetLength);
+
+            _line.positionCount = shaftSegments + 4; // shaft + (headL, tip, headR)
+            Vector3 tip = Vector3.zero;
+            Vector3 beforeTip = Vector3.zero;
+            for (int i = 0; i <= shaftSegments; i++)
+            {
+                Vector3 p = target.GetPositionOnSpline(tEnd * i / shaftSegments, 0f);
+                p.z = from.z - 0.15f; // nổi lên trước mặt băng
+                _line.SetPosition(i, _indicatorRoot.InverseTransformPoint(p));
+                if (i == shaftSegments - 1) beforeTip = p;
+                if (i == shaftSegments) tip = p;
+            }
+
+            Vector3 dir = tip - beforeTip;
+            dir = dir.sqrMagnitude > 1e-6f ? dir.normalized : Vector3.up;
+            Vector3 headL = tip + Quaternion.Euler(0f, 0f, 150f) * (dir * 0.4f);
+            Vector3 headR = tip + Quaternion.Euler(0f, 0f, -150f) * (dir * 0.4f);
+
+            // Vẽ đè lại qua tip để có 2 cạnh đầu mũi tên bằng 1 LineRenderer.
+            _line.SetPosition(shaftSegments + 1, _indicatorRoot.InverseTransformPoint(headL));
+            _line.SetPosition(shaftSegments + 2, _indicatorRoot.InverseTransformPoint(tip));
+            _line.SetPosition(shaftSegments + 3, _indicatorRoot.InverseTransformPoint(headR));
+        }
+
+        /// <summary>
+        /// Nhánh KHÔNG được chọn: phủ lớp tối + đẩy lùi ra sau (Z) để nằm khuất dưới nhánh
+        /// đang chọn tại chỗ giao nhau; nhánh được chọn: sáng, cùng mặt phẳng với băng nguồn.
+        /// Phủ tối bằng MESH OVERLAY (share mesh của băng, material Sprites/Default màu đen
+        /// bán trong suốt) vì shader băng (Mobile/Particles) không có property màu để tint.
+        /// Overlay share mesh THEO THAM CHIẾU nên tự khớp khi ConveyorBeltRenderer rebuild.
+        /// </summary>
+        void RefreshBranchVisuals()
+        {
+            if (!Application.isPlaying || _conn == null || _conn.next == null) return;
+
+            TryGetActiveNext(out ConveyorSpline active);
+            for (int i = 0; i < _conn.next.Count; i++)
+            {
+                ConveyorSpline belt = _conn.next[i];
+                if (belt == null) continue;
+                bool isActive = belt == active;
+
+                if (!_branchBaseZ.TryGetValue(belt, out float baseZ))
+                {
+                    baseZ = belt.transform.position.z;
+                    _branchBaseZ[belt] = baseZ;
+                }
+                Vector3 pos = belt.transform.position;
+                pos.z = baseZ + (isActive ? 0f : inactiveBranchZOffset);
+                belt.transform.position = pos;
+
+                Transform overlay = belt.transform.Find(DimOverlayName);
+                if (!isActive && overlay == null) overlay = CreateDimOverlay(belt);
+                if (overlay != null) overlay.gameObject.SetActive(!isActive);
+            }
+        }
+
+        Transform CreateDimOverlay(ConveyorSpline belt)
+        {
+            MeshFilter sourceFilter = belt.GetComponent<MeshFilter>();
+            if (sourceFilter == null || sourceFilter.sharedMesh == null) return null;
+
+            var go = new GameObject(DimOverlayName);
+            go.transform.SetParent(belt.transform, false);
+            // Nhích lên trước mặt băng CỦA CHÍNH NÓ một chút (vẫn sau nhánh active vì cả
+            // object nhánh inactive đã bị đẩy lùi inactiveBranchZOffset).
+            go.transform.localPosition = new Vector3(0f, 0f, -0.02f);
+
+            var overlayFilter = go.AddComponent<MeshFilter>();
+            overlayFilter.sharedMesh = sourceFilter.sharedMesh;
+
+            if (_dimMaterial == null)
+            {
+                _dimMaterial = new Material(Shader.Find("Sprites/Default"))
+                {
+                    color = new Color(0f, 0f, 0f, Mathf.Clamp01(inactiveDimAlpha))
+                };
+            }
+
+            var overlayRenderer = go.AddComponent<MeshRenderer>();
+            int subMeshCount = Mathf.Max(1, sourceFilter.sharedMesh.subMeshCount);
+            var mats = new Material[subMeshCount];
+            for (int i = 0; i < subMeshCount; i++) mats[i] = _dimMaterial;
+            overlayRenderer.sharedMaterials = mats;
+            overlayRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            overlayRenderer.receiveShadows = false;
+            return go.transform;
+        }
+
+        void OnDestroy()
+        {
+            if (_dimMaterial != null) Destroy(_dimMaterial);
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            Gizmos.color = indicatorColor;
+            Gizmos.DrawWireSphere(SwitchPosition, clickRadius);
+        }
+    }
+}

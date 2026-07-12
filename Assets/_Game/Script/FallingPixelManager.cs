@@ -523,7 +523,8 @@ namespace FruitSort
 
         /// <summary>
         /// Khi dot chạy hết băng hiện tại: chuyển sang băng được nối qua <see cref="ConveyorConnections"/>.
-        /// Nhiều nhánh (splitter) -> chọn ngẫu nhiên. Trả về false nếu không có băng kế (đích cuối).
+        /// Có <see cref="ConveyorSwitch"/> -> đi theo nhánh người chơi đang chọn;
+        /// không có -> nhiều nhánh (splitter) chọn ngẫu nhiên. Trả về false nếu không có băng kế.
         /// </summary>
         bool AdvanceToNext(Dot d)
         {
@@ -531,15 +532,26 @@ namespace FruitSort
             var conn = d.conveyor.GetComponent<ConveyorConnections>();
             if (conn == null || conn.next == null || conn.next.Count == 0) return false;
 
-            // Lọc nhánh hợp lệ rồi chọn ngẫu nhiên.
             ConveyorSpline pick = null;
-            int valid = 0;
-            for (int i = 0; i < conn.next.Count; i++)
+
+            // Switch định tuyến: người chơi quyết định nhánh thay vì random.
+            var routeSwitch = d.conveyor.GetComponent<ConveyorSwitch>();
+            if (routeSwitch != null && routeSwitch.isActiveAndEnabled &&
+                routeSwitch.TryGetActiveNext(out ConveyorSpline chosen))
             {
-                var nx = conn.next[i];
-                if (nx == null) continue;
-                valid++;
-                if (Random.Range(0, valid) == 0) pick = nx; // reservoir sampling -> phân bố đều
+                pick = chosen;
+            }
+            else
+            {
+                // Lọc nhánh hợp lệ rồi chọn ngẫu nhiên.
+                int valid = 0;
+                for (int i = 0; i < conn.next.Count; i++)
+                {
+                    var nx = conn.next[i];
+                    if (nx == null) continue;
+                    valid++;
+                    if (Random.Range(0, valid) == 0) pick = nx; // reservoir sampling -> phân bố đều
+                }
             }
             if (pick == null) return false;
 
@@ -548,6 +560,33 @@ namespace FruitSort
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -pick.HalfWidth, pick.HalfWidth);
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
             return true;
+        }
+
+        /// <summary>
+        /// Booster nam châm: hút mọi dot đang tự do (không phải InGrid/Attracting) cùng màu
+        /// với <paramref name="bucket"/> về bucket đó, qua đúng luồng reserve/attract sẵn có.
+        /// Bucket tự giới hạn số dot nhận (TryReserve fail khi đặt đủ chỗ) -> không hút thừa.
+        /// Trả về số dot đã bị hút.
+        /// </summary>
+        public int MagnetPullToBucket(Bucket bucket)
+        {
+            if (bucket == null) return 0;
+
+            int pulled = 0;
+            for (int i = 0; i < _dots.Count; i++)
+            {
+                Dot d = _dots[i];
+                if (d == null || d.markedForRemoval || d.capturedByBucket) continue;
+                if (d.colorId != bucket.colorId) continue;
+                if (d.state == DotState.InGrid || d.state == DotState.Attracting) continue;
+                if (!bucket.TryReserve(d)) break; // giỏ đã đặt đủ chỗ -> dừng
+
+                d.ignoredBucket = null;
+                d.targetBucket = bucket;
+                d.state = DotState.Attracting;
+                pulled++;
+            }
+            return pulled;
         }
 
         void StepAttracting(Dot d, float dt, int idx)

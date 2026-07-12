@@ -46,6 +46,26 @@ namespace FruitSort
         public int scorePerBucket = 100;
         public int score = 0;
 
+        [Header("Combo")]
+        [Tooltip("Khoảng cách tối đa (giây gameplay, không tính lúc popup pause) giữa 2 dot vào giỏ để nối combo.")]
+        [Min(0.1f)] public float comboWindow = 2f;
+        [Tooltip("Điểm thưởng cộng thêm cho mỗi bậc combo (dot thứ n trong chuỗi được +bonus*(n-1)).")]
+        [Min(0)] public int comboBonusPerStep = 5;
+        [Tooltip("Trần điểm thưởng combo cho 1 dot.")]
+        [Min(0)] public int comboBonusMax = 50;
+
+        [Header("Cảnh báo thiếu dot")]
+        [Tooltip("Chu kỳ (giây) tính lại cảnh báo cung/cầu dot theo màu.")]
+        [Min(0.1f)] public float supplyRiskInterval = 0.5f;
+
+        /// <summary>Mức rủi ro cung dot so với số bucket còn cần lấp.</summary>
+        public enum DotSupplyRisk
+        {
+            None = 0,    // còn dư dot
+            Tight = 1,   // vừa KHÍT — phí 1 dot là có màu không lấp nổi
+            Starved = 2  // đã THIẾU — có bucket không bao giờ lấp đủ được nữa
+        }
+
         [Header("UI")]
         public Text scoreText;
         public Text dotsLeftText;
@@ -60,6 +80,20 @@ namespace FruitSort
         /// <summary>Bắn SAU khi một action (move) được ghi nhận — dùng để cache tiến trình.</summary>
         public static event System.Action onInteractionRecorded;
 
+        /// <summary>
+        /// Bắn khi trạng thái gameplay đổi NGOÀI move (vd bật ConveyorSwitch) — cũng cần
+        /// cache tiến trình nhưng không được tốn move / khởi động đồng hồ.
+        /// </summary>
+        public static event System.Action onStateChangedForSave;
+
+        /// <summary>Bắn khi combo đổi (chỉ bắn từ combo >= 2). Tham số: bậc combo hiện tại.</summary>
+        public static event System.Action<int> onComboChanged;
+
+        /// <summary>Bắn khi mức rủi ro cung dot đổi.</summary>
+        public static event System.Action<DotSupplyRisk> onSupplyRiskChanged;
+
+        public static void NotifyStateChangedForSave() => onStateChangedForSave?.Invoke();
+
         int _movesLeft;
         int _lastScore = int.MinValue;
         int _lastOnBelt = int.MinValue;
@@ -71,6 +105,18 @@ namespace FruitSort
         bool _progressRestored;
         PlayState _state = PlayState.Playing;
         LoseReason _loseReason = LoseReason.None;
+
+        // ---- combo (runtime) ----
+        int _combo;
+        float _comboClock;                          // đồng hồ gameplay, đứng yên khi popup pause
+        float _lastSortAt = float.NegativeInfinity; // thời điểm (theo _comboClock) dot gần nhất vào giỏ
+
+        // ---- cảnh báo cung/cầu dot (runtime) ----
+        DotSupplyRisk _supplyRisk = DotSupplyRisk.None;
+        float _nextSupplyRiskAt;
+
+        public int CurrentCombo => _combo;
+        public DotSupplyRisk CurrentSupplyRisk => _supplyRisk;
 
         public int MovesLeft => HasMoveLimit ? _movesLeft : int.MaxValue;
         public bool HasMoveLimit => moveLimit > 0;
@@ -117,8 +163,13 @@ namespace FruitSort
 
         void Update()
         {
+            // Đồng hồ combo chạy theo gameplay: popup đè lên thì đứng yên,
+            // người chơi không bị đứt combo oan trong lúc xem popup.
+            if (!GameplayPause.IsPaused) _comboClock += Time.deltaTime;
+
             TickTime();
             EvaluateOutOfMoves();
+            EvaluateSupplyRisk();
             RefreshUI();
         }
 
@@ -129,8 +180,23 @@ namespace FruitSort
             timeLimit = Mathf.Max(0f, level.timeLimit);
             _hasStartedInteraction = false;
             _progressRestored = false;
+            ResetCombo();
+            ResetSupplyRisk();
             ResetMoves();
             ResetTime();
+        }
+
+        void ResetCombo()
+        {
+            _combo = 0;
+            _lastSortAt = float.NegativeInfinity;
+        }
+
+        void ResetSupplyRisk()
+        {
+            _supplyRisk = DotSupplyRisk.None;
+            // Chờ 1 nhịp sau khi dựng level để bucket/spawner đăng ký xong.
+            _nextSupplyRiskAt = Time.time + Mathf.Max(0.1f, supplyRiskInterval);
         }
 
         /// <summary>
@@ -231,7 +297,63 @@ namespace FruitSort
         public void OnDotSorted(Dot d)
         {
             if (_state != PlayState.Playing) return;
-            score += scorePerSorted;
+
+            // Combo: dot vào giỏ đủ sát dot trước -> nối chuỗi, thưởng điểm tăng dần.
+            _combo = (_comboClock - _lastSortAt <= comboWindow) ? _combo + 1 : 1;
+            _lastSortAt = _comboClock;
+
+            int comboBonus = Mathf.Min(comboBonusMax, comboBonusPerStep * (_combo - 1));
+            score += scorePerSorted + comboBonus;
+
+            if (_combo >= 2) onComboChanged?.Invoke(_combo);
+        }
+
+        /// <summary>
+        /// Cảnh báo cung/cầu dot theo màu, tính lại mỗi <see cref="supplyRiskInterval"/> giây:
+        /// so số dot còn kiếm được của mỗi màu (trên băng + trong gói + đang nhả + nằm SAI giỏ)
+        /// với số dot bucket màu đó còn cần. Thiếu -> Starved, vừa khít -> Tight.
+        /// Chỉ để CẢNH BÁO sớm cho người chơi — không tự xử thua (lose vẫn theo move/time).
+        /// </summary>
+        void EvaluateSupplyRisk()
+        {
+            if (_state != PlayState.Playing || Time.time < _nextSupplyRiskAt) return;
+            _nextSupplyRiskAt = Time.time + Mathf.Max(0.1f, supplyRiskInterval);
+
+            DotSupplyRisk risk = DotSupplyRisk.None;
+            System.Collections.Generic.IReadOnlyList<Bucket> buckets = Bucket.All;
+            FallingPixelManager fm = fallingManager != null ? fallingManager : FallingPixelManager.Instance;
+
+            for (int i = 0; i < buckets.Count; i++)
+            {
+                Bucket bucket = buckets[i];
+                // Giỏ kẹt màu sai vẫn cứu được bằng click nhả -> không tính là kẹt ở đây.
+                if (bucket == null || bucket.IsFull || !bucket.CanStillFillForWin) continue;
+
+                int needed = bucket.RemainingFillForWin;
+                if (needed <= 0) continue;
+
+                int available = 0;
+                if (fm != null) available += fm.CountActiveDotsByColor(bucket.colorId);
+                available += ModelDotSpawner.CountPendingDotsForColor(bucket.colorId);
+                available += Bucket.CountPendingReleaseDotsForColor(bucket.colorId);
+
+                // Mở gói / nhả giỏ sai màu đều TỐN move -> chỉ tính khi còn move.
+                if (!HasMoveLimit || _movesLeft > 0)
+                {
+                    available += ModelDotSpawner.CountPackagedDotsForColor(bucket.colorId);
+                    available += Bucket.CountMisplacedDotsForColor(bucket.colorId);
+                }
+
+                int slack = available - needed;
+                if (slack < 0) { risk = DotSupplyRisk.Starved; break; }
+                if (slack == 0) risk = DotSupplyRisk.Tight;
+            }
+
+            if (risk != _supplyRisk)
+            {
+                _supplyRisk = risk;
+                onSupplyRiskChanged?.Invoke(risk);
+            }
         }
 
         public void OnBucketFilled(Bucket b)

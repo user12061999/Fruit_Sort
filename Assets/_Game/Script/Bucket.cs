@@ -400,6 +400,26 @@ namespace FruitSort
             else _pendingReleaseByColor[dot.colorId] = count - 1;
         }
 
+        /// <summary>
+        /// Đếm dot màu <paramref name="colorId"/> đang nằm NHẦM trong các giỏ khác màu
+        /// (giỏ giữ màu sai — người chơi có thể click nhả để lấy lại). Dùng cho cảnh báo
+        /// cung/cầu dot của GamePlayManager; KHÔNG dùng cho check thua vì nhả tốn move.
+        /// </summary>
+        public static int CountMisplacedDotsForColor(int colorId)
+        {
+            int total = 0;
+            for (int i = 0; i < s_all.Count; i++)
+            {
+                Bucket bucket = s_all[i];
+                if (bucket == null || !bucket.isActiveAndEnabled) continue;
+                // Giỏ đang giữ đúng màu của nó -> số dot đó đã tính vào tiến độ fill.
+                if (bucket._containedColorId < 0 || bucket._containedColorId == bucket.colorId) continue;
+                if (bucket._containedColorId != colorId) continue;
+                total += bucket._contained.Count;
+            }
+            return total;
+        }
+
         public static int CountPendingReleaseDotsForColor(int colorId)
         {
             int total = 0;

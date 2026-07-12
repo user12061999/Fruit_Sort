@@ -80,6 +80,9 @@ namespace FruitSort
             public float beltWidth = 3f;
             [Tooltip("Spline khép kín (loop) hay hở.")]
             public bool closed;
+            [Tooltip("Đặt switch định tuyến ở cuối băng: người chơi click đổi nhánh dot đi tiếp. " +
+                     "Chỉ có nghĩa khi băng HỞ và có >= 2 link đi ra.")]
+            public bool hasSwitch;
             public bool straightEdges = true;
             [Min(0f)] public float cornerRadius = 0.5f;
             [Min(1)] public int cornerSegments = 8;
@@ -152,6 +155,11 @@ namespace FruitSort
                 }
 
                 hash = hash * 31 + data.conveyors.Count;
+
+                // Chỉ hash khi CÓ switch để không đổi hash của các level cũ (giữ save đang chơi dở).
+                for (int i = 0; i < data.conveyors.Count; i++)
+                    if (data.conveyors[i].hasSwitch) hash = hash * 31 + (i + 1);
+
                 return hash;
             }
         }
