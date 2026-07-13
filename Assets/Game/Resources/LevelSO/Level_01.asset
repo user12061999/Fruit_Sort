@@ -17,6 +17,7 @@ MonoBehaviour:
   columnPrefab: {fileID: 2732737590822570767, guid: 0140749776e76c544a08ff732eb76360, type: 3}
   conveyorPrefab: {fileID: 8734211276015217555, guid: 3cac9b7b6eabe7c409e9905b9eda177d, type: 3}
   obstaclePrefab: {fileID: 7155311856979371079, guid: a9da21c10f063ce48aa14fce28997892, type: 3}
+  grinderPrefab: {fileID: 5225219692814338250, guid: f6fb0e73789b1f34986407969a9b2a00, type: 3}
   fruitDatabase: {fileID: 11400000, guid: 667ce4a834fb82c4f94a141d2cdbbf8b, type: 2}
   timeLimit: 90
   moveLimit: 10
@@ -55,18 +56,56 @@ MonoBehaviour:
     - {x: 2.6, y: 4.1, z: 0}
     - {x: 2.6, y: 5.1, z: 0}
     - {x: 0.4, y: 5.1, z: 0}
+  - name: Conveyor
+    beltWidth: 1
+    closed: 0
+    hasSwitch: 0
+    straightEdges: 1
+    cornerRadius: 1
+    cornerSegments: 45
+    knots:
+    - {x: 1.5, y: -4.5, z: 0}
+    - {x: 4, y: -4.5, z: 0}
+    - {x: 4.5, y: -7, z: 0}
+  - name: Conveyor
+    beltWidth: 1
+    closed: 0
+    hasSwitch: 0
+    straightEdges: 1
+    cornerRadius: 1
+    cornerSegments: 45
+    knots:
+    - {x: -3, y: -6.5, z: 0}
+    - {x: 0.5, y: -7, z: 0}
+    - {x: 2, y: -6.5, z: 0}
+  - name: Conveyor
+    beltWidth: 1
+    closed: 0
+    hasSwitch: 1
+    straightEdges: 1
+    cornerRadius: 1
+    cornerSegments: 45
+    knots:
+    - {x: -3.5, y: -1.5, z: 0}
+    - {x: 0, y: -2, z: 0}
+    - {x: 0.5, y: -3.5, z: 0}
+    - {x: -2, y: -4.5, z: 0}
   conveyorLinks:
   - from: 0
     to: 1
   - from: 0
     to: 2
+  - from: 5
+    to: 4
+  - from: 5
+    to: 3
   buckets:
-  - position: {x: 1.2, y: 6.2, z: 0}
-    colorId: 1
-    maxFill: 30
-    launchDirection: {x: 0, y: -1}
   - position: {x: -1.2, y: 6.2, z: 0}
     colorId: 0
+    maxFill: 30
+    launchDirection: {x: 0, y: -1}
+  - position: {x: 1.2, y: 6.2, z: 0}
+    colorId: 1
     maxFill: 30
     launchDirection: {x: 0, y: -1}
   spawners:
@@ -84,3 +123,4 @@ MonoBehaviour:
     launchSpeed: 10
   columns: []
   obstacles: []
+  grinders: []

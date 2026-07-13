@@ -480,7 +480,9 @@ namespace FruitSort
                 }
                 else if (!AdvanceToNext(d))
                 {
-                    d.markedForRemoval = true;
+                    var terminal = d.conveyor.GetComponent<ConveyorConnections>();
+                    if (terminal == null || terminal.terminalGrinder == null || !terminal.terminalGrinder.TryCrush(d))
+                        d.markedForRemoval = true;
                 }
                 return;
             }
@@ -753,7 +755,7 @@ namespace FruitSort
                     _dots.RemoveAt(i);
                     if (d.targetBucket != null) d.targetBucket.CancelReservation(d);
                     // Đã vào giỏ -> bucket sở hữu, KHÔNG destroy (sẽ đi theo giỏ khi worker mang đi).
-                    if (!d.capturedByBucket)
+                    if (!d.capturedByBucket && !d.capturedByGrinder)
                         Destroy(d.gameObject);
                 }
             }

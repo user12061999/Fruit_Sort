@@ -48,6 +48,9 @@ namespace FruitSort
                     conn.next.Add(conveyors[link.to]);
             }
 
+            for (int i = 0; i < data.grinders.Count; i++)
+                BuildGrinder(data, data.grinders[i], i, conveyors, root.transform);
+
             // Connection-aware meshes must be built after the complete link topology exists.
             foreach (ConveyorSpline conveyor in conveyors)
             {
@@ -94,6 +97,24 @@ namespace FruitSort
                     BuildObstacle(data, data.obstacles[i], i, root.transform);
 
             return root;
+        }
+
+        static void BuildGrinder(LevelData level, LevelData.GrinderData data, int index, List<ConveyorSpline> conveyors, Transform parent)
+        {
+            GameObject go = level.grinderPrefab != null
+                ? Spawn(level.grinderPrefab.gameObject, parent)
+                : new GameObject();
+            if (level.grinderPrefab == null) go.transform.SetParent(parent, false);
+            go.name = $"Grinder_{index}";
+            go.transform.position = data.position;
+            var grinder = go.GetComponent<ConveyorGrinder>();
+            if (grinder == null) grinder = go.AddComponent<ConveyorGrinder>();
+            if (data.inputConveyor < 0 || data.inputConveyor >= conveyors.Count) return;
+
+            ConveyorSpline conveyor = conveyors[data.inputConveyor];
+            if (conveyor == null) return;
+            var connections = conveyor.GetComponent<ConveyorConnections>();
+            if (connections != null) connections.terminalGrinder = grinder;
         }
 
         static void BuildObstacle(LevelData data, LevelData.ObstacleData od, int index, Transform parent)

@@ -16,5 +16,7 @@ namespace FruitSort
     {
         [Tooltip("Các băng chuyền item đi tiếp tới sau khi hết băng này. Rỗng = đích cuối.")]
         public List<ConveyorSpline> next = new List<ConveyorSpline>();
+        [Tooltip("Grinder receives dots when this open conveyor has no next branch.")]
+        public ConveyorGrinder terminalGrinder;
     }
 }

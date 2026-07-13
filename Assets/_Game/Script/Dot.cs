@@ -51,6 +51,7 @@ namespace FruitSort
         [System.NonSerialized] public bool markedForRemoval = false;
         // Đã được bucket "nhận nuôi" (xếp vào giỏ) -> gỡ khỏi manager nhưng KHÔNG destroy. Không serialize.
         [System.NonSerialized] public bool capturedByBucket = false;
+        [System.NonSerialized] public bool capturedByGrinder = false;
         [System.NonSerialized] public bool sortScoreAwarded = false;
         // Sau khi bị đổ ra, bỏ qua bucket cũ cho đến khi dot đã đi ra ngoài vùng hút của bucket đó.
         [System.NonSerialized] public Bucket ignoredBucket;

@@ -26,6 +26,7 @@ namespace FruitSort
         public ConveyorSpline conveyorPrefab;
         [Tooltip("Prefab vật cản (có component DotObstacle). Chỉ cần khi level có obstacles.")]
         public DotObstacle obstaclePrefab;
+        public ConveyorGrinder grinderPrefab;
         [Tooltip("Database quả/màu. Gán xuống cho bucket/spawner nào chưa có.")]
         public FruitDatabase fruitDatabase;
 
@@ -98,6 +99,13 @@ namespace FruitSort
             [Min(1)] public int requiredDots = 10;
         }
 
+        [Serializable]
+        public class GrinderData
+        {
+            public Vector3 position;
+            public int inputConveyor = -1;
+        }
+
         /// <summary>Cuối băng <see cref="from"/> -> đầu băng <see cref="to"/> (index trong <see cref="conveyors"/>).</summary>
         [Serializable]
         public class ConveyorLink
@@ -112,6 +120,7 @@ namespace FruitSort
         public List<SpawnerData> spawners = new List<SpawnerData>();
         public List<ColumnData> columns = new List<ColumnData>();
         public List<ObstacleData> obstacles = new List<ObstacleData>();
+        public List<GrinderData> grinders = new List<GrinderData>();
 
         /// <summary>
         /// Hash các thông số gameplay của level. Snapshot tiến trình lưu hash này lúc chụp;

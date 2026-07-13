@@ -25,9 +25,9 @@ namespace FruitSort.EditorTools
     /// </summary>
     public class LevelEditorWindow : EditorWindow
     {
-        enum Mode { Select, Bucket, Spawner, Column, Conveyor, EditBelt, Obstacle, Delete }
+        enum Mode { Select, Bucket, Spawner, Column, Conveyor, EditBelt, Connect, Grinder, Obstacle, Delete }
 
-        static readonly string[] ModeLabels = { "Select", "Bucket", "Spawner", "Column", "Conveyor", "Edit Belt", "Obstacle", "Delete" };
+        static readonly string[] ModeLabels = { "Select", "Bucket", "Spawner", "Column", "Conveyor", "Edit Belt", "Connect", "Grinder", "Obstacle", "Delete" };
 
         LevelData _level;
         Mode _mode = Mode.Select;
@@ -58,6 +58,9 @@ namespace FruitSort.EditorTools
         ConveyorSpline _drawing;   // băng đang vẽ (Conveyor mode)
         ConveyorSpline _editing;   // băng đang chỉnh (EditBelt mode)
 
+        ConveyorSpline _connectFrom;
+        Vector3 _cursorPreviewPosition;
+        bool _hasCursorPreview;
         Vector2 _scroll;
         List<LevelIssue> _issues;
         bool _showPrefabs = true;
@@ -95,6 +98,8 @@ namespace FruitSort.EditorTools
             EditorGUILayout.Space();
             DrawPlacementSettings();
             EditorGUILayout.Space();
+            DrawSwitchSection();
+            EditorGUILayout.Space();
             DrawSnapSection();
             EditorGUILayout.Space();
             DrawValidationSection();
@@ -130,6 +135,7 @@ namespace FruitSort.EditorTools
             var column = (ModelDotSpawnerColumn)EditorGUILayout.ObjectField("Column", _level.columnPrefab, typeof(ModelDotSpawnerColumn), false);
             var conveyor = (ConveyorSpline)EditorGUILayout.ObjectField("Conveyor (tuỳ chọn)", _level.conveyorPrefab, typeof(ConveyorSpline), false);
             var obstacle = (DotObstacle)EditorGUILayout.ObjectField("Obstacle (tuỳ chọn)", _level.obstaclePrefab, typeof(DotObstacle), false);
+            var grinder = (ConveyorGrinder)EditorGUILayout.ObjectField("Grinder", _level.grinderPrefab, typeof(ConveyorGrinder), false);
             var db = (FruitDatabase)EditorGUILayout.ObjectField("Fruit Database", _level.fruitDatabase, typeof(FruitDatabase), false);
             if (EditorGUI.EndChangeCheck())
             {
@@ -139,6 +145,7 @@ namespace FruitSort.EditorTools
                 _level.columnPrefab = column;
                 _level.conveyorPrefab = conveyor;
                 _level.obstaclePrefab = obstacle;
+                _level.grinderPrefab = grinder;
                 _level.fruitDatabase = db;
                 EditorUtility.SetDirty(_level);
             }
@@ -153,6 +160,7 @@ namespace FruitSort.EditorTools
             {
                 if (_mode == Mode.Conveyor) FinishDrawing();
                 _mode = (Mode)next;
+                _connectFrom = null;
                 SceneView.RepaintAll();
             }
             EditorGUILayout.HelpBox(HelpFor(_mode), MessageType.Info);
@@ -258,6 +266,45 @@ namespace FruitSort.EditorTools
             }
         }
 
+        void DrawSwitchSection()
+        {
+            if (_mode != Mode.EditBelt || _editing == null) return;
+            bool current = _editing.GetComponent<ConveyorSwitch>() != null;
+            bool requested = EditorGUILayout.Toggle("Switch định tuyến", current);
+            if (requested != current)
+            {
+                if (requested) Undo.AddComponent<ConveyorSwitch>(_editing.gameObject);
+                else Undo.DestroyObjectImmediate(_editing.GetComponent<ConveyorSwitch>());
+                MarkDirty();
+                current = requested;
+            }
+            if (!current) return;
+
+            var connections = _editing.GetComponent<ConveyorConnections>();
+            EditorGUILayout.LabelField("Nhánh switch", EditorStyles.boldLabel);
+            if (GUILayout.Button("Thêm nhánh (Connect mode)"))
+            {
+                _connectFrom = _editing;
+                _mode = Mode.Connect;
+                Notify("Click conveyor đích để thêm nhánh switch");
+                SceneView.RepaintAll();
+            }
+
+            for (int i = connections.next.Count - 1; i >= 0; i--)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.ObjectField(connections.next[i], typeof(ConveyorSpline), true);
+                    if (GUILayout.Button("Xóa", GUILayout.Width(46)))
+                    {
+                        Undo.RecordObject(connections, "Remove Switch Branch");
+                        connections.next.RemoveAt(i);
+                        MarkDirty();
+                    }
+                }
+            }
+        }
+
         void DrawSnapSection()
         {
             EditorGUILayout.LabelField("Snap", EditorStyles.boldLabel);
@@ -324,7 +371,16 @@ namespace FruitSort.EditorTools
         {
             if (_level == null) return;
 
+            Event e = Event.current;
+            if (e.type == EventType.MouseMove || e.type == EventType.MouseDrag)
+            {
+                _cursorPreviewPosition = Snap(MouseWorld(e));
+                _hasCursorPreview = true;
+                sv.Repaint();
+            }
+
             DrawSceneOverlays();
+            DrawCursorPreview();
 
             if (_mode == Mode.Select)
             {
@@ -332,7 +388,6 @@ namespace FruitSort.EditorTools
                 return;
             }
 
-            Event e = Event.current;
             int ctrl = GUIUtility.GetControlID(FocusType.Passive);
             if (_mode != Mode.EditBelt)
                 HandleUtility.AddDefaultControl(ctrl); // nuốt click để không deselect/chọn nhầm
@@ -352,6 +407,8 @@ namespace FruitSort.EditorTools
                     case Mode.Obstacle: PlaceObstacle(wp); e.Use(); break;
                     case Mode.Conveyor: PlaceKnot(wp); e.Use(); break;
                     case Mode.EditBelt: _editing = PickConveyor(raw); Repaint(); e.Use(); break;
+                    case Mode.Connect: ConnectAt(raw); e.Use(); break;
+                    case Mode.Grinder: PlaceGrinder(wp); e.Use(); break;
                     case Mode.Delete: DeleteAt(raw); e.Use(); break;
                 }
             }
@@ -479,6 +536,19 @@ namespace FruitSort.EditorTools
             MarkDirty();
         }
 
+        void PlaceGrinder(Vector3 pos)
+        {
+            GameObject go = _level.grinderPrefab != null
+                ? (GameObject)PrefabUtility.InstantiatePrefab(_level.grinderPrefab.gameObject)
+                : new GameObject("Grinder");
+            Undo.RegisterCreatedObjectUndo(go, "Place Grinder");
+            go.name = "Grinder";
+            go.transform.position = pos;
+            if (go.GetComponent<ConveyorGrinder>() == null) go.AddComponent<ConveyorGrinder>();
+            Selection.activeGameObject = go;
+            MarkDirty();
+        }
+
         static ModelDotSpawnerColumn NearestColumn(Vector3 pos, float maxDist)
         {
             ModelDotSpawnerColumn best = null;
@@ -519,6 +589,7 @@ namespace FruitSort.EditorTools
             if (container == null) container = go.AddComponent<SplineContainer>();
             var spline = container.Spline;
             spline.Clear();
+            spline.Closed = _newBeltClosed;
             spline.Add(new BezierKnot((float3)go.transform.InverseTransformPoint(firstKnot)), TangentMode.AutoSmooth);
 
             var conv = go.GetComponent<ConveyorSpline>();
@@ -535,6 +606,8 @@ namespace FruitSort.EditorTools
             Undo.RecordObject(conv.Container, "Add Knot");
             conv.Container.Spline.Add(new BezierKnot((float3)conv.transform.InverseTransformPoint(world)), TangentMode.AutoSmooth);
             conv.Bake();
+            var renderer = conv.GetComponent<ConveyorBeltRenderer>();
+            if (renderer != null) renderer.RebuildMeshAndMaterials();
             MarkDirty();
         }
 
@@ -547,11 +620,8 @@ namespace FruitSort.EditorTools
             }
             else
             {
-                if (_newBeltClosed)
-                {
-                    Undo.RecordObject(_drawing.Container, "Close Belt");
-                    _drawing.Container.Spline.Closed = true;
-                }
+                Undo.RecordObject(_drawing.Container, "Set Belt Loop");
+                _drawing.Container.Spline.Closed = _newBeltClosed;
                 _drawing.Bake();
                 Selection.activeGameObject = _drawing.gameObject;
             }
@@ -634,6 +704,48 @@ namespace FruitSort.EditorTools
             return dist;
         }
 
+        void ConnectAt(Vector3 world)
+        {
+            if (_connectFrom == null)
+            {
+                _connectFrom = PickConveyor(world);
+                if (_connectFrom != null) Notify("Selected source conveyor");
+                return;
+            }
+
+            ConveyorSpline target = PickConveyor(world);
+            if (target != null && target != _connectFrom)
+            {
+                ConveyorConnections connections = _connectFrom.GetComponent<ConveyorConnections>();
+                Undo.RecordObject(connections, "Connect Conveyor");
+                if (!connections.next.Contains(target)) connections.next.Add(target);
+                connections.terminalGrinder = null;
+                _connectFrom = null;
+                MarkDirty();
+                return;
+            }
+
+            ConveyorGrinder grinder = NearestGrinder(world, 1f);
+            if (grinder == null) return;
+            ConveyorConnections grinderConnections = _connectFrom.GetComponent<ConveyorConnections>();
+            Undo.RecordObject(grinderConnections, "Connect Grinder");
+            grinderConnections.terminalGrinder = grinder;
+            _connectFrom = null;
+            MarkDirty();
+        }
+
+        static ConveyorGrinder NearestGrinder(Vector3 position, float maxDistance)
+        {
+            ConveyorGrinder best = null;
+            float bestDistance = maxDistance;
+            foreach (ConveyorGrinder grinder in Object.FindObjectsByType<ConveyorGrinder>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                float distance = Vector2.Distance(grinder.transform.position, position);
+                if (distance < bestDistance) { bestDistance = distance; best = grinder; }
+            }
+            return best;
+        }
+
         // ---------------- Delete ----------------
 
         void DeleteAt(Vector3 wp)
@@ -661,6 +773,11 @@ namespace FruitSort.EditorTools
                 float d = Vector2.Distance(o.transform.position, wp);
                 if (d < best) { best = d; target = o.gameObject; }
             }
+            foreach (var grinder in Object.FindObjectsByType<ConveyorGrinder>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                float d = Vector2.Distance(grinder.transform.position, wp);
+                if (d < best) { best = d; target = grinder.gameObject; }
+            }
             foreach (var c in Object.FindObjectsByType<ConveyorSpline>(FindObjectsSortMode.None))
             {
                 float d = DistanceToSpline(c, wp);
@@ -678,6 +795,14 @@ namespace FruitSort.EditorTools
 
         void DrawSceneOverlays()
         {
+            foreach (var grinder in Object.FindObjectsByType<ConveyorGrinder>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Color color = new Color(0.9f, 0.25f, 0.15f);
+                Handles.color = color;
+                Handles.DrawWireCube(grinder.transform.position, new Vector3(1.1f, 0.8f, 0f));
+                Handles.Label(grinder.transform.position + Vector3.up * 0.55f, "Grinder", LabelStyle(color));
+            }
+
             // Băng chuyền: 2 mép + đầu/cuối + link
             foreach (var c in Object.FindObjectsByType<ConveyorSpline>(FindObjectsSortMode.None))
             {
@@ -773,6 +898,61 @@ namespace FruitSort.EditorTools
         // ---------------- Handle xoay hướng phóng (Select mode) ----------------
 
         /// <summary>Vẽ handle kéo ở đầu mũi tên cho mọi Bucket/Spawner để xoay launchDirection.</summary>
+        void DrawCursorPreview()
+        {
+            if (!_hasCursorPreview) return;
+            Vector3 p = _cursorPreviewPosition;
+            Color color;
+
+            switch (_mode)
+            {
+                case Mode.Bucket:
+                    color = ColorFor(_bucketColorId);
+                    Handles.color = color;
+                    Handles.DrawWireDisc(p, Vector3.forward, 0.5f);
+                    Handles.Label(p + Vector3.up * 0.6f, "Bucket", LabelStyle(color));
+                    break;
+                case Mode.Spawner:
+                    color = _spawnerColorId >= 0 ? ColorFor(_spawnerColorId) : Color.white;
+                    Handles.color = color;
+                    Handles.DrawWireCube(p, new Vector3(0.7f, 0.7f, 0f));
+                    Handles.Label(p + Vector3.up * 0.5f, "Spawner", LabelStyle(color));
+                    break;
+                case Mode.Column:
+                    Handles.color = Color.gray;
+                    Handles.DrawWireCube(p, new Vector3(1f, 1f, 0f));
+                    Handles.Label(p + Vector3.up * 0.7f, "Column", LabelStyle(Color.gray));
+                    break;
+                case Mode.Obstacle:
+                    color = new Color(1f, 0.35f, 0.35f);
+                    Handles.color = color;
+                    Handles.DrawWireCube(p, new Vector3(1f, 1f, 0f));
+                    Handles.Label(p + Vector3.up * 0.6f, "Obstacle", LabelStyle(color));
+                    break;
+                case Mode.Grinder:
+                    color = new Color(0.9f, 0.25f, 0.15f);
+                    Handles.color = color;
+                    Handles.DrawWireCube(p, new Vector3(1.1f, 0.8f, 0f));
+                    Handles.Label(p + Vector3.up * 0.55f, "Grinder", LabelStyle(color));
+                    break;
+                case Mode.Conveyor:
+                    Handles.color = Color.cyan;
+                    Handles.DrawSolidDisc(p, Vector3.forward, 0.12f);
+                    if (_drawing != null && _drawing.Container.Spline.Count > 0)
+                    {
+                        var spline = _drawing.Container.Spline;
+                        Vector3 last = _drawing.transform.TransformPoint((Vector3)spline[spline.Count - 1].Position);
+                        Handles.DrawDottedLine(last, p, 4f);
+                    }
+                    break;
+                case Mode.Connect:
+                    if (_connectFrom == null) break;
+                    Handles.color = Color.magenta;
+                    Handles.DrawDottedLine(_connectFrom.GetPositionOnSpline(1f, 0f), p, 4f);
+                    break;
+            }
+        }
+
         void DrawLaunchDirHandles()
         {
             foreach (var b in Object.FindObjectsByType<Bucket>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -874,6 +1054,7 @@ namespace FruitSort.EditorTools
                 a.columnPrefab = _level.columnPrefab;
                 a.conveyorPrefab = _level.conveyorPrefab;
                 a.obstaclePrefab = _level.obstaclePrefab;
+                a.grinderPrefab = _level.grinderPrefab;
                 a.fruitDatabase = _level.fruitDatabase;
             }
             AssetDatabase.CreateAsset(a, path);
@@ -890,6 +1071,7 @@ namespace FruitSort.EditorTools
             _level.spawners.Clear();
             _level.columns.Clear();
             _level.obstacles.Clear();
+            _level.grinders.Clear();
 
             // ---- Conveyors + links ----
             var conveyors = new List<ConveyorSpline>(
@@ -924,6 +1106,21 @@ namespace FruitSort.EditorTools
                     if (nx == null || !index.ContainsKey(nx)) continue;
                     _level.conveyorLinks.Add(new LevelData.ConveyorLink { from = index[c], to = index[nx] });
                 }
+            }
+
+            foreach (var grinder in Object.FindObjectsByType<ConveyorGrinder>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                int inputConveyor = -1;
+                foreach (var conveyor in conveyors)
+                {
+                    ConveyorConnections connections = conveyor.GetComponent<ConveyorConnections>();
+                    if (connections != null && connections.terminalGrinder == grinder)
+                    {
+                        inputConveyor = index[conveyor];
+                        break;
+                    }
+                }
+                _level.grinders.Add(new LevelData.GrinderData { position = grinder.transform.position, inputConveyor = inputConveyor });
             }
 
             // ---- Buckets ----
@@ -1028,6 +1225,8 @@ namespace FruitSort.EditorTools
                 doomed.Add(c.gameObject);
             foreach (var o in Object.FindObjectsByType<DotObstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 doomed.Add(o.gameObject);
+            foreach (var grinder in Object.FindObjectsByType<ConveyorGrinder>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                doomed.Add(grinder.gameObject);
             // Root rỗng còn sót lại từ lần load trước.
             foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
                 if (go != null && go.name.StartsWith(LevelBuilder.RootName)) doomed.Add(go);
@@ -1123,6 +1322,7 @@ namespace FruitSort.EditorTools
             foreach (var s in root.GetComponentsInChildren<ModelDotSpawner>(true)) MarkPrefabOverride(s);
             foreach (var c in root.GetComponentsInChildren<ModelDotSpawnerColumn>(true)) MarkPrefabOverride(c);
             foreach (var o in root.GetComponentsInChildren<DotObstacle>(true)) MarkPrefabOverride(o);
+            foreach (var grinder in root.GetComponentsInChildren<ConveyorGrinder>(true)) MarkPrefabOverride(grinder);
             foreach (var c in root.GetComponentsInChildren<ConveyorSpline>(true))
             {
                 MarkPrefabOverride(c);
