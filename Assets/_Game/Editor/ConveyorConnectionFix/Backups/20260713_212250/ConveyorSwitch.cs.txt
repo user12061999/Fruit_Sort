@@ -193,9 +193,10 @@ namespace FruitSort
             if (!Application.isPlaying) return;
             EnsureIndicator();
             RefreshBranchVisuals();
-            // Connector liên tục trim cả cuối source và đầu target. Khi đổi route phải rebuild
-            // source + toàn bộ target: target cũ trả lại phần đầu, target mới được trim để nhận cung nối.
-            RebuildConnectionMeshes();
+            // The smooth connector belongs to the source conveyor mesh. Rebuild it after the active
+            // route changes so only the newly selected branch receives the foreground curve.
+            var beltRenderer = GetComponent<ConveyorBeltRenderer>();
+            if (beltRenderer != null) beltRenderer.RebuildMeshAndMaterials();
             if (_line == null) return;
 
             bool show = _spline != null && !_spline.IsClosed &&
@@ -235,24 +236,6 @@ namespace FruitSort
             _line.SetPosition(shaftSegments + 1, _indicatorRoot.InverseTransformPoint(headL));
             _line.SetPosition(shaftSegments + 2, _indicatorRoot.InverseTransformPoint(tip));
             _line.SetPosition(shaftSegments + 3, _indicatorRoot.InverseTransformPoint(headR));
-        }
-
-
-        void RebuildConnectionMeshes()
-        {
-            ConveyorBeltRenderer sourceRenderer = GetComponent<ConveyorBeltRenderer>();
-            if (sourceRenderer != null) sourceRenderer.RebuildMeshAndMaterials();
-
-            if (_conn == null || _conn.next == null) return;
-            var rebuilt = new HashSet<ConveyorBeltRenderer>();
-            for (int i = 0; i < _conn.next.Count; i++)
-            {
-                ConveyorSpline target = _conn.next[i];
-                if (target == null) continue;
-                ConveyorBeltRenderer targetRenderer = target.GetComponent<ConveyorBeltRenderer>();
-                if (targetRenderer == null || !rebuilt.Add(targetRenderer)) continue;
-                targetRenderer.RebuildMeshAndMaterials();
-            }
         }
 
         /// <summary>

@@ -38,17 +38,13 @@ namespace FruitSort
                  "Cần bật để các kết nối vuông góc không bị khuyết phần góc ngoài.")]
         public bool renderConnections = true;
         [Tooltip("Số đoạn chia của mesh bo tại điểm nối. 16-24 thường đủ mượt.")]
-        [Min(4)] public int connectionSegments = 24;
-        [Tooltip("Bán kính bo tối thiểu tại điểm nối (world unit). Với góc 90 độ, đây cũng là khoảng trim trên mỗi conveyor.")]
+        [Min(4)] public int connectionSegments = 20;
+        [Tooltip("Chiều dài tối thiểu lấy vào mỗi conveyor để tạo cung nối (world unit).")]
         [Min(0.05f)] public float connectionMinLead = 0.9f;
-        [Tooltip("Bán kính bo tự động theo NỬA bề rộng băng. 1.1-1.5 thường cho mép trong đẹp và không tự cắt.")]
-        [Min(0.5f)] public float connectionWidthFactor = 1.25f;
-        [Tooltip("Giới hạn phần trăm chiều dài spline được trim để tạo đoạn nối.")]
+        [Tooltip("Lead tối thiểu theo bề rộng băng. Giá trị lớn hơn tạo góc bo rộng hơn và tránh mép trong tự cắt.")]
+        [Min(0.5f)] public float connectionWidthFactor = 1.15f;
+        [Tooltip("Giới hạn phần trăm chiều dài spline được dùng cho đoạn nối, tránh connector ăn quá sâu vào conveyor ngắn.")]
         [Range(0.05f, 0.5f)] public float connectionMaxProgress = 0.35f;
-        [Tooltip("Hai hướng có dot lớn hơn giá trị này được coi là nối thẳng. Nối thẳng không tạo disk/round patch nên không bị phình.")]
-        [Range(0.9f, 0.9999f)] public float straightConnectionDot = 0.995f;
-        [Tooltip("Khoảng lệch endpoint tối đa vẫn được coi là cùng một junction, tính theo tỉ lệ bề rộng lớn nhất.")]
-        [Min(0.01f)] public float connectionSnapWidthFactor = 0.08f;
 
         [Header("Texture mapping")]
         [Tooltip("Số lần lặp texture theo CHIỀU RỘNG băng. Tiling dọc tự tính để giữ ô vuông.")]
@@ -97,32 +93,9 @@ namespace FruitSort
         readonly List<int> _triOuter = new List<int>();
         readonly List<int> _triInner = new List<int>();
 
-        readonly List<Vector3> _connectionPath = new List<Vector3>(64);
-        readonly List<float> _connectionDistances = new List<float>(64);
-        readonly List<ConnectionGeometry> _outgoingConnections = new List<ConnectionGeometry>(4);
-
-        struct ConnectionGeometry
-        {
-            public ConveyorSpline target;
-            public ConveyorBeltRenderer targetRenderer;
-            public bool straight;
-            public bool exactFillet;
-            public Vector3 sourceEnd;
-            public Vector3 targetStart;
-            public Vector3 junction;
-            public Vector3 sourceDirection;
-            public Vector3 targetDirection;
-            public Vector3 sourceTangentPoint;
-            public Vector3 targetTangentPoint;
-            public Vector3 arcCenter;
-            public float turnAngle;
-            public float turnSign;
-            public float sourceTrimProgress;
-            public float targetTrimProgress;
-        }
-
         const float JunctionZOffset = -0.01f;
         const float RuleTileDirectionDotThreshold = 0.92f;
+        const float CubicQuarterCircleHandle = 0.55228475f;
 
         ConveyorSpline Conveyor
         {
@@ -250,53 +223,35 @@ namespace FruitSort
             float width = Mathf.Max(1e-4f, Conveyor.beltWidth);
             float length = Conveyor.GetSplineLength();
 
+            // Giữ ô texture vuông: số lần lặp dọc = tilesAcrossWidth * (dài / rộng).
             _vTiles = tilesAcrossWidth * (length / width);
+            // Số lần lặp ngang trên thành (theo bề rộng thành) để giữ ô vuông trên thành.
             float wallTiles = tilesAcrossWidth * (Mathf.Abs(wallWidth) / width);
 
             _verts.Clear(); _uvs.Clear();
             _triBelt.Clear(); _triOuter.Clear(); _triInner.Clear();
 
-            CollectOutgoingConnections(_outgoingConnections);
-            float startProgress = renderConnections ? GetIncomingTrimProgress(Conveyor) : 0f;
-            float endTrimProgress = 0f;
-            if (renderConnections)
-            {
-                for (int i = 0; i < _outgoingConnections.Count; i++)
-                {
-                    ConnectionGeometry geometry = _outgoingConnections[i];
-                    if (!geometry.straight)
-                        endTrimProgress = Mathf.Max(endTrimProgress, geometry.sourceTrimProgress);
-                }
-            }
-
-            float endProgress = 1f - endTrimProgress;
-            if (endProgress < startProgress + 0.001f)
-            {
-                float middle = (startProgress + endProgress) * 0.5f;
-                startProgress = Mathf.Max(0f, middle - 0.0005f);
-                endProgress = Mathf.Min(1f, middle + 0.0005f);
-            }
-
-            // Mesh chính được trim tại junction. Connector sẽ điền chính xác phần đã trim,
-            // vì vậy không còn hai strip đầy đủ chồng lên nhau và làm góc bị phình.
-            AppendStripRange(n, startProgress, endProgress, +halfW, -halfW,
-                zOffset, tilesAcrossWidth, 0f, _triBelt);
+            // Mặt băng: mép trái (+halfW) -> mép phải (-halfW).
+            AppendStrip(n, +halfW, -halfW, zOffset, tilesAcrossWidth, 0f, _triBelt);
 
             if (showWalls)
             {
-                AppendStripRange(n, startProgress, endProgress,
-                    +halfW + wallWidth, +halfW,
-                    zOffset + wallZOffset, wallTiles, 0f, _triOuter);
-                AppendStripRange(n, startProgress, endProgress,
-                    -halfW, -halfW - wallWidth,
-                    zOffset + wallZOffset, 0f, wallTiles, _triInner);
+                // Thành NGOÀI: từ (+halfW + wallWidth) về (+halfW). Giữ latA > latB như mặt băng.
+                AppendStrip(n, +halfW + wallWidth, +halfW, zOffset + wallZOffset, wallTiles, 0f, _triOuter);
+                // Thành TRONG: từ (-halfW) về (-halfW - wallWidth).
+                AppendStrip(n, -halfW, -halfW - wallWidth, zOffset + wallZOffset, 0f, wallTiles, _triInner);
             }
 
-            if (renderConnections)
-                AppendOutgoingConnections(_outgoingConnections, endTrimProgress, width);
+            // Dải nối phải được tạo cả với kết nối 1-1 và cả khi không dùng wall.
+            // Trước đây hàm này chỉ chạy trong showWalls và chỉ nhận >= 2 nhánh, nên kết nối
+            // vuông góc giữa hai conveyor bị hở một mảng tam giác ở góc ngoài.
+            if (renderConnections) AppendOutgoingConnections(width);
 
             if (showWalls)
+            {
+                // Merger nhiều nhánh vẫn dùng rule tile để che phần giao nhau.
                 AppendMultiIncomingJunction(width);
+            }
 
             if (_mesh == null) _mesh = new Mesh { name = "ConveyorBeltMesh" };
             _mesh.Clear();
@@ -318,18 +273,14 @@ namespace FruitSort
 
         // Thêm 1 dải dọc spline giữa 2 mức lệch ngang latA (UV u = uA) và latB (UV u = uB).
         // Đỉnh và tam giác nối tiếp vào _verts/_uvs và list tam giác của submesh tương ứng.
-        void AppendStripRange(int n, float startProgress, float endProgress,
-            float latA, float latB, float zoff, float uA, float uB, List<int> tris)
+        void AppendStrip(int n, float latA, float latB, float zoff, float uA, float uB, List<int> tris)
         {
             int baseIndex = _verts.Count;
-            startProgress = Mathf.Clamp01(startProgress);
-            endProgress = Mathf.Clamp01(endProgress);
-
             for (int i = 0; i <= n; i++)
             {
-                float normalized = i / (float)n;
-                float t = Mathf.Lerp(startProgress, endProgress, normalized);
+                float t = i / (float)n;
 
+                // GetPositionOnSpline trả về WORLD -> đưa về LOCAL của object này cho MeshFilter.
                 Vector3 wa = Conveyor.GetPositionOnSpline(t, latA);
                 Vector3 wb = Conveyor.GetPositionOnSpline(t, latB);
                 wa.z += zoff; wb.z += zoff;
@@ -354,348 +305,174 @@ namespace FruitSort
             }
         }
 
-        void CollectOutgoingConnections(List<ConnectionGeometry> output)
+        void AppendOutgoingConnections(float sourceWidth)
         {
-            output.Clear();
             if (Conveyor.IsClosed) return;
 
             ConveyorConnections connections = GetComponent<ConveyorConnections>();
             if (connections == null || connections.next == null) return;
 
+            var targets = new List<ConveyorSpline>(connections.next.Count);
+
+            foreach (ConveyorSpline target in connections.next)
+            {
+                if (target == null || target == Conveyor || targets.Contains(target)) continue;
+                // A runtime link is authoritative. The smooth overlay intentionally bridges even
+                // a small visual gap, then blends toward the target's first straight lead-in.
+                targets.Add(target);
+            }
+
+            // Cả kết nối tuần tự 1-1 cũng cần connector. Hai mesh chữ nhật gặp nhau ở góc 90°
+            // không thể tự tạo phần bo ngoài chỉ bằng cách trùng endpoint.
+            if (targets.Count == 0) return;
+
+            AppendSmoothConnections(targets, sourceWidth);
+        }
+
+        void AppendSmoothConnections(List<ConveyorSpline> targets, float sourceWidth)
+        {
             ConveyorSpline activeTarget = null;
             ConveyorSwitch routeSwitch = GetComponent<ConveyorSwitch>();
             if (Application.isPlaying && routeSwitch != null)
                 routeSwitch.TryGetActiveNext(out activeTarget);
 
-            for (int i = 0; i < connections.next.Count; i++)
+            Vector3 sourceEnd = Conveyor.GetPositionOnSpline(1f, 0f);
+            float patchRadius = Conveyor.HalfWidth;
+            float patchZ = zOffset + JunctionZOffset - 0.002f;
+            bool needsRoundPatch = false;
+
+            foreach (ConveyorSpline target in targets)
             {
-                ConveyorSpline target = connections.next[i];
-                if (target == null || target == Conveyor) continue;
                 if (activeTarget != null && target != activeTarget) continue;
 
-                bool duplicate = false;
-                for (int j = 0; j < output.Count; j++)
+                ConveyorBeltRenderer targetRenderer = target.GetComponent<ConveyorBeltRenderer>();
+                if (targetRenderer == null) continue;
+
+                float desiredLead = GetDesiredConnectionLead(target);
+                float sourceProgress = GetConnectionProgress(Conveyor, desiredLead);
+                float targetProgress = GetTargetLeadProgress(target, desiredLead);
+                AppendSmoothConnection(target, sourceProgress, targetProgress, sourceWidth, targetRenderer,
+                    desiredLead);
+
+                // Khi hai endpoint trùng hoặc gần trùng, hai strip riêng chỉ tạo hai đầu cắt phẳng.
+                // Thêm một disk tại joint tương đương round-line-join, lấp đúng phần tư góc còn thiếu.
+                Vector3 targetStart = target.GetPositionOnSpline(0f, 0f);
+                float snapTolerance = Mathf.Max(0.05f,
+                    Mathf.Max(Conveyor.beltWidth, target.beltWidth) * 0.2f);
+                if (Vector2.Distance(sourceEnd, targetStart) <= snapTolerance)
                 {
-                    if (output[j].target == target) { duplicate = true; break; }
-                }
-                if (duplicate) continue;
-
-                if (TryBuildConnectionGeometry(Conveyor, target, out ConnectionGeometry geometry))
-                    output.Add(geometry);
-            }
-        }
-
-        void AppendOutgoingConnections(List<ConnectionGeometry> geometries,
-            float sharedSourceTrimProgress, float sourceWidth)
-        {
-            for (int i = 0; i < geometries.Count; i++)
-            {
-                ConnectionGeometry geometry = geometries[i];
-                float sharedTargetTrimProgress = GetIncomingTrimProgress(geometry.target);
-                AppendConnectionPath(geometry, sharedSourceTrimProgress,
-                    sharedTargetTrimProgress, sourceWidth);
-            }
-        }
-
-        float GetIncomingTrimProgress(ConveyorSpline target)
-        {
-            if (target == null || target.IsClosed) return 0f;
-
-            float trimProgress = 0f;
-            ConveyorConnections[] allConnections = Object.FindObjectsByType<ConveyorConnections>(
-                FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-
-            for (int i = 0; i < allConnections.Length; i++)
-            {
-                ConveyorConnections connection = allConnections[i];
-                if (connection == null || connection.next == null ||
-                    !connection.next.Contains(target)) continue;
-
-                ConveyorSpline source = connection.GetComponent<ConveyorSpline>();
-                if (source == null || source == target || source.IsClosed) continue;
-                if (!IsRuntimeRouteActive(source, target)) continue;
-
-                ConveyorBeltRenderer sourceRenderer = source.GetComponent<ConveyorBeltRenderer>();
-                if (sourceRenderer != null &&
-                    sourceRenderer.TryBuildConnectionGeometry(source, target,
-                        out ConnectionGeometry geometry) && !geometry.straight)
-                {
-                    trimProgress = Mathf.Max(trimProgress, geometry.targetTrimProgress);
+                    needsRoundPatch = true;
+                    patchRadius = Mathf.Max(patchRadius, target.HalfWidth);
+                    patchZ = Mathf.Min(patchZ, targetRenderer.zOffset + JunctionZOffset - 0.002f);
                 }
             }
 
-            return Mathf.Clamp01(trimProgress);
+            if (needsRoundPatch)
+                AppendRoundJunctionPatch(sourceEnd, patchRadius * 1.01f, patchZ, sourceWidth, _vTiles);
         }
 
-        static bool IsRuntimeRouteActive(ConveyorSpline source, ConveyorSpline target)
+        float GetDesiredConnectionLead(ConveyorSpline target)
         {
-            if (!Application.isPlaying) return true;
-            ConveyorSwitch routeSwitch = source.GetComponent<ConveyorSwitch>();
-            if (routeSwitch == null || routeSwitch.ValidBranchCount < 2) return true;
-            return routeSwitch.TryGetActiveNext(out ConveyorSpline active) && active == target;
+            float widestBelt = Mathf.Max(Conveyor.beltWidth, target != null ? target.beltWidth : 0f);
+            // Lead phải tăng theo width. Nếu centerline quay gắt hơn bán kính của nửa bề rộng,
+            // mép trong sẽ tự cắt và mép ngoài không phủ hết góc.
+            return Mathf.Max(connectionMinLead, widestBelt * connectionWidthFactor);
         }
 
-        bool TryBuildConnectionGeometry(ConveyorSpline source, ConveyorSpline target,
-            out ConnectionGeometry geometry)
+        float GetConnectionProgress(ConveyorSpline conveyor, float desiredLead)
         {
-            geometry = default;
-            if (source == null || target == null || source == target ||
-                source.IsClosed || target.IsClosed) return false;
-
-            ConveyorBeltRenderer targetRenderer = target.GetComponent<ConveyorBeltRenderer>();
-            if (targetRenderer == null) return false;
-
-            Vector3 sourceEnd = source.GetPositionOnSpline(1f, 0f);
-            Vector3 targetStart = target.GetPositionOnSpline(0f, 0f);
-            Vector3 sourceDirection = source.GetTangent(1f);
-            Vector3 targetDirection = target.GetTangent(0f);
-            sourceDirection.z = 0f;
-            targetDirection.z = 0f;
-            if (sourceDirection.sqrMagnitude < 1e-6f || targetDirection.sqrMagnitude < 1e-6f)
-                return false;
-            sourceDirection.Normalize();
-            targetDirection.Normalize();
-
-            float directionDot = Mathf.Clamp(Vector3.Dot(sourceDirection, targetDirection), -1f, 1f);
-            bool straight = directionDot >= straightConnectionDot;
-
-            geometry.target = target;
-            geometry.targetRenderer = targetRenderer;
-            geometry.straight = straight;
-            geometry.sourceEnd = sourceEnd;
-            geometry.targetStart = targetStart;
-            geometry.sourceDirection = sourceDirection;
-            geometry.targetDirection = targetDirection;
-
-            // Nối thẳng không trim và không thêm round patch. Nếu endpoint trùng nhau,
-            // hai strip gặp nhau chính xác nên không cần sinh thêm geometry.
-            if (straight) return true;
-
-            float turnAngle = Mathf.Acos(directionDot);
-            float tanHalf = Mathf.Tan(turnAngle * 0.5f);
-            float cross = sourceDirection.x * targetDirection.y -
-                          sourceDirection.y * targetDirection.x;
-            // U-turn hoặc hai hướng gần song song ngược chiều không có fillet ổn định tại một junction.
-            if (Mathf.Abs(cross) <= 1e-4f || tanHalf <= 1e-4f || directionDot <= -0.98f)
-                return false;
-            float turnSign = Mathf.Sign(cross);
-
-            float widestHalfWidth = Mathf.Max(source.HalfWidth, target.HalfWidth);
-            float desiredRadius = Mathf.Max(connectionMinLead,
-                widestHalfWidth * connectionWidthFactor);
-
-            float sourceAvailable = GetEndpointStraightLead(source, false);
-            float targetAvailable = GetEndpointStraightLead(target, true);
-            float maxTrimDistance = Mathf.Max(0.01f,
-                Mathf.Min(sourceAvailable, targetAvailable));
-
-            float trimDistance = desiredRadius * tanHalf;
-            if (trimDistance > maxTrimDistance)
-                trimDistance = maxTrimDistance;
-
-            float radius = trimDistance / tanHalf;
-            float sourceLength = Mathf.Max(0.01f, source.GetSplineLength());
-            float targetLength = Mathf.Max(0.01f, target.GetSplineLength());
-            float sourceTrimProgress = Mathf.Clamp(trimDistance / sourceLength,
-                0.001f, connectionMaxProgress);
-            float targetTrimProgress = Mathf.Clamp(trimDistance / targetLength,
-                0.001f, connectionMaxProgress);
-
-            // Re-evaluate bằng progress đã clamp để điểm trim của mesh và connector trùng tuyệt đối.
-            Vector3 sourceTangentPoint = source.GetPositionOnSpline(1f - sourceTrimProgress, 0f);
-            Vector3 targetTangentPoint = target.GetPositionOnSpline(targetTrimProgress, 0f);
-
-            float snapTolerance = Mathf.Max(0.05f,
-                Mathf.Max(source.beltWidth, target.beltWidth) * connectionSnapWidthFactor);
-            bool snapped = Vector2.Distance(sourceEnd, targetStart) <= snapTolerance;
-            Vector3 junction = snapped ? (sourceEnd + targetStart) * 0.5f : sourceEnd;
-
-            // Với layout endpoint đã snap, dựng cung tròn fillet tiếp tuyến chính xác.
-            // Nếu endpoint lệch nhiều, fallback path bên dưới dùng Hermite, không dùng disk.
-            bool exactFillet = false;
-            Vector3 arcCenter = Vector3.zero;
-            if (snapped)
-            {
-                Vector3 leftNormal = new Vector3(-sourceDirection.y, sourceDirection.x, 0f);
-                arcCenter = sourceTangentPoint + leftNormal * (turnSign * radius);
-
-                Vector3 radialStart = sourceTangentPoint - arcCenter;
-                float cos = Mathf.Cos(turnSign * turnAngle);
-                float sin = Mathf.Sin(turnSign * turnAngle);
-                Vector3 expectedArcEnd = arcCenter + new Vector3(
-                    radialStart.x * cos - radialStart.y * sin,
-                    radialStart.x * sin + radialStart.y * cos,
-                    0f);
-
-                // Chỉ dùng cung tròn khi cả hai tiếp điểm thực sự khớp. Nếu không,
-                // fallback cubic sẽ tránh một đoạn gãy nhỏ ở cuối cung.
-                exactFillet = Vector2.Distance(expectedArcEnd, targetTangentPoint) <=
-                               Mathf.Max(0.01f, snapTolerance * 0.25f);
-            }
-
-            geometry.exactFillet = exactFillet;
-            geometry.junction = junction;
-            geometry.sourceTangentPoint = sourceTangentPoint;
-            geometry.targetTangentPoint = targetTangentPoint;
-            geometry.arcCenter = arcCenter;
-            geometry.turnAngle = turnAngle;
-            geometry.turnSign = turnSign;
-            geometry.sourceTrimProgress = sourceTrimProgress;
-            geometry.targetTrimProgress = targetTrimProgress;
-            return true;
+            float length = Mathf.Max(0.01f, conveyor.GetSplineLength());
+            return Mathf.Clamp(desiredLead / length, 0.001f, connectionMaxProgress);
         }
 
-        float GetEndpointStraightLead(ConveyorSpline conveyor, bool atStart)
+        // Lấy một đoạn lead-in trên target nhưng dừng trước corner đầu tiên của chính target,
+        // để connector và mesh target chồng nhẹ lên nhau thay vì tạo khe hở.
+        float GetTargetLeadProgress(ConveyorSpline target, float desiredLead)
         {
-            float fallback = conveyor.GetSplineLength() * connectionMaxProgress;
-            if (conveyor.Container == null || conveyor.Container.Spline == null ||
-                conveyor.Container.Spline.Count < 2)
-                return Mathf.Max(0.01f, fallback);
+            if (target.Container == null || target.Container.Spline == null ||
+                target.Container.Spline.Count < 2)
+                return GetConnectionProgress(target, desiredLead);
 
-            int count = conveyor.Container.Spline.Count;
-            int indexA = atStart ? 0 : count - 1;
-            int indexB = atStart ? 1 : count - 2;
-            Vector3 a = conveyor.transform.TransformPoint(
-                (Vector3)conveyor.Container.Spline[indexA].Position);
-            Vector3 b = conveyor.transform.TransformPoint(
-                (Vector3)conveyor.Container.Spline[indexB].Position);
-            float segmentLength = Vector2.Distance(a, b);
+            Vector3 start = target.GetPositionOnSpline(0f, 0f);
+            Vector3 nextKnot = target.transform.TransformPoint((Vector3)target.Container.Spline[1].Position);
+            float firstSegmentLength = Vector2.Distance(start, nextKnot);
+            if (firstSegmentLength <= 1e-4f) return GetConnectionProgress(target, desiredLead);
 
-            // Chừa lại một phần trước corner nội bộ tiếp theo để hai bo góc không đè lên nhau.
-            float reserve = Mathf.Max(0f, conveyor.cornerRadius * 1.05f);
-            float usable = Mathf.Max(0.01f, segmentLength - reserve);
-            return Mathf.Min(usable, fallback);
+            float beforeCorner = Mathf.Max(0.05f, firstSegmentLength - target.cornerRadius * 1.05f);
+            float leadDistance = Mathf.Min(desiredLead, firstSegmentLength * 0.8f, beforeCorner);
+            if (leadDistance <= 1e-4f) return GetConnectionProgress(target, desiredLead);
+
+            Vector3 leadPoint = start + (nextKnot - start).normalized * leadDistance;
+            return Mathf.Clamp(target.FindClosestProgress(leadPoint, out _), 0.001f, connectionMaxProgress);
         }
 
-        void AppendConnectionPath(ConnectionGeometry geometry,
-            float sharedSourceTrimProgress, float sharedTargetTrimProgress, float sourceWidth)
+        void AppendSmoothConnection(ConveyorSpline target, float sourceProgress, float targetProgress,
+            float sourceWidth, ConveyorBeltRenderer targetRenderer, float desiredLead)
         {
-            _connectionPath.Clear();
+            Vector3 start = Conveyor.GetPositionOnSpline(1f - sourceProgress, 0f);
+            Vector3 end = target.GetPositionOnSpline(targetProgress, 0f);
+            Vector3 startTangent = Conveyor.GetTangent(1f - sourceProgress);
+            Vector3 endTangent = target.GetTangent(targetProgress);
+            float distance = Vector2.Distance(start, end);
+            if (distance <= 1e-4f) return;
 
-            Vector3 pathStart = Conveyor.GetPositionOnSpline(
-                1f - Mathf.Clamp(sharedSourceTrimProgress, 0f, connectionMaxProgress), 0f);
-            Vector3 pathEnd = geometry.target.GetPositionOnSpline(
-                Mathf.Clamp(sharedTargetTrimProgress, 0f, connectionMaxProgress), 0f);
-
-            AddConnectionPoint(pathStart);
-
-            if (geometry.straight)
-            {
-                AddConnectionPoint(geometry.sourceEnd);
-                AddConnectionPoint(geometry.targetStart);
-                AddConnectionPoint(pathEnd);
-            }
-            else if (geometry.exactFillet)
-            {
-                AddConnectionPoint(geometry.sourceTangentPoint);
-
-                Vector3 radialStart = geometry.sourceTangentPoint - geometry.arcCenter;
-                float startAngle = Mathf.Atan2(radialStart.y, radialStart.x);
-                int arcSegments = Mathf.Max(4,
-                    Mathf.CeilToInt(connectionSegments * geometry.turnAngle / (Mathf.PI * 0.5f)));
-
-                for (int i = 1; i <= arcSegments; i++)
-                {
-                    float f = i / (float)arcSegments;
-                    float angle = startAngle + geometry.turnSign * geometry.turnAngle * f;
-                    float radius = radialStart.magnitude;
-                    Vector3 point = geometry.arcCenter +
-                                    new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * radius;
-                    AddConnectionPoint(point);
-                }
-
-                // Dùng điểm thật trên target thay vì chỉ dựa vào control point. Đây là phần
-                // "mượn" lead-in của conveyor được kết nối để đường render liên tục.
-                AddConnectionPoint(geometry.targetTangentPoint);
-                AddConnectionPoint(pathEnd);
-            }
-            else
-            {
-                // Endpoint không snap: blend Hermite giữa hai điểm trim, không chèn disk.
-                Vector3 start = geometry.sourceTangentPoint;
-                Vector3 end = geometry.targetTangentPoint;
-                AddConnectionPoint(start);
-                float distance = Vector2.Distance(start, end);
-                float handle = distance * 0.45f;
-                Vector3 controlA = start + geometry.sourceDirection * handle;
-                Vector3 controlB = end - geometry.targetDirection * handle;
-                int count = Mathf.Max(4, connectionSegments);
-                for (int i = 1; i <= count; i++)
-                {
-                    float t = i / (float)count;
-                    AddConnectionPoint(EvaluateCubicBezier(start, controlA, controlB, end, t));
-                }
-                AddConnectionPoint(pathEnd);
-            }
-
-            if (_connectionPath.Count < 2) return;
+            // 0.55228475 là hệ số control-handle gần đúng cho cung tròn 90° bằng cubic Bezier.
+            // Clamp theo khoảng cách để không overshoot khi hai endpoint rất gần nhau.
+            float handleLength = Mathf.Min(desiredLead * CubicQuarterCircleHandle, distance * 0.48f);
+            Vector3 controlA = start + startTangent * handleLength;
+            Vector3 controlB = end - endTangent * handleLength;
 
             float sourceHalfWidth = Conveyor.HalfWidth;
-            float targetHalfWidth = geometry.target.HalfWidth;
-            float sourceWallWidth = showWalls ? Mathf.Abs(wallWidth) : 0f;
-            float targetWallWidth = geometry.targetRenderer.showWalls
-                ? Mathf.Abs(geometry.targetRenderer.wallWidth)
+            float targetHalfWidth = target.HalfWidth;
+            // The source rails can be much wider than the radius of a 90-degree switch turn.
+            // Cap only the visual blend rail so it cannot fold over itself on the inside of the curve.
+            float smoothRailCap = Mathf.Min(sourceHalfWidth, targetHalfWidth) * 0.3f;
+            float sourceWallWidth = Mathf.Min(Mathf.Abs(wallWidth), smoothRailCap);
+            // A target may opt out of its own rails, but its incoming belt still needs a
+            // continuous visual bridge. Taper the source rail away at the target endpoint.
+            float targetWallWidth = targetRenderer.showWalls
+                ? Mathf.Min(Mathf.Abs(targetRenderer.wallWidth), smoothRailCap)
                 : 0f;
-            float beltZ = Mathf.Min(zOffset, geometry.targetRenderer.zOffset) + JunctionZOffset;
+            float beltZ = Mathf.Min(zOffset, targetRenderer.zOffset) + JunctionZOffset;
             float wallZ = Mathf.Min(zOffset + wallZOffset,
-                geometry.targetRenderer.zOffset + geometry.targetRenderer.wallZOffset) +
-                JunctionZOffset - 0.001f;
-            float startV = (1f - sharedSourceTrimProgress) * _vTiles;
+                targetRenderer.zOffset + targetRenderer.wallZOffset) + JunctionZOffset - 0.001f;
+            float startV = (1f - sourceProgress) * _vTiles;
 
-            AppendConnectionStrip(_connectionPath, sourceHalfWidth, targetHalfWidth,
+            AppendSmoothStrip(start, controlA, controlB, end, sourceHalfWidth, targetHalfWidth,
                 sourceWallWidth, targetWallWidth, 0, beltZ, sourceWidth, startV, _triBelt);
 
             if (showWalls)
             {
-                AppendConnectionStrip(_connectionPath, sourceHalfWidth, targetHalfWidth,
+                AppendSmoothStrip(start, controlA, controlB, end, sourceHalfWidth, targetHalfWidth,
                     sourceWallWidth, targetWallWidth, 1, wallZ, sourceWidth, startV, _triOuter);
-                AppendConnectionStrip(_connectionPath, sourceHalfWidth, targetHalfWidth,
+                AppendSmoothStrip(start, controlA, controlB, end, sourceHalfWidth, targetHalfWidth,
                     sourceWallWidth, targetWallWidth, 2, wallZ, sourceWidth, startV, _triInner);
             }
         }
 
-        void AddConnectionPoint(Vector3 point)
-        {
-            if (_connectionPath.Count == 0 ||
-                (_connectionPath[_connectionPath.Count - 1] - point).sqrMagnitude > 1e-8f)
-                _connectionPath.Add(point);
-        }
-
         // stripType: 0 = belt, 1 = outer rail (+normal), 2 = inner rail (-normal).
-        void AppendConnectionStrip(List<Vector3> centers,
-            float sourceHalfWidth, float targetHalfWidth,
-            float sourceWallWidth, float targetWallWidth,
+        void AppendSmoothStrip(Vector3 start, Vector3 controlA, Vector3 controlB, Vector3 end,
+            float sourceHalfWidth, float targetHalfWidth, float sourceWallWidth, float targetWallWidth,
             int stripType, float zoff, float sourceWidth, float startV, List<int> tris)
         {
-            int count = centers.Count;
-            if (count < 2) return;
-
-            _connectionDistances.Clear();
-            _connectionDistances.Add(0f);
-            float totalLength = 0f;
-            for (int i = 1; i < count; i++)
-            {
-                totalLength += Vector2.Distance(centers[i - 1], centers[i]);
-                _connectionDistances.Add(totalLength);
-            }
-            if (totalLength <= 1e-5f) return;
-
             int baseIndex = _verts.Count;
-            for (int i = 0; i < count; i++)
+            float v = startV;
+            Vector3 previous = start;
+            for (int i = 0; i <= connectionSegments; i++)
             {
-                Vector3 tangent;
-                if (i == 0) tangent = centers[1] - centers[0];
-                else if (i == count - 1) tangent = centers[count - 1] - centers[count - 2];
-                else tangent = centers[i + 1] - centers[i - 1];
-                tangent.z = 0f;
-                if (tangent.sqrMagnitude < 1e-6f) tangent = geometrySafeDirection(centers, i);
+                float t = i / (float)connectionSegments;
+                Vector3 position = EvaluateCubicBezier(start, controlA, controlB, end, t);
+                Vector3 tangent = EvaluateCubicBezierTangent(start, controlA, controlB, end, t);
+                if (tangent.sqrMagnitude < 1e-6f) tangent = end - start;
                 tangent.Normalize();
                 Vector3 normal = new Vector3(-tangent.y, tangent.x, 0f);
 
-                float blend = _connectionDistances[i] / totalLength;
-                float halfWidth = Mathf.Lerp(sourceHalfWidth, targetHalfWidth, blend);
-                float currentWallWidth = Mathf.Lerp(sourceWallWidth, targetWallWidth, blend);
+                if (i > 0) v += Vector2.Distance(previous, position) * tilesAcrossWidth /
+                    Mathf.Max(1e-4f, sourceWidth);
+                previous = position;
 
+                float halfWidth = Mathf.Lerp(sourceHalfWidth, targetHalfWidth, t);
+                float wallWidth = Mathf.Lerp(sourceWallWidth, targetWallWidth, t);
                 float offsetA;
                 float offsetB;
                 float uA;
@@ -709,33 +486,30 @@ namespace FruitSort
                 }
                 else if (stripType == 1)
                 {
-                    offsetA = halfWidth + currentWallWidth;
+                    offsetA = halfWidth + wallWidth;
                     offsetB = halfWidth;
-                    uA = currentWallWidth * tilesAcrossWidth / Mathf.Max(1e-4f, sourceWidth);
+                    uA = wallWidth * tilesAcrossWidth / Mathf.Max(1e-4f, sourceWidth);
                     uB = 0f;
                 }
                 else
                 {
                     offsetA = -halfWidth;
-                    offsetB = -halfWidth - currentWallWidth;
+                    offsetB = -halfWidth - wallWidth;
                     uA = 0f;
-                    uB = currentWallWidth * tilesAcrossWidth / Mathf.Max(1e-4f, sourceWidth);
+                    uB = wallWidth * tilesAcrossWidth / Mathf.Max(1e-4f, sourceWidth);
                 }
 
-                Vector3 worldA = centers[i] + normal * offsetA;
-                Vector3 worldB = centers[i] + normal * offsetB;
+                Vector3 worldA = position + normal * offsetA;
+                Vector3 worldB = position + normal * offsetB;
                 worldA.z += zoff;
                 worldB.z += zoff;
                 _verts.Add(transform.InverseTransformPoint(worldA));
                 _verts.Add(transform.InverseTransformPoint(worldB));
-
-                float v = startV + _connectionDistances[i] * tilesAcrossWidth /
-                    Mathf.Max(1e-4f, sourceWidth);
                 _uvs.Add(new Vector2(uA, v));
                 _uvs.Add(new Vector2(uB, v));
             }
 
-            for (int i = 0; i < count - 1; i++)
+            for (int i = 0; i < connectionSegments; i++)
             {
                 int vi = baseIndex + i * 2;
                 tris.Add(vi);
@@ -747,31 +521,56 @@ namespace FruitSort
             }
         }
 
-        static Vector3 geometrySafeDirection(List<Vector3> centers, int index)
+        // Fan tròn tại endpoint chung. Với hai strip vuông góc, union của hai strip + disk
+        // chính là một round join hoàn chỉnh, không còn phần tư góc bị khuyết.
+        void AppendRoundJunctionPatch(Vector3 center, float radius, float zoff, float sourceWidth,
+            float centerV)
         {
-            for (int offset = 1; offset < centers.Count; offset++)
-            {
-                int next = Mathf.Min(centers.Count - 1, index + offset);
-                Vector3 direction = centers[next] - centers[index];
-                direction.z = 0f;
-                if (direction.sqrMagnitude > 1e-6f) return direction;
+            int fanSegments = Mathf.Max(12, connectionSegments);
+            float uvPerWorld = tilesAcrossWidth / Mathf.Max(1e-4f, sourceWidth);
+            int centerIndex = _verts.Count;
 
-                int previous = Mathf.Max(0, index - offset);
-                direction = centers[index] - centers[previous];
-                direction.z = 0f;
-                if (direction.sqrMagnitude > 1e-6f) return direction;
+            Vector3 worldCenter = center;
+            worldCenter.z += zoff;
+            _verts.Add(transform.InverseTransformPoint(worldCenter));
+            _uvs.Add(new Vector2(tilesAcrossWidth * 0.5f, centerV));
+
+            int ringStart = _verts.Count;
+            for (int i = 0; i <= fanSegments; i++)
+            {
+                float angle = Mathf.PI * 2f * i / fanSegments;
+                Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                Vector3 world = center + (Vector3)(direction * radius);
+                world.z += zoff;
+                _verts.Add(transform.InverseTransformPoint(world));
+                _uvs.Add(new Vector2(
+                    tilesAcrossWidth * 0.5f + direction.x * radius * uvPerWorld,
+                    centerV + direction.y * radius * uvPerWorld));
             }
-            return Vector3.right;
+
+            // Winding -Z để cùng chiều với AppendStrip trong setup camera 2D hiện tại.
+            for (int i = 0; i < fanSegments; i++)
+            {
+                _triBelt.Add(centerIndex);
+                _triBelt.Add(ringStart + i + 1);
+                _triBelt.Add(ringStart + i);
+            }
         }
 
-        static Vector3 EvaluateCubicBezier(Vector3 start, Vector3 controlA, Vector3 controlB,
+        static Vector3 EvaluateCubicBezier(Vector3 start, Vector3 controlA, Vector3 controlB, Vector3 end,
+            float t)
+        {
+            float inverseT = 1f - t;
+            return inverseT * inverseT * inverseT * start + 3f * inverseT * inverseT * t * controlA +
+                3f * inverseT * t * t * controlB + t * t * t * end;
+        }
+
+        static Vector3 EvaluateCubicBezierTangent(Vector3 start, Vector3 controlA, Vector3 controlB,
             Vector3 end, float t)
         {
             float inverseT = 1f - t;
-            return inverseT * inverseT * inverseT * start +
-                   3f * inverseT * inverseT * t * controlA +
-                   3f * inverseT * t * t * controlB +
-                   t * t * t * end;
+            return 3f * inverseT * inverseT * (controlA - start) +
+                6f * inverseT * t * (controlB - controlA) + 3f * t * t * (end - controlB);
         }
 
         void AppendMultiIncomingJunction(float sourceWidth)

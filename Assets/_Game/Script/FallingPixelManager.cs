@@ -751,6 +751,7 @@ namespace FruitSort
                 if (d.markedForRemoval)
                 {
                     _dots.RemoveAt(i);
+                    if (d.targetBucket != null) d.targetBucket.CancelReservation(d);
                     // Đã vào giỏ -> bucket sở hữu, KHÔNG destroy (sẽ đi theo giỏ khi worker mang đi).
                     if (!d.capturedByBucket)
                         Destroy(d.gameObject);

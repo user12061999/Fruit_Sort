@@ -1054,6 +1054,7 @@ MonoBehaviour:
   rows: 13
   fillAmount: 0
   cellGap: 0
+  tint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &5261861657073283899
 GameObject:
   m_ObjectHideFlags: 0

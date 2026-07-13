@@ -1,0 +1,2 @@
+Assets/_Game/Script/ConveyorBeltRenderer.cs|ConveyorBeltRenderer.cs.txt
+Assets/_Game/Script/ConveyorSwitch.cs|ConveyorSwitch.cs.txt

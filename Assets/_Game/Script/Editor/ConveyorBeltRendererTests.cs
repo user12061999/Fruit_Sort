@@ -27,69 +27,18 @@ namespace FruitSort.EditorTests
                 Mesh mesh = sourceTransform.GetComponent<MeshFilter>().sharedMesh;
                 int stripCount = renderer.showWalls ? 3 : 1;
                 int baseVertexCount = (Mathf.Max(2, renderer.segments) + 1) * 2 * stripCount;
-
-                Assert.That(mesh.vertexCount, Is.GreaterThan(baseVertexCount),
-                    "A multi-link source needs extra junction geometry beyond its normal belt strips.");
-                Assert.That(mesh.vertexCount, Is.EqualTo(baseVertexCount + 8),
-                    "A three-way rule tile is one square belt face plus one closed wall side, not a radial disk.");
-
-                Vector3 endpoint = sourceTransform.GetComponent<ConveyorSpline>()
-                    .GetPositionOnSpline(1f, 0f);
-                Vector3 tileCenter = mesh.vertices
-                    .Skip(baseVertexCount)
-                    .Take(4)
-                    .Select(sourceTransform.TransformPoint)
-                    .Aggregate(Vector3.zero, (sum, vertex) => sum + vertex) / 4f;
-
-                Assert.That(Vector2.Distance(tileCenter, endpoint), Is.LessThan(0.001f),
-                    "The square rule tile must be centered on the shared linked endpoint.");
-                Assert.That(mesh.normals.All(normal => normal.z < -0.99f), Is.True,
-                    "Junction disk and border triangles must face the same side as the belt strips.");
+                const int smoothSegments = 12;
+                const int stripsPerBranch = 3; // belt + two rails
 
                 ConveyorSpline source = sourceTransform.GetComponent<ConveyorSpline>();
                 ConveyorConnections connections = sourceTransform.GetComponent<ConveyorConnections>();
-                var armDirections = new List<Vector2> { -source.GetTangent(1f) };
-                var armHalfWidths = new List<float> { source.HalfWidth };
-                foreach (ConveyorSpline target in connections.next)
-                {
-                    armDirections.Add(target.GetTangent(0f));
-                    armHalfWidths.Add(target.HalfWidth);
-                }
+                int expectedExtraVertexCount = connections.next.Count * stripsPerBranch *
+                    (smoothSegments + 1) * 2;
 
-                int[] outerTriangles = mesh.GetTriangles(1);
-                int junctionWallTriangleCount = 0;
-                Vector2 expectedClosedSide = source.GetTangent(1f).normalized;
-                for (int i = 0; i < outerTriangles.Length; i += 3)
-                {
-                    if (outerTriangles[i] < baseVertexCount && outerTriangles[i + 1] < baseVertexCount &&
-                        outerTriangles[i + 2] < baseVertexCount)
-                        continue;
-
-                    junctionWallTriangleCount++;
-
-                    Vector3 centroid = sourceTransform.TransformPoint(
-                        (mesh.vertices[outerTriangles[i]] + mesh.vertices[outerTriangles[i + 1]] +
-                         mesh.vertices[outerTriangles[i + 2]]) / 3f);
-                    Vector2 relative = centroid - endpoint;
-                    float closedProjection = Vector2.Dot(relative, expectedClosedSide);
-                    float closedLateralDistance = Mathf.Abs(
-                        expectedClosedSide.x * relative.y - expectedClosedSide.y * relative.x);
-                    Assert.That(closedProjection, Is.GreaterThan(closedLateralDistance),
-                        "The rule tile must close the side opposite the incoming conveyor arm.");
-                    for (int arm = 0; arm < armDirections.Count; arm++)
-                    {
-                        Vector2 direction = armDirections[arm].normalized;
-                        if (Vector2.Dot(relative, direction) <= 0f) continue;
-
-                        float perpendicularDistance = Mathf.Abs(
-                            direction.x * relative.y - direction.y * relative.x);
-                        Assert.That(perpendicularDistance,
-                            Is.GreaterThanOrEqualTo(armHalfWidths[arm] - 0.03f),
-                            "Junction border geometry must leave every linked belt lane open.");
-                    }
-                }
-                Assert.That(junctionWallTriangleCount, Is.EqualTo(2),
-                    "A three-way rule tile has one closed wall quad.");
+                Assert.That(mesh.vertexCount, Is.EqualTo(baseVertexCount + expectedExtraVertexCount),
+                    "Each switch branch must be rendered as a smooth belt strip with two curved rails.");
+                Assert.That(mesh.normals.All(normal => normal.z < -0.99f), Is.True,
+                    "Smooth switch strips and rails must face the same side as the base conveyor.");
             }
             finally
             {

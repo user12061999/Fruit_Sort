@@ -9,21 +9,23 @@ public sealed class SpriteGridFill : MonoBehaviour
     [SerializeField, Min(1)] private int rows = 4;
     [SerializeField, Range(0f, 1f)] private float fillAmount = 1f;
     [SerializeField, Range(0f, 0.45f)] private float cellGap = 0.02f;
+    [SerializeField] private Color tint = Color.white;
 
     private static readonly int ColumnsId = Shader.PropertyToID("_Columns");
     private static readonly int RowsId = Shader.PropertyToID("_Rows");
     private static readonly int FillAmountId = Shader.PropertyToID("_FillAmount");
     private static readonly int CellGapId = Shader.PropertyToID("_CellGap");
     private static readonly int LocalBoundsId = Shader.PropertyToID("_LocalBounds");
+    private static readonly int TintId = Shader.PropertyToID("_Color");
 
     private SpriteRenderer spriteRenderer;
     private MaterialPropertyBlock propertyBlock;
-    private Material materialInstance;
     private Sprite appliedSprite;
     private int appliedColumns = -1;
     private int appliedRows = -1;
     private float appliedFillAmount = -1f;
     private float appliedCellGap = -1f;
+    private Color appliedTint = new Color(-1f, -1f, -1f, -1f);
 
     public float FillAmount
     {
@@ -61,6 +63,16 @@ public sealed class SpriteGridFill : MonoBehaviour
         set
         {
             cellGap = Mathf.Clamp(value, 0f, 0.45f);
+            Apply(force: true);
+        }
+    }
+
+    public Color Tint
+    {
+        get => tint;
+        set
+        {
+            tint = value;
             Apply(force: true);
         }
     }
@@ -115,14 +127,6 @@ public sealed class SpriteGridFill : MonoBehaviour
         Apply(force: true);
     }
 
-    private void OnDestroy()
-    {
-        if (materialInstance == null) return;
-        if (Application.isPlaying) Destroy(materialInstance);
-        else DestroyImmediate(materialInstance);
-        materialInstance = null;
-    }
-
     private void OnValidate()
     {
         columns = Mathf.Max(1, columns);
@@ -161,7 +165,8 @@ public sealed class SpriteGridFill : MonoBehaviour
             || columns != appliedColumns
             || rows != appliedRows
             || !Mathf.Approximately(fillAmount, appliedFillAmount)
-            || !Mathf.Approximately(cellGap, appliedCellGap);
+            || !Mathf.Approximately(cellGap, appliedCellGap)
+            || tint != appliedTint;
 
         if (!changed)
             return;
@@ -172,47 +177,28 @@ public sealed class SpriteGridFill : MonoBehaviour
         size.y = Mathf.Max(size.y, 0.00001f);
         Vector4 localBounds = new Vector4(bounds.min.x, bounds.min.y, size.x, size.y);
 
-        if (CanCreateMaterialInstance(Application.isPlaying, gameObject.scene.IsValid()))
-        {
-            // LÚC PLAY: dùng MATERIAL INSTANCE thay vì MaterialPropertyBlock.
-            // SRP Batcher / sprite batching của URP 2D (Unity 6) có thể BỎ QUA property block
-            // khi sprite bị gom batch -> sprite tàng hình dù block đã set đúng (chỉ hiện lại
-            // 1 frame mỗi khi SetPropertyBlock phá batch). Material instance luôn được tôn trọng.
-            if (materialInstance == null)
-            {
-                materialInstance = spriteRenderer.material; // tự tạo instance 1 lần
-                spriteRenderer.SetPropertyBlock(null);      // xoá block cũ kẻo nó đè material
-            }
-            materialInstance.SetFloat(ColumnsId, columns);
-            materialInstance.SetFloat(RowsId, rows);
-            materialInstance.SetFloat(FillAmountId, fillAmount);
-            materialInstance.SetFloat(CellGapId, cellGap);
-            materialInstance.SetVector(LocalBoundsId, localBounds);
-        }
-        else
-        {
-            // EDIT MODE: giữ property block để không tạo material instance leak vào editor.
-            if (propertyBlock == null)
-                propertyBlock = new MaterialPropertyBlock();
+        if (propertyBlock == null)
+            propertyBlock = new MaterialPropertyBlock();
 
-            spriteRenderer.GetPropertyBlock(propertyBlock);
-            propertyBlock.SetFloat(ColumnsId, columns);
-            propertyBlock.SetFloat(RowsId, rows);
-            propertyBlock.SetFloat(FillAmountId, fillAmount);
-            propertyBlock.SetFloat(CellGapId, cellGap);
-            propertyBlock.SetVector(LocalBoundsId, localBounds);
-            spriteRenderer.SetPropertyBlock(propertyBlock);
-        }
+        spriteRenderer.GetPropertyBlock(propertyBlock);
+        propertyBlock.SetFloat(ColumnsId, columns);
+        propertyBlock.SetFloat(RowsId, rows);
+        propertyBlock.SetFloat(FillAmountId, fillAmount);
+        propertyBlock.SetFloat(CellGapId, cellGap);
+        propertyBlock.SetVector(LocalBoundsId, localBounds);
+        propertyBlock.SetColor(TintId, tint);
+        spriteRenderer.SetPropertyBlock(propertyBlock);
 
         appliedSprite = sprite;
         appliedColumns = columns;
         appliedRows = rows;
         appliedFillAmount = fillAmount;
         appliedCellGap = cellGap;
+        appliedTint = tint;
     }
 
     private static bool CanCreateMaterialInstance(bool isPlaying, bool isSceneObject)
     {
-        return isPlaying && isSceneObject;
+        return false;
     }
 }

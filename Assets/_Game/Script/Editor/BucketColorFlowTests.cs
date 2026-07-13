@@ -50,6 +50,53 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
+        public void Reservation_CannotBeOwnedByTwoBuckets()
+        {
+            var otherObject = new GameObject("Other bucket under test");
+            otherObject.AddComponent<SpriteRenderer>();
+            Bucket other = otherObject.AddComponent<Bucket>();
+            other.maxFill = 3;
+            Dot dot = CreateDot(2, Color.blue);
+
+            Assert.That(_bucket.TryReserve(dot), Is.True);
+            Assert.That(other.TryReserve(dot), Is.False);
+            Assert.That(dot.targetBucket, Is.SameAs(_bucket));
+
+            Object.DestroyImmediate(dot.gameObject);
+            Object.DestroyImmediate(otherObject);
+        }
+
+        [Test]
+        public void CancellingReservation_ReleasesDotOwnership()
+        {
+            Dot dot = CreateDot(2, Color.blue);
+            Assert.That(_bucket.TryReserve(dot), Is.True);
+
+            _bucket.CancelReservation(dot);
+
+            Assert.That(dot.targetBucket, Is.Null);
+            Object.DestroyImmediate(dot.gameObject);
+        }
+
+        [Test]
+        public void ReservationCapacity_DoesNotExceedRemainingFill()
+        {
+            _bucket.maxFill = 5;
+            _bucket.currentFill = 4;
+            Dot first = CreateDot(2, Color.blue);
+            Dot second = CreateDot(2, Color.blue);
+            Dot third = CreateDot(2, Color.blue);
+
+            Assert.That(_bucket.TryReserve(first), Is.True);
+            Assert.That(_bucket.TryReserve(second), Is.False);
+            Assert.That(_bucket.TryReserve(third), Is.False);
+
+            Object.DestroyImmediate(first.gameObject);
+            Object.DestroyImmediate(second.gameObject);
+            Object.DestroyImmediate(third.gameObject);
+        }
+
+        [Test]
         public void WrongColor_TintsBodyButCorrectColorKeepsWhite()
         {
             Dot wrongDot = CreateDot(2, Color.blue);
@@ -240,20 +287,19 @@ namespace FruitSort.EditorTests
             Assert.That(bucket.gridFill.GetComponent<SpriteRenderer>(), Is.SameAs(bucket.body));
         }
 
-        [TestCase(true, true, true)]
-        [TestCase(true, false, false)]
-        [TestCase(false, true, false)]
-        public void MaterialInstance_IsOnlyCreatedForRuntimeSceneObjects(
+        [TestCase(true, true)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        public void MaterialInstance_IsNeverCreatedForGridFill(
             bool isPlaying,
-            bool isSceneObject,
-            bool expected)
+            bool isSceneObject)
         {
             MethodInfo method = typeof(SpriteGridFill).GetMethod(
                 "CanCreateMaterialInstance",
                 BindingFlags.Static | BindingFlags.NonPublic);
 
             Assert.That(method, Is.Not.Null);
-            Assert.That(method.Invoke(null, new object[] { isPlaying, isSceneObject }), Is.EqualTo(expected));
+            Assert.That(method.Invoke(null, new object[] { isPlaying, isSceneObject }), Is.False);
         }
 
         Dot CreateDot(int colorId, Color color)

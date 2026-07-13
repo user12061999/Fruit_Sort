@@ -6,6 +6,15 @@ using TMPro;
 
 namespace FruitSort
 {
+    public enum BucketState
+    {
+        Empty,
+        Receiving,
+        Releasing,
+        Completed,
+        Disabled
+    }
+
     /// <summary>
     /// Cage/Bucket dùng SpriteGridFill: mỗi dot nhảy vào một ô rồi tăng fill của shader.
     /// Dot CÙNG MÀU đi vào VÙNG VA CHẠM (Collider2D chỉnh trong editor) sẽ bị hút vào và
@@ -118,6 +127,21 @@ namespace FruitSort
         bool _full;
         bool _releasing;
 
+        public int TargetColorId => colorId;
+        public int? LockedColorId => _containedColorId >= 0 ? _containedColorId : null;
+        public int CurrentFill => currentFill;
+        public int VisibleFill => _visibleFill;
+        public int ReservedCount => _reserved.Count;
+        public BucketState State
+        {
+            get
+            {
+                if (!isActiveAndEnabled) return BucketState.Disabled;
+                if (_full) return BucketState.Completed;
+                if (_releasing) return BucketState.Releasing;
+                return currentFill > 0 || _reserved.Count > 0 ? BucketState.Receiving : BucketState.Empty;
+            }
+        }
         public bool IsActive => isActiveAndEnabled && !_full && !_releasing && currentFill < maxFill;
         public float FillRatio => maxFill > 0 ? Mathf.Clamp01(currentFill / (float)maxFill) : 1f;
         public Vector3 MouthPosition => mouth != null ? mouth.position : transform.position;
@@ -175,6 +199,7 @@ namespace FruitSort
 
         void OnDisable()
         {
+            CancelAllReservations();
             s_all.Remove(this);
             _pendingReleaseByColor.Clear();
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
@@ -208,6 +233,7 @@ namespace FruitSort
         {
             if (dot == null) return false;
             if (_reserved.Contains(dot)) return true;
+            if (dot.targetBucket != null && dot.targetBucket != this) return false;
             if (!CanAcceptColor(dot.colorId)) return false;
 
             if (_containedColorId < 0)
@@ -217,6 +243,7 @@ namespace FruitSort
             }
 
             _reserved.Add(dot);
+            dot.targetBucket = this;
             return true;
         }
 
@@ -228,7 +255,24 @@ namespace FruitSort
 
         public void CancelReservation(Dot dot)
         {
-            if (dot != null) _reserved.Remove(dot);
+            if (dot != null)
+            {
+                _reserved.Remove(dot);
+                if (dot.targetBucket == this) dot.targetBucket = null;
+            }
+            ResetColorLockIfEmpty();
+        }
+
+        void CancelAllReservations()
+        {
+            foreach (Dot dot in _reserved)
+            {
+                if (dot == null) continue;
+                if (dot.targetBucket == this) dot.targetBucket = null;
+                dot.ignoredBucket = this;
+                dot.state = DotState.OnBelt;
+            }
+            _reserved.Clear();
             ResetColorLockIfEmpty();
         }
 
@@ -247,6 +291,7 @@ namespace FruitSort
             }
 
             _reserved.Remove(d);
+            if (d.targetBucket == this) d.targetBucket = null;
             Transform root = contentRoot != null ? contentRoot : transform;
             int slot = currentFill;
             _contained.Add(d);
@@ -316,14 +361,7 @@ namespace FruitSort
                 return false;
 
             // Hủy đặt chỗ các dot đang bay tới (chưa vào giỏ) -> trả về belt.
-            foreach (Dot dot in new List<Dot>(_reserved))
-            {
-                if (dot == null) continue;
-                dot.targetBucket = null;
-                dot.ignoredBucket = this;
-                dot.state = DotState.OnBelt;
-            }
-            _reserved.Clear();
+            CancelAllReservations();
 
             List<Dot> returning = new List<Dot>(_contained);
             _contained.Clear();

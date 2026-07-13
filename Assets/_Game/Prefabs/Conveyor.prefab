@@ -222,8 +222,6 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
-  - {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
-  - {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -265,7 +263,7 @@ MonoBehaviour:
   zOffset: 0.05
   tilesAcrossWidth: 1
   scrollSpeed: 0.5
-  showWalls: 1
+  showWalls: 0
   wallWidth: 0.5
   wallZOffset: 0
   scrollWalls: 0
