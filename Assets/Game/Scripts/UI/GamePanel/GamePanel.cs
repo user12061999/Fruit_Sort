@@ -44,6 +44,8 @@ public class GamePanel : UIFrame
     private void Start()
     {
         btnPause.onClick.AddListener(PauseGame);
+        ApplyItemIcon(btnFreezeTime, ItemID.TimeFreezeBooster);
+        ApplyItemIcon(btnMagnet, ItemID.MagnetBooster);
         if (btnFreezeTime != null) btnFreezeTime.onClick.AddListener(OnClickFreezeTime);
         if (btnMagnet != null) btnMagnet.onClick.AddListener(OnClickMagnet);
         EventDispatcher.AddListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
@@ -53,6 +55,24 @@ public class GamePanel : UIFrame
         GamePlayManager.onComboChanged += OnComboChanged;
         GamePlayManager.onSupplyRiskChanged += OnSupplyRiskChanged;
     }
+
+    private static void ApplyItemIcon(Button button, int itemId)
+    {
+        if (button == null || button.image == null)
+        {
+            return;
+        }
+
+        Sprite icon = ItemManager.GetIcon(itemId);
+        if (icon == null)
+        {
+            return;
+        }
+
+        button.image.sprite = icon;
+        button.image.preserveAspect = true;
+    }
+
     private void OnDestroy()
     {
         EventDispatcher.RemoveListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
