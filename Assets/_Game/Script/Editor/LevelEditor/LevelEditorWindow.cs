@@ -262,23 +262,88 @@ namespace FruitSort.EditorTools
                         EditorUtility.SetDirty(_editing.Container);
                         MarkDirty();
                     }
+
+                    DrawSelectedConveyorComponentSettings();
                     break;
+            }
+        }
+
+        void DrawSelectedConveyorComponentSettings()
+        {
+            if (_editing == null)
+                return;
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Component settings", EditorStyles.boldLabel);
+            bool changed = false;
+            changed |= DrawAllSerializedProperties(_editing);
+            changed |= DrawAllSerializedProperties(_editing.GetComponent<ConveyorBeltRenderer>());
+            changed |= DrawAllSerializedProperties(_editing.GetComponent<ConveyorConnections>());
+
+            if (!changed)
+                return;
+
+            _editing.Bake();
+            ConveyorConnections.RebuildNetwork(_editing);
+            EditorUtility.SetDirty(_editing);
+            MarkDirty();
+        }
+
+        static bool DrawAllSerializedProperties(Component component)
+        {
+            if (component == null)
+                return false;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField(component.GetType().Name, EditorStyles.boldLabel);
+                var serialized = new SerializedObject(component);
+                serialized.Update();
+                SerializedProperty property = serialized.GetIterator();
+                bool enterChildren = true;
+                while (property.NextVisible(enterChildren))
+                {
+                    enterChildren = false;
+                    if (property.propertyPath == "m_Script")
+                        continue;
+
+                    EditorGUILayout.PropertyField(property, true);
+                }
+
+                return serialized.ApplyModifiedProperties();
             }
         }
 
         void DrawSwitchSection()
         {
             if (_mode != Mode.EditBelt || _editing == null) return;
-            bool current = _editing.GetComponent<ConveyorSwitch>() != null;
-            bool requested = EditorGUILayout.Toggle("Switch định tuyến", current);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("ConveyorSwitch", EditorStyles.boldLabel);
+
+            ConveyorSwitch routeSwitch = _editing.GetComponent<ConveyorSwitch>();
+            bool current = routeSwitch != null;
+            bool requested = EditorGUILayout.Toggle("Bật switch định tuyến", current);
             if (requested != current)
             {
-                if (requested) Undo.AddComponent<ConveyorSwitch>(_editing.gameObject);
-                else Undo.DestroyObjectImmediate(_editing.GetComponent<ConveyorSwitch>());
+                if (requested)
+                    routeSwitch = Undo.AddComponent<ConveyorSwitch>(_editing.gameObject);
+                else
+                    Undo.DestroyObjectImmediate(routeSwitch);
                 MarkDirty();
                 current = requested;
             }
-            if (!current) return;
+            if (!current)
+            {
+                EditorGUILayout.HelpBox("Bật switch để cấu hình nhánh và các thông số ConveyorSwitch.", MessageType.None);
+                return;
+            }
+
+            if (DrawAllSerializedProperties(routeSwitch))
+            {
+                ConveyorConnections.RebuildNetwork(_editing);
+                EditorUtility.SetDirty(routeSwitch);
+                MarkDirty();
+            }
 
             var connections = _editing.GetComponent<ConveyorConnections>();
             EditorGUILayout.LabelField("Nhánh switch", EditorStyles.boldLabel);
@@ -1083,15 +1148,61 @@ namespace FruitSort.EditorTools
             foreach (var c in conveyors)
             {
                 var spline = c.Container.Spline;
+                var beltRenderer = c.GetComponent<ConveyorBeltRenderer>();
+                var routeSwitch = c.GetComponent<ConveyorSwitch>();
                 var cd = new LevelData.ConveyorData
                 {
                     name = c.name,
                     beltWidth = c.beltWidth,
                     closed = spline.Closed,
-                    hasSwitch = c.GetComponent<ConveyorSwitch>() != null,
+                    hasSwitch = routeSwitch != null,
+                    hasSwitchSettings = routeSwitch != null,
+                    switchClickRadius = routeSwitch != null ? routeSwitch.clickRadius : 1.1f,
+                    switchBranchClickPadding = routeSwitch != null ? routeSwitch.branchClickPadding : 0.15f,
+                    switchBranchClickStartProgress = routeSwitch != null ? routeSwitch.branchClickStartProgress : 0.08f,
+                    switchLinkedBranchSprite = routeSwitch != null ? routeSwitch.linkedBranchSprite : null,
+                    switchIndicatorColor = routeSwitch != null ? routeSwitch.indicatorColor : new Color(1f, 0.85f, 0.2f),
+                    switchLinkedSpriteProgress = routeSwitch != null ? routeSwitch.linkedSpriteProgress : 0.35f,
+                    switchLinkedSpriteSize = routeSwitch != null ? routeSwitch.linkedSpriteSize : 0.45f,
+                    switchLinkedSpriteSortingOrder = routeSwitch != null ? routeSwitch.linkedSpriteSortingOrder : 60,
+                    switchUseCombinedRenderer = routeSwitch != null && routeSwitch.useCombinedRenderer,
+                    switchLinkedKnotCount = routeSwitch != null ? routeSwitch.linkedKnotCount : 0,
+                    switchHideSourceRenderer = routeSwitch == null || routeSwitch.hideSourceRenderer,
+                    switchCombinedRendererZOffset = routeSwitch != null ? routeSwitch.combinedRendererZOffset : -0.002f,
+                    switchDuplicateKnotTolerance = routeSwitch != null ? routeSwitch.duplicateKnotTolerance : 0.01f,
+                    switchCombinedSortingOrderOffset = routeSwitch != null ? routeSwitch.combinedSortingOrderOffset : 1,
+                    switchInactiveDimAlpha = routeSwitch != null ? routeSwitch.inactiveDimAlpha : 0.45f,
+                    switchInactiveBranchZOffset = routeSwitch != null ? routeSwitch.inactiveBranchZOffset : 0.35f,
+                    switchInactiveBranchSortingOffset = routeSwitch != null ? routeSwitch.inactiveBranchSortingOffset : 20,
+                    switchActiveBranchOwnedKnotCount = routeSwitch != null ? routeSwitch.activeBranchOwnedKnotCount : 2,
+                    switchActiveIndex = routeSwitch != null ? routeSwitch.ActiveIndex : 0,
+                    hasRendererSettings = beltRenderer != null,
                     straightEdges = c.straightEdges,
                     cornerRadius = c.cornerRadius,
                     cornerSegments = c.cornerSegments,
+                    bakeResolution = c.bakeResolution,
+                    autoRebakeAtRuntime = c.autoRebakeAtRuntime,
+                    beltMaterial = beltRenderer != null ? beltRenderer.beltMaterial : null,
+                    beltTexture = beltRenderer != null ? beltRenderer.texture : null,
+                    rendererSegments = beltRenderer != null ? beltRenderer.segments : 64,
+                    rendererZOffset = beltRenderer != null ? beltRenderer.zOffset : 0.05f,
+                    renderConnections = beltRenderer == null || beltRenderer.renderConnections,
+                    connectionSegments = beltRenderer != null ? beltRenderer.connectionSegments : 16,
+                    connectionMinLead = beltRenderer != null ? beltRenderer.connectionMinLead : 0.9f,
+                    connectionWidthFactor = beltRenderer != null ? beltRenderer.connectionWidthFactor : 1.25f,
+                    connectionMaxProgress = beltRenderer != null ? beltRenderer.connectionMaxProgress : 0.35f,
+                    straightConnectionDot = beltRenderer != null ? beltRenderer.straightConnectionDot : 0.995f,
+                    connectionSnapWidthFactor = beltRenderer != null ? beltRenderer.connectionSnapWidthFactor : 0.08f,
+                    tilesAcrossWidth = beltRenderer != null ? beltRenderer.tilesAcrossWidth : 1f,
+                    scrollSpeed = beltRenderer != null ? beltRenderer.scrollSpeed : 0.5f,
+                    showWalls = beltRenderer != null && beltRenderer.showWalls,
+                    wallWidth = beltRenderer != null ? beltRenderer.wallWidth : 0.15f,
+                    wallZOffset = beltRenderer != null ? beltRenderer.wallZOffset : -0.01f,
+                    scrollWalls = beltRenderer != null && beltRenderer.scrollWalls,
+                    wallMaterialOuter = beltRenderer != null ? beltRenderer.wallMaterialOuter : null,
+                    wallTextureOuter = beltRenderer != null ? beltRenderer.wallTextureOuter : null,
+                    wallMaterialInner = beltRenderer != null ? beltRenderer.wallMaterialInner : null,
+                    wallTextureInner = beltRenderer != null ? beltRenderer.wallTextureInner : null,
                 };
                 for (int i = 0; i < spline.Count; i++)
                     cd.knots.Add(c.transform.TransformPoint((Vector3)spline[i].Position));
@@ -1327,6 +1438,9 @@ namespace FruitSort.EditorTools
             {
                 MarkPrefabOverride(c);
                 MarkPrefabOverride(c.Container); // knots của spline cũng là dữ liệu instance
+                MarkPrefabOverride(c.GetComponent<ConveyorBeltRenderer>());
+                MarkPrefabOverride(c.GetComponent<ConveyorConnections>());
+                MarkPrefabOverride(c.GetComponent<ConveyorSwitch>());
             }
             // Sprite/màu do RefreshVisuals đổi nằm trên các SpriteRenderer -> cũng phải ghi.
             foreach (var r in root.GetComponentsInChildren<SpriteRenderer>(true)) MarkPrefabOverride(r);

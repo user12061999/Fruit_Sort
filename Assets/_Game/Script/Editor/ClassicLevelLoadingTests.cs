@@ -100,6 +100,103 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
+        public void LevelBuilder_RestoresSavedWallConfiguration()
+        {
+            GameObject conveyorAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ConveyorPrefabPath);
+            LevelData data = ScriptableObject.CreateInstance<LevelData>();
+            data.conveyorPrefab = conveyorAsset.GetComponent<ConveyorSpline>();
+            data.conveyors.Add(new LevelData.ConveyorData
+            {
+                name = "Walled Conveyor",
+                beltWidth = 1f,
+                hasRendererSettings = true,
+                showWalls = true,
+                wallWidth = 0.35f,
+                wallZOffset = -0.04f,
+                scrollWalls = true,
+                rendererSegments = 18,
+                renderConnections = false,
+                scrollSpeed = 1.25f,
+                knots = new System.Collections.Generic.List<Vector3>
+                {
+                    Vector3.zero,
+                    Vector3.right * 3f,
+                },
+            });
+
+            GameObject root = LevelBuilder.Build(data);
+            try
+            {
+                ConveyorBeltRenderer renderer = root.GetComponentInChildren<ConveyorBeltRenderer>();
+                Assert.That(renderer.showWalls, Is.True);
+                Assert.That(renderer.wallWidth, Is.EqualTo(0.35f));
+                Assert.That(renderer.wallZOffset, Is.EqualTo(-0.04f));
+                Assert.That(renderer.scrollWalls, Is.True);
+                Assert.That(renderer.segments, Is.EqualTo(18));
+                Assert.That(renderer.renderConnections, Is.False);
+                Assert.That(renderer.scrollSpeed, Is.EqualTo(1.25f));
+                Assert.That(renderer.GetComponent<MeshFilter>().sharedMesh.subMeshCount, Is.EqualTo(3));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
+        public void LevelBuilder_RestoresSavedConveyorSwitchConfiguration()
+        {
+            GameObject conveyorAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ConveyorPrefabPath);
+            LevelData data = ScriptableObject.CreateInstance<LevelData>();
+            data.conveyorPrefab = conveyorAsset.GetComponent<ConveyorSpline>();
+            data.conveyors.Add(new LevelData.ConveyorData
+            {
+                name = "Switch Source",
+                hasSwitch = true,
+                hasSwitchSettings = true,
+                switchClickRadius = 2.5f,
+                switchLinkedSpriteSize = 0.7f,
+                switchUseCombinedRenderer = false,
+                switchCombinedRendererZOffset = -0.06f,
+                switchActiveBranchOwnedKnotCount = 3,
+                knots = new System.Collections.Generic.List<Vector3>
+                {
+                    Vector3.left * 2f,
+                    Vector3.zero,
+                },
+            });
+            data.conveyors.Add(new LevelData.ConveyorData
+            {
+                name = "Switch Target",
+                knots = new System.Collections.Generic.List<Vector3>
+                {
+                    Vector3.zero,
+                    Vector3.up * 2f,
+                },
+            });
+            data.conveyorLinks.Add(new LevelData.ConveyorLink { from = 0, to = 1 });
+
+            GameObject root = LevelBuilder.Build(data);
+            try
+            {
+                ConveyorSwitch routeSwitch = root.transform.Find("Switch Source")
+                    .GetComponent<ConveyorSwitch>();
+                Assert.That(routeSwitch, Is.Not.Null);
+                Assert.That(routeSwitch.clickRadius, Is.EqualTo(2.5f));
+                Assert.That(routeSwitch.linkedSpriteSize, Is.EqualTo(0.7f));
+                Assert.That(routeSwitch.useCombinedRenderer, Is.False);
+                Assert.That(routeSwitch.combinedRendererZOffset, Is.EqualTo(-0.06f));
+                Assert.That(routeSwitch.activeBranchOwnedKnotCount, Is.EqualTo(3));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
         public void LevelBuilder_ConfiguresSpawnerAsSquareWithoutColorIdSprite()
         {
             GameObject spawnerAsset = AssetDatabase.LoadAssetAtPath<GameObject>(SpawnerPrefabPath);

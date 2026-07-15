@@ -175,6 +175,7 @@ MonoBehaviour:
   cornerRadius: 1
   cornerSegments: 45
   autoRebakeAtRuntime: 0
+  registerWithFallingPixelManager: 1
 --- !u!114 &7518739244743215292
 MonoBehaviour:
   m_ObjectHideFlags: 0

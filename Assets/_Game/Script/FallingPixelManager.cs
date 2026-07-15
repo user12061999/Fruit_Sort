@@ -13,6 +13,7 @@ namespace FruitSort
     /// </summary>
     public class FallingPixelManager : MonoBehaviour
     {
+        const int ConveyorDotSortingOrder = 100;
         public static FallingPixelManager Instance { get; private set; }
 
         [Header("Refs")]
@@ -177,7 +178,7 @@ namespace FruitSort
             {
                 d.Sr.enabled = true;
                 d.Sr.sortingLayerID = 0;
-                d.Sr.sortingOrder = 0;
+                d.Sr.sortingOrder = ConveyorDotSortingOrder;
             }
             d.ApplyColor();
             if (!alreadyManaged) _dots.Add(d);
@@ -218,7 +219,7 @@ namespace FruitSort
             {
                 d.Sr.enabled = true;
                 d.Sr.sortingLayerID = 0;
-                d.Sr.sortingOrder = 0;
+                d.Sr.sortingOrder = ConveyorDotSortingOrder;
             }
             d.ApplyColor();
             if (!_dots.Contains(d)) _dots.Add(d);
@@ -467,6 +468,8 @@ namespace FruitSort
             if (d.conveyor == null) d.conveyor = conveyor;
             if (d.conveyor == null) { d.markedForRemoval = true; return; }
 
+            EnsureDotRendersAboveConveyor(d);
+
             if (d.connectionTarget != null)
             {
                 StepOnConnection(d, sep, dt, idx, advanceByBeltSpeed: true);
@@ -712,6 +715,15 @@ namespace FruitSort
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -pick.HalfWidth, pick.HalfWidth);
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
             return true;
+        }
+
+        static void EnsureDotRendersAboveConveyor(Dot d)
+        {
+            if (d == null || d.Sr == null || d.Sr.sortingOrder >= ConveyorDotSortingOrder)
+                return;
+
+            d.Sr.sortingLayerID = 0;
+            d.Sr.sortingOrder = ConveyorDotSortingOrder;
         }
 
         static void ClearConnectionState(Dot d)

@@ -2,500 +2,434 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace FruitSort
 {
     /// <summary>
-    /// Bọc một SplineContainer làm "băng chuyền".
-    /// Cung cấp vị trí trên spline theo progress (0..1) + lệch ngang trong bề rộng băng chuyền.
-    ///
-    /// TỐI ƯU: spline được "bake" 1 lần thành LOOKUP TABLE (LUT) gồm vị trí tâm + tiếp tuyến
-    /// đã chuẩn hoá. Mọi truy vấn runtime chỉ là LERP vào mảng -> rất rẻ, thay cho
-    /// Container.Evaluate() (đắt) bị gọi tới 2 lần/dot/frame. Chiều dài spline cũng được
-    /// cache (không CalculateLength mỗi frame). Tự re-bake khi transform của băng chuyền đổi.
-    ///
-    /// HÌNH DẠNG: mặc định (straightEdges) dựng centerline bằng các ĐOẠN THẲNG nối các knot,
-    /// CHỈ bo cong (fillet) tại các góc với bán kính cornerRadius. Tắt straightEdges để dùng
-    /// đường cong Bezier gốc của spline.
+    /// Nguồn dữ liệu hình học duy nhất của conveyor.
+    /// Spline được bake thành một LUT world-space để movement và renderer cùng sample.
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(SplineContainer))]
-    public class ConveyorSpline : MonoBehaviour
+    public sealed class ConveyorSpline : MonoBehaviour
     {
-        [Tooltip("Bề rộng băng chuyền (world unit). Dùng để random vị trí ban đầu và clamp lệch ngang.")]
-        public float beltWidth = 3f;
+        [Min(0.01f)] public float beltWidth = 3f;
+        [Min(8)] public int bakeResolution = 96;
 
-        [Tooltip("Số điểm sample khi bake LUT. Cao hơn = mượt hơn nhưng tốn RAM/tải bake. 64-128 là đủ cho hầu hết băng chuyền.")]
-        [Min(2)] public int bakeResolution = 96;
-
-        [Header("Cạnh thẳng / Bo góc")]
-        [Tooltip("BẬT (mặc định): cạnh băng chuyền THẲNG giữa các knot, chỉ bo cong ở góc. " +
-                 "TẮT: dùng đường cong Bezier gốc của spline (cong khắp nơi).")]
+        [Header("Straight path / rounded corners")]
         public bool straightEdges = true;
-
-        [Tooltip("Bán kính bo tròn ở mỗi góc (world unit). 0 = góc nhọn (gấp khúc). " +
-                 "Tự clamp lại nếu lớn hơn nửa đoạn thẳng kề bên.")]
         [Min(0f)] public float cornerRadius = 0.5f;
-
-        [Tooltip("Số đoạn chia cho mỗi cung bo góc. Cao hơn = góc mượt hơn.")]
         [Min(1)] public int cornerSegments = 8;
 
-        [Tooltip("Lúc PLAY có tự bake lại khi transform băng chuyền đổi không? " +
-                 "TẮT (mặc định) = chỉ bake 1 lần -> tránh re-bake 256 evaluate mỗi frame nếu hasChanged bị bật. " +
-                 "Bật nếu băng chuyền THỰC SỰ di chuyển lúc chơi.")]
-        public bool autoRebakeAtRuntime = false;
+        [Tooltip("Chỉ bật khi transform conveyor thực sự thay đổi trong lúc chạy.")]
+        public bool autoRebakeAtRuntime;
 
+        [Tooltip("Bật với conveyor gameplay thật. Tắt với spline chỉ dùng để render tạm, " +
+                 "ví dụ renderer hợp nhất của ConveyorSwitch.")]
+        public bool registerWithFallingPixelManager = true;
+
+        readonly List<Vector3> _polyline = new List<Vector3>(128);
+        Vector3[] _positions;
+        Vector3[] _tangents;
         SplineContainer _container;
-        public SplineContainer Container
-        {
-            get { if (_container == null) _container = GetComponent<SplineContainer>(); return _container; }
-        }
+        float _length;
+        int _resolution;
+        bool _isBaked;
+        bool _rebuildQueued;
+        bool _registeredWithFallingPixelManager;
+
+        public SplineContainer Container =>
+            _container != null ? _container : (_container = GetComponent<SplineContainer>());
 
         public float HalfWidth => beltWidth * 0.5f;
-        public bool IsClosed => HasSpline && Container.Spline.Closed;
+        public bool IsClosed => HasValidSpline && Container.Spline.Closed;
+        public float Length
+        {
+            get
+            {
+                EnsureBaked();
+                return _length;
+            }
+        }
 
-        bool HasSpline => Container != null && Container.Spline != null && Container.Spline.Count > 1;
-
-        // ---- LUT đã bake (world space) ----
-        Vector3[] _lutPos;   // vị trí TÂM spline
-        Vector3[] _lutTan;   // tiếp tuyến đã chuẩn hoá (XY)
-        float _bakedLength = 1f;
-        bool _baked = false;
-        int _bakedRes = -1;
-        bool _rebakeQueued; // sửa field trên Inspector LÚC PLAY -> re-bake ở Update kế tiếp
-
-        // Buffer tái dùng khi dựng polyline bo góc (tránh alloc mỗi lần bake).
-        readonly List<Vector3> _pathPts = new List<Vector3>(256);
-
-        void Awake() { Bake(); }
+        bool HasValidSpline =>
+            Container != null && Container.Spline != null && Container.Spline.Count >= 2;
 
         void OnEnable()
         {
             Bake();
-            if (Application.isPlaying && FallingPixelManager.Instance != null)
+
+            if (Application.isPlaying && registerWithFallingPixelManager &&
+                FallingPixelManager.Instance != null)
+            {
                 FallingPixelManager.Instance.RegisterConveyor(this);
+                _registeredWithFallingPixelManager = true;
+            }
         }
 
         void OnDisable()
         {
-            if (Application.isPlaying && FallingPixelManager.Instance != null)
+            if (!_registeredWithFallingPixelManager)
+                return;
+
+            if (FallingPixelManager.Instance != null)
                 FallingPixelManager.Instance.UnregisterConveyor(this);
+
+            _registeredWithFallingPixelManager = false;
         }
 
         void OnValidate()
         {
-            if (this == null) return;
+            beltWidth = Mathf.Max(0.01f, beltWidth);
+            bakeResolution = Mathf.Max(8, bakeResolution);
+            cornerRadius = Mathf.Max(0f, cornerRadius);
+            cornerSegments = Mathf.Max(1, cornerSegments);
 
-            // Đang PLAY: đặt cờ, Update frame kế tiếp sẽ re-bake + dựng lại mesh renderer.
             if (Application.isPlaying)
             {
-                _rebakeQueued = true;
+                _rebuildQueued = true;
                 return;
             }
 
-            // Edit mode: re-bake ngay khi sửa field (beltWidth, bakeResolution, cornerRadius...).
             Bake();
-#if UNITY_EDITOR
-            SceneView.RepaintAll();
-#endif
+            RebuildRenderer();
         }
 
         void Update()
         {
-            // Có chỉnh sửa từ Inspector lúc play -> re-bake LUT và dựng lại mesh băng
-            // (một lần theo cờ, KHÔNG re-bake mỗi frame).
-            if (_rebakeQueued)
+            if (_rebuildQueued)
             {
-                _rebakeQueued = false;
+                _rebuildQueued = false;
                 Bake();
-                var beltRenderer = GetComponent<ConveyorBeltRenderer>();
-                if (beltRenderer != null) beltRenderer.RebuildMeshAndMaterials();
+                RebuildRenderer();
             }
 
-            // Lúc PLAY: mặc định KHÔNG auto re-bake để tránh 256 evaluate/frame nếu hasChanged
-            // bị bật liên tục. Băng chuyền tĩnh -> bake 1 lần ở Awake/OnEnable là đủ.
-            if (Application.isPlaying && !autoRebakeAtRuntime) return;
+            if (Application.isPlaying && !autoRebakeAtRuntime)
+                return;
 
-            // Editor (chỉnh spline) hoặc khi bật autoRebakeAtRuntime: re-bake khi transform đổi.
-            if (transform.hasChanged)
-            {
-                Bake();
-                transform.hasChanged = false;
-            }
+            if (!transform.hasChanged)
+                return;
+
+            transform.hasChanged = false;
+            Bake();
+            RebuildRenderer();
         }
 
-        void EnsureLutArrays(int res)
+        void RebuildRenderer()
         {
-            if (_lutPos == null || _bakedRes != res)
-            {
-                _lutPos = new Vector3[res + 1];
-                _lutTan = new Vector3[res + 1];
-                _bakedRes = res;
-            }
+            ConveyorConnections.RebuildNetwork(this);
         }
 
-        /// <summary>Bake (hoặc re-bake) LUT từ spline hiện tại. Có thể gọi tay nếu sửa spline lúc runtime.</summary>
+        [ContextMenu("Bake Conveyor")]
         public void Bake()
         {
-            if (!HasSpline) { _baked = false; return; }
+            _isBaked = false;
+            _length = 0f;
 
-            if (straightEdges && BakeStraight()) { _baked = true; return; }
+            if (!HasValidSpline)
+                return;
 
-            BakeFromSpline();
-            _baked = true;
+            int resolution = Mathf.Max(8, bakeResolution);
+            EnsureArrays(resolution);
+
+            bool success = straightEdges
+                ? BuildRoundedPolyline(_polyline) && BakePolyline(_polyline, resolution)
+                : BakeUnitySpline(resolution);
+
+            _isBaked = success;
         }
 
-        /// <summary>Bake theo đường cong Bezier gốc của spline (cong khắp nơi).</summary>
-        void BakeFromSpline()
+        void EnsureArrays(int resolution)
         {
-            int res = Mathf.Max(2, bakeResolution);
-            EnsureLutArrays(res);
+            if (_positions != null && _resolution == resolution)
+                return;
 
-            for (int i = 0; i <= res; i++)
+            _resolution = resolution;
+            _positions = new Vector3[resolution + 1];
+            _tangents = new Vector3[resolution + 1];
+        }
+
+        bool BakeUnitySpline(int resolution)
+        {
+            for (int i = 0; i <= resolution; i++)
             {
-                float t = i / (float)res;
-                Container.Evaluate(t, out float3 pos, out float3 tan, out _);
-
-                Vector3 wt = (Vector3)tan; wt.z = 0f;
-                if (wt.sqrMagnitude < 1e-6f) wt = Vector3.right; else wt.Normalize();
-
-                _lutPos[i] = (Vector3)pos;
-                _lutTan[i] = wt;
+                float t = i / (float)resolution;
+                Container.Evaluate(t, out float3 position, out float3 tangent, out _);
+                _positions[i] = (Vector3)position;
+                _tangents[i] = Normalize2D((Vector3)tangent);
             }
 
-            _bakedLength = Mathf.Max(0.01f, Container.CalculateLength());
+            _length = CalculateLength(_positions);
+            return _length > 0.0001f;
         }
 
-        /// <summary>
-        /// Bake centerline kiểu "cạnh thẳng, bo góc": nối các knot bằng đoạn thẳng,
-        /// chèn cung tròn tại mỗi góc, rồi resample đều theo CHIỀU DÀI CUNG vào LUT.
-        /// Trả về false nếu polyline suy biến (để Bake() fallback về spline gốc).
-        /// </summary>
-        bool BakeStraight()
+        bool BuildRoundedPolyline(List<Vector3> output)
         {
-            if (!BuildRoundedCenterline(_pathPts)) return false;
+            output.Clear();
 
-            int m = _pathPts.Count;
-            if (m < 2) return false;
-
-            // Cộng dồn chiều dài tới từng điểm polyline.
-            float total = 0f;
-            for (int i = 1; i < m; i++)
-                total += Vector3.Distance(_pathPts[i - 1], _pathPts[i]);
-            if (total < 1e-4f) return false;
-
-            int res = Mathf.Max(2, bakeResolution);
-            EnsureLutArrays(res);
-
-            int seg = 0;                 // chỉ số đoạn polyline hiện tại
-            float segStart = 0f;         // chiều dài cộng dồn ở đầu đoạn seg
-            float segLen = Mathf.Max(1e-6f, Vector3.Distance(_pathPts[0], _pathPts[1]));
-
-            for (int i = 0; i <= res; i++)
-            {
-                float target = (i / (float)res) * total;
-
-                // Tiến tới đoạn chứa 'target'.
-                while (seg < m - 2 && target > segStart + segLen)
-                {
-                    segStart += segLen;
-                    seg++;
-                    segLen = Mathf.Max(1e-6f, Vector3.Distance(_pathPts[seg], _pathPts[seg + 1]));
-                }
-
-                float f = Mathf.Clamp01((target - segStart) / segLen);
-                Vector3 a = _pathPts[seg];
-                Vector3 b = _pathPts[seg + 1];
-
-                Vector3 tan = b - a; tan.z = 0f;
-                if (tan.sqrMagnitude < 1e-6f) tan = Vector3.right; else tan.Normalize();
-
-                _lutPos[i] = Vector3.LerpUnclamped(a, b, f);
-                _lutTan[i] = tan;
-            }
-
-            _bakedLength = Mathf.Max(0.01f, total);
-            return true;
-        }
-
-        /// <summary>
-        /// Dựng polyline (world space) gồm các đoạn thẳng nối knot + cung fillet ở các góc.
-        /// </summary>
-        bool BuildRoundedCenterline(List<Vector3> path)
-        {
-            path.Clear();
-
-            var spline = Container.Spline;
-            int kc = spline.Count;
-            if (kc < 2) return false;
-
+            Spline spline = Container.Spline;
+            int count = spline.Count;
             bool closed = spline.Closed;
 
-            // Knot world-space.
-            var knots = new Vector3[kc];
-            for (int i = 0; i < kc; i++)
-                knots[i] = transform.TransformPoint((Vector3)spline[i].Position);
-
-            int cseg = Mathf.Max(1, cornerSegments);
-
-            for (int i = 0; i < kc; i++)
+            for (int index = 0; index < count; index++)
             {
-                // Đầu/cuối của spline HỞ là điểm mút, không bo.
-                bool isEndpoint = !closed && (i == 0 || i == kc - 1);
-                if (isEndpoint) { AddPoint(path, knots[i]); continue; }
+                Vector3 current = transform.TransformPoint((Vector3)spline[index].Position);
+                bool endpoint = !closed && (index == 0 || index == count - 1);
 
-                int ip = (i - 1 + kc) % kc;
-                int inx = (i + 1) % kc;
-                Vector3 prev = knots[ip], cur = knots[i], next = knots[inx];
-
-                Vector3 dirIn = cur - prev; float lenIn = dirIn.magnitude;
-                Vector3 dirOut = next - cur; float lenOut = dirOut.magnitude;
-                if (lenIn < 1e-5f || lenOut < 1e-5f) { AddPoint(path, cur); continue; }
-                dirIn /= lenIn; dirOut /= lenOut;
-
-                Vector3 a = -dirIn;   // tay hướng về knot trước
-                Vector3 b = dirOut;   // tay hướng về knot sau
-                float cosA = Mathf.Clamp(Vector3.Dot(a, b), -1f, 1f);
-                float ang = Mathf.Acos(cosA);     // góc giữa 2 tay
-                float half = ang * 0.5f;
-
-                // Gần thẳng -> không cần bo.
-                if (cornerRadius <= 1e-5f || half < 1e-3f || (Mathf.PI - ang) < 1e-3f)
+                if (endpoint || cornerRadius <= 0.0001f || count < 3)
                 {
-                    AddPoint(path, cur);
+                    AddUnique(output, current);
                     continue;
                 }
 
-                float tanHalf = Mathf.Tan(half);
-                float r = cornerRadius;
-                float d = r / tanHalf;                          // khoảng cách từ góc tới điểm tiếp xúc
-                float maxD = Mathf.Min(lenIn, lenOut) * 0.5f;   // không cho cung lấn quá nửa đoạn
-                if (d > maxD) { d = maxD; r = d * tanHalf; }
+                int previousIndex = (index - 1 + count) % count;
+                int nextIndex = (index + 1) % count;
+                Vector3 previous = transform.TransformPoint((Vector3)spline[previousIndex].Position);
+                Vector3 next = transform.TransformPoint((Vector3)spline[nextIndex].Position);
 
-                Vector3 bis = a + b;
-                if (bis.sqrMagnitude < 1e-6f) { AddPoint(path, cur); continue; }
-                bis.Normalize();
-
-                Vector3 tIn = cur - dirIn * d;        // điểm tiếp xúc trên đoạn vào
-                Vector3 tOut = cur + dirOut * d;      // điểm tiếp xúc trên đoạn ra
-                Vector3 center = cur + bis * (r / Mathf.Sin(half));
-
-                Vector3 v0 = tIn - center;
-                Vector3 v1 = tOut - center;
-                for (int s = 0; s <= cseg; s++)
-                {
-                    float f = s / (float)cseg;
-                    AddPoint(path, center + Vector3.Slerp(v0, v1, f));
-                }
+                AddRoundedCorner(output, previous, current, next);
             }
 
-            // Spline kín: nối điểm cuối về điểm đầu để resample khép vòng.
-            if (closed && path.Count > 1) AddPoint(path, path[0]);
+            if (closed && output.Count > 1)
+                AddUnique(output, output[0]);
 
-            return path.Count >= 2;
+            return output.Count >= 2;
         }
 
-        static void AddPoint(List<Vector3> path, Vector3 p)
+        void AddRoundedCorner(List<Vector3> output, Vector3 previous, Vector3 current, Vector3 next)
         {
-            // Bỏ điểm trùng liên tiếp để tránh đoạn dài 0.
-            if (path.Count == 0 || (p - path[path.Count - 1]).sqrMagnitude > 1e-10f)
-                path.Add(p);
-        }
-
-        void EnsureBaked() { if (!_baked) Bake(); }
-
-        /// <summary>Tra LUT: trả vị trí TÂM + tiếp tuyến (đã chuẩn hoá) tại progress t (0..1).</summary>
-        public bool TrySampleCenterline(float t, out Vector3 pos, out Vector3 tangent)
-        {
-            EnsureBaked();
-            if (!_baked) { pos = transform.position; tangent = Vector3.right; return false; }
-
-            float f = Mathf.Clamp01(t) * _bakedRes;
-            int i0 = (int)f;
-            if (i0 >= _bakedRes)
-            {
-                pos = _lutPos[_bakedRes];
-                tangent = _lutTan[_bakedRes];
-                return true;
-            }
-
-            float frac = f - i0;
-            int i1 = i0 + 1;
-            pos = Vector3.LerpUnclamped(_lutPos[i0], _lutPos[i1], frac);
-
-            Vector3 tn = Vector3.Lerp(_lutTan[i0], _lutTan[i1], frac);
-            if (tn.sqrMagnitude < 1e-6f) tn = Vector3.right; else tn.Normalize();
-            tangent = tn;
-            return true;
-        }
-
-        /// <summary>
-        /// Vị trí world trên spline tại progress t (0..1), lệch sang ngang lateralOffset
-        /// theo pháp tuyến (vuông góc hướng đi) trong mặt phẳng XY.
-        /// </summary>
-        public Vector3 GetPositionOnSpline(float t, float lateralOffset)
-        {
-            if (!TrySampleCenterline(t, out Vector3 pos, out Vector3 tan)) return transform.position;
-            Vector3 normal = new Vector3(-tan.y, tan.x, 0f);
-            return pos + normal * lateralOffset;
-        }
-
-        /// <summary>
-        /// Tìm progress t trên spline gần worldPos nhất (dùng LUT, O(n)).
-        /// Trả về closestDist = khoảng cách thực tới đường tâm tại t đó.
-        /// </summary>
-        public float FindClosestProgress(Vector3 worldPos, out float closestDist)
-        {
-            EnsureBaked();
-            if (!_baked || _lutPos == null || _bakedRes <= 0)
-            {
-                closestDist = float.MaxValue;
-                return 0f;
-            }
-
-            float bestDistSq = float.MaxValue;
-            int bestIdx = 0;
-            for (int i = 0; i <= _bakedRes; i++)
-            {
-                float dx = _lutPos[i].x - worldPos.x;
-                float dy = _lutPos[i].y - worldPos.y;
-                float dSq = dx * dx + dy * dy;
-                if (dSq < bestDistSq) { bestDistSq = dSq; bestIdx = i; }
-            }
-
-            closestDist = Mathf.Sqrt(bestDistSq);
-            return bestIdx / (float)_bakedRes;
-        }
-
-        /// <summary>
-        /// Progress đã đi qua knot chỉ định. Với straightEdges có bo góc, điểm này là tiếp điểm
-        /// cuối của cung bo trên đoạn knot hiện tại -> knot kế tiếp, không phải giữa cung.
-        /// </summary>
-        public float GetProgressThroughKnot(int knotIndex)
-        {
-            EnsureBaked();
-            if (!_baked || Container == null || Container.Spline == null) return 0f;
-
-            var spline = Container.Spline;
-            int count = spline.Count;
-            if (count < 2 || knotIndex <= 0) return 0f;
-            if (!spline.Closed && knotIndex >= count - 1) return 1f;
-
-            knotIndex = Mathf.Clamp(knotIndex, 0, count - 1);
-            Vector3 target = transform.TransformPoint((Vector3)spline[knotIndex].Position);
-            if (straightEdges && TryGetRoundedKnotExit(knotIndex, out Vector3 roundedExit))
-                target = roundedExit;
-
-            return FindClosestProgress(target, out _);
-        }
-
-        /// <summary>
-        /// Chiều dài đoạn thẳng thực tế từ endpoint đến cung bo nội bộ gần nhất.
-        /// Dùng bán kính đã clamp theo độ dài hai segment, không dùng trực tiếp cornerRadius cấu hình.
-        /// </summary>
-        public float GetEndpointStraightLead(bool atStart)
-        {
-            if (Container == null || Container.Spline == null || Container.Spline.Count < 2)
-                return 0f;
-
-            var spline = Container.Spline;
-            int count = spline.Count;
-            int endpointIndex = atStart ? 0 : count - 1;
-            int adjacentIndex = atStart ? 1 : count - 2;
-            Vector3 endpoint = transform.TransformPoint((Vector3)spline[endpointIndex].Position);
-            Vector3 adjacent = transform.TransformPoint((Vector3)spline[adjacentIndex].Position);
-
-            if (!straightEdges || count < 3 ||
-                !TryGetRoundedKnotTangentPoints(adjacentIndex, out Vector3 entry, out Vector3 exit))
-                return Vector2.Distance(endpoint, adjacent);
-
-            return atStart
-                ? Vector2.Distance(endpoint, entry)
-                : Vector2.Distance(exit, endpoint);
-        }
-
-        bool TryGetRoundedKnotExit(int knotIndex, out Vector3 exit)
-        {
-            return TryGetRoundedKnotTangentPoints(knotIndex, out _, out exit);
-        }
-
-        bool TryGetRoundedKnotTangentPoints(int knotIndex, out Vector3 entry, out Vector3 exit)
-        {
-            entry = default;
-            exit = default;
-            var spline = Container.Spline;
-            int count = spline.Count;
-            bool closed = spline.Closed;
-            if (count < 3 || (!closed && (knotIndex <= 0 || knotIndex >= count - 1)))
-                return false;
-
-            int previousIndex = (knotIndex - 1 + count) % count;
-            int nextIndex = (knotIndex + 1) % count;
-            Vector3 previous = transform.TransformPoint((Vector3)spline[previousIndex].Position);
-            Vector3 current = transform.TransformPoint((Vector3)spline[knotIndex].Position);
-            Vector3 next = transform.TransformPoint((Vector3)spline[nextIndex].Position);
-
             Vector3 incoming = current - previous;
             Vector3 outgoing = next - current;
             float incomingLength = incoming.magnitude;
             float outgoingLength = outgoing.magnitude;
-            if (incomingLength < 1e-5f || outgoingLength < 1e-5f) return false;
+
+            if (incomingLength < 0.0001f || outgoingLength < 0.0001f)
+            {
+                AddUnique(output, current);
+                return;
+            }
+
             incoming /= incomingLength;
             outgoing /= outgoingLength;
 
             float angle = Mathf.Acos(Mathf.Clamp(Vector3.Dot(-incoming, outgoing), -1f, 1f));
+            if (angle < 0.001f || Mathf.PI - angle < 0.001f)
+            {
+                AddUnique(output, current);
+                return;
+            }
+
             float halfAngle = angle * 0.5f;
-            if (cornerRadius <= 1e-5f || halfAngle < 1e-3f ||
-                (Mathf.PI - angle) < 1e-3f)
+            float tangentDistance = cornerRadius / Mathf.Tan(halfAngle);
+            tangentDistance = Mathf.Min(tangentDistance, Mathf.Min(incomingLength, outgoingLength) * 0.5f);
+
+            float radius = tangentDistance * Mathf.Tan(halfAngle);
+            Vector3 entry = current - incoming * tangentDistance;
+            Vector3 exit = current + outgoing * tangentDistance;
+            Vector3 bisector = (-incoming + outgoing).normalized;
+            Vector3 center = current + bisector * (radius / Mathf.Sin(halfAngle));
+
+            Vector3 startRadius = entry - center;
+            Vector3 endRadius = exit - center;
+            int segments = Mathf.Max(1, cornerSegments);
+
+            for (int i = 0; i <= segments; i++)
+                AddUnique(output, center + Vector3.Slerp(startRadius, endRadius, i / (float)segments));
+        }
+
+        bool BakePolyline(List<Vector3> path, int resolution)
+        {
+            int count = path.Count;
+            if (count < 2)
                 return false;
 
-            float tangentDistance = cornerRadius / Mathf.Tan(halfAngle);
-            tangentDistance = Mathf.Min(tangentDistance,
-                Mathf.Min(incomingLength, outgoingLength) * 0.5f);
-            entry = current - incoming * tangentDistance;
-            exit = current + outgoing * tangentDistance;
+            float[] cumulative = new float[count];
+            for (int i = 1; i < count; i++)
+                cumulative[i] = cumulative[i - 1] + Vector2.Distance(path[i - 1], path[i]);
+
+            _length = cumulative[count - 1];
+            if (_length <= 0.0001f)
+                return false;
+
+            int segment = 0;
+            for (int i = 0; i <= resolution; i++)
+            {
+                float targetDistance = _length * i / resolution;
+                while (segment < count - 2 && cumulative[segment + 1] < targetDistance)
+                    segment++;
+
+                float segmentStart = cumulative[segment];
+                float segmentEnd = cumulative[segment + 1];
+                float blend = Mathf.InverseLerp(segmentStart, segmentEnd, targetDistance);
+                Vector3 a = path[segment];
+                Vector3 b = path[segment + 1];
+
+                _positions[i] = Vector3.LerpUnclamped(a, b, blend);
+                _tangents[i] = Normalize2D(b - a);
+            }
+
+            SmoothTangents();
             return true;
         }
 
-        /// <summary>Hướng đi (tangent) đã chuẩn hoá tại t, trong mặt phẳng XY.</summary>
-        public Vector3 GetTangent(float t)
+        void SmoothTangents()
         {
-            if (!TrySampleCenterline(t, out _, out Vector3 tan)) return Vector3.right;
-            return tan;
+            for (int i = 0; i <= _resolution; i++)
+            {
+                Vector3 tangent;
+                if (i == 0)
+                    tangent = _positions[1] - _positions[0];
+                else if (i == _resolution)
+                    tangent = _positions[_resolution] - _positions[_resolution - 1];
+                else
+                    tangent = _positions[i + 1] - _positions[i - 1];
+
+                _tangents[i] = Normalize2D(tangent);
+            }
         }
 
-        /// <summary>Chiều dài world của spline (cache; chỉ tính lại khi bake).</summary>
-        public float GetSplineLength()
+        static float CalculateLength(Vector3[] positions)
+        {
+            float length = 0f;
+            for (int i = 1; i < positions.Length; i++)
+                length += Vector2.Distance(positions[i - 1], positions[i]);
+            return length;
+        }
+
+        static Vector3 Normalize2D(Vector3 value)
+        {
+            value.z = 0f;
+            return value.sqrMagnitude > 0.000001f ? value.normalized : Vector3.right;
+        }
+
+        static void AddUnique(List<Vector3> points, Vector3 point)
+        {
+            if (points.Count == 0 || (points[points.Count - 1] - point).sqrMagnitude > 0.00000001f)
+                points.Add(point);
+        }
+
+        void EnsureBaked()
+        {
+            if (!_isBaked)
+                Bake();
+        }
+
+        public bool TrySampleCenterline(float progress, out Vector3 position, out Vector3 tangent)
         {
             EnsureBaked();
-            return _bakedLength;
+
+            if (!_isBaked || _positions == null)
+            {
+                position = transform.position;
+                tangent = Vector3.right;
+                return false;
+            }
+
+            float sample = Mathf.Clamp01(progress) * _resolution;
+            int index = Mathf.Min(Mathf.FloorToInt(sample), _resolution - 1);
+            float blend = sample - index;
+
+            position = Vector3.LerpUnclamped(_positions[index], _positions[index + 1], blend);
+            tangent = Normalize2D(Vector3.Lerp(_tangents[index], _tangents[index + 1], blend));
+            return true;
         }
 
-        // Vẽ 2 mép băng chuyền (cyan) khi chọn object trong Editor.
-        // Dùng LUT đã bake để gizmo phản ánh đúng hình "cạnh thẳng, bo góc".
+        public Vector3 GetPositionOnSpline(float progress, float lateralOffset)
+        {
+            if (!TrySampleCenterline(progress, out Vector3 center, out Vector3 tangent))
+                return transform.position;
+
+            Vector3 normal = new Vector3(-tangent.y, tangent.x, 0f);
+            return center + normal * lateralOffset;
+        }
+
+        public Vector3 GetTangent(float progress)
+        {
+            return TrySampleCenterline(progress, out _, out Vector3 tangent)
+                ? tangent
+                : Vector3.right;
+        }
+
+        public float FindClosestProgress(Vector3 worldPosition, out float closestDistance)
+        {
+            EnsureBaked();
+
+            if (!_isBaked || _positions == null)
+            {
+                closestDistance = float.MaxValue;
+                return 0f;
+            }
+
+            float bestDistanceSquared = float.MaxValue;
+            float bestProgress = 0f;
+            Vector2 point = worldPosition;
+
+            for (int i = 0; i < _resolution; i++)
+            {
+                Vector2 a = _positions[i];
+                Vector2 b = _positions[i + 1];
+                Vector2 ab = b - a;
+                float denominator = ab.sqrMagnitude;
+                float blend = denominator > 0.000001f
+                    ? Mathf.Clamp01(Vector2.Dot(point - a, ab) / denominator)
+                    : 0f;
+
+                Vector2 closest = a + ab * blend;
+                float distanceSquared = (point - closest).sqrMagnitude;
+                if (distanceSquared >= bestDistanceSquared)
+                    continue;
+
+                bestDistanceSquared = distanceSquared;
+                bestProgress = (i + blend) / _resolution;
+            }
+
+            closestDistance = Mathf.Sqrt(bestDistanceSquared);
+            return bestProgress;
+        }
+
+        public float GetProgressThroughKnot(int knotIndex)
+        {
+            if (!HasValidSpline)
+                return 0f;
+
+            knotIndex = Mathf.Clamp(knotIndex, 0, Container.Spline.Count - 1);
+            Vector3 knot = transform.TransformPoint((Vector3)Container.Spline[knotIndex].Position);
+            return FindClosestProgress(knot, out _);
+        }
+
+        public float GetEndpointStraightLead(bool atStart)
+        {
+            if (!HasValidSpline)
+                return 0f;
+
+            int first = atStart ? 0 : Container.Spline.Count - 1;
+            int second = atStart ? 1 : Container.Spline.Count - 2;
+            Vector3 a = transform.TransformPoint((Vector3)Container.Spline[first].Position);
+            Vector3 b = transform.TransformPoint((Vector3)Container.Spline[second].Position);
+            return Vector2.Distance(a, b);
+        }
+
+        public float GetSplineLength() => Length;
+
         void OnDrawGizmosSelected()
         {
-            if (!HasSpline) return;
             EnsureBaked();
-            if (!_baked) return;
+            if (!_isBaked)
+                return;
 
             Gizmos.color = Color.cyan;
-            const int seg = 96;
-            Vector3 prevL = Vector3.zero, prevR = Vector3.zero;
-            for (int i = 0; i <= seg; i++)
+            Vector3 previousLeft = GetPositionOnSpline(0f, HalfWidth);
+            Vector3 previousRight = GetPositionOnSpline(0f, -HalfWidth);
+
+            for (int i = 1; i <= 64; i++)
             {
-                float t = i / (float)seg;
-                Vector3 l = GetPositionOnSpline(t, +HalfWidth);
-                Vector3 r = GetPositionOnSpline(t, -HalfWidth);
-                if (i > 0)
-                {
-                    Gizmos.DrawLine(prevL, l);
-                    Gizmos.DrawLine(prevR, r);
-                }
-                prevL = l; prevR = r;
+                float progress = i / 64f;
+                Vector3 left = GetPositionOnSpline(progress, HalfWidth);
+                Vector3 right = GetPositionOnSpline(progress, -HalfWidth);
+                Gizmos.DrawLine(previousLeft, left);
+                Gizmos.DrawLine(previousRight, right);
+                previousLeft = left;
+                previousRight = right;
             }
         }
     }

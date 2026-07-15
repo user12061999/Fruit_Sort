@@ -56,6 +56,34 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
+        public void ConnectedBelts_KeepTheirEndpointsToPreventVisibleSeams()
+        {
+            LevelData data = CreateCornerConnectionData();
+            GameObject root = LevelBuilder.Build(data);
+            try
+            {
+                ConveyorBeltRenderer source = root.transform.Find("Belt_Source")
+                    .GetComponent<ConveyorBeltRenderer>();
+                ConveyorBeltRenderer target = root.transform.Find("Belt_Target")
+                    .GetComponent<ConveyorBeltRenderer>();
+                MethodInfo incomingTrim = typeof(ConveyorBeltRenderer).GetMethod(
+                    "GetIncomingTrimProgress", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo outgoingTrim = typeof(ConveyorBeltRenderer).GetMethod(
+                    "GetOutgoingTrimProgress", BindingFlags.Instance | BindingFlags.NonPublic);
+
+                Assert.That(incomingTrim, Is.Not.Null);
+                Assert.That(outgoingTrim, Is.Not.Null);
+                Assert.That((float)outgoingTrim.Invoke(source, null), Is.EqualTo(1f).Within(0.0001f));
+                Assert.That((float)incomingTrim.Invoke(target, null), Is.EqualTo(0f).Within(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
         public void ConnectionWalls_DoNotFlipAcrossTightCornerCenter()
         {
             LevelData data = CreateCornerConnectionData();

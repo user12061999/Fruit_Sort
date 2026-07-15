@@ -1,200 +1,262 @@
-using System.Collections.Generic;
-using DG.Tweening;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.Splines;
 
 namespace FruitSort
 {
     /// <summary>
-    /// Switch định tuyến tại CUỐI băng chuyền hở có >= 2 nhánh next (ConveyorConnections):
-    /// người chơi click quanh điểm cuối băng để đổi nhánh dot sẽ đi tiếp,
-    /// thay vì để FallingPixelManager chia nhánh ngẫu nhiên.
-    /// - KHÔNG tốn move (chỉ là quyết định định tuyến), nhưng vẫn notify save tiến trình.
-    /// - Input là POLLING (PointerInput) giống Bucket/ModelDotSpawner — không dùng Collider
-    ///   (dot/stream không có Rigidbody2D nên project không dùng OnTrigger).
-    /// Gắn CHUNG GameObject với ConveyorSpline + ConveyorConnections (LevelBuilder tự thêm
-    /// khi ConveyorData.hasSwitch = true).
+    /// Chọn nhánh active của conveyor.
+    ///
+    /// Khi nhánh thay đổi, component tạo một conveyor hiển thị tạm bằng cách ghép:
+    /// - toàn bộ knot của conveyor nguồn;
+    /// - các knot của conveyor nhánh đang active.
+    ///
+    /// Renderer hợp nhất chỉ dùng cho hình ảnh. Movement vẫn chạy trên hai ConveyorSpline gốc,
+    /// vì vậy không thay đổi logic FallingPixelManager hoặc graph ConveyorConnections.
     /// </summary>
     [RequireComponent(typeof(ConveyorSpline))]
     [RequireComponent(typeof(ConveyorConnections))]
-    public class ConveyorSwitch : MonoBehaviour
+    public sealed class ConveyorSwitch : MonoBehaviour
     {
-        [Tooltip("Bán kính vùng click quanh điểm cuối băng (world unit).")]
+        const string CombinedRendererObjectName = "SwitchCombinedConveyorRenderer";
+
+        [Header("Input")]
         [Min(0.1f)] public float clickRadius = 1.1f;
-        [Tooltip("Biên nới thêm khi bấm trực tiếp lên conveyor nhánh để đổi route (world unit).")]
         [Min(0f)] public float branchClickPadding = 0.15f;
-        [Tooltip("Bỏ qua phần đầu conveyor nhánh sát điểm giao để người chơi không còn switch bằng cách bấm đúng điểm junction.")]
         [Range(0f, 0.5f)] public float branchClickStartProgress = 0.08f;
-        [Header("Marker nhánh đang chọn")]
-        [Tooltip("Sprite hiển thị trực tiếp trên conveyor đang được link. Để trống sẽ dùng marker tròn mặc định.")]
+
+        [Header("Active branch marker")]
         public Sprite linkedBranchSprite;
-        [Tooltip("Màu marker của nhánh đang chọn.")]
         public Color indicatorColor = new Color(1f, 0.85f, 0.2f);
-        [Tooltip("Vị trí marker dọc theo conveyor được link (0 = đầu conveyor, 1 = cuối conveyor).")]
         [Range(0.05f, 0.95f)] public float linkedSpriteProgress = 0.35f;
-        [Tooltip("Kích thước marker theo world unit.")]
         [Min(0.05f)] public float linkedSpriteSize = 0.45f;
-        [Tooltip("Sorting order của marker.")]
         public int linkedSpriteSortingOrder = 60;
 
-        [Header("Nhánh chọn / không chọn")]
-        [Tooltip("Độ tối phủ lên nhánh KHÔNG được chọn (0 = không phủ, 1 = đen kịt). " +
-                 "Phủ bằng mesh overlay nên không phụ thuộc shader của băng.")]
+        [Header("Combined conveyor renderer")]
+        [Tooltip("Tạo một renderer mới từ knot của conveyor nguồn và nhánh đang chọn.")]
+        public bool useCombinedRenderer = true;
+
+        [Tooltip("Số knot lấy từ conveyor nhánh. 0 = lấy toàn bộ knot.")]
+        [Min(0)] public int linkedKnotCount;
+
+        [Tooltip("Ẩn MeshRenderer của conveyor nguồn khi renderer hợp nhất đang hoạt động.")]
+        public bool hideSourceRenderer = true;
+
+        [Tooltip("Lệch Z cộng thêm cho renderer hợp nhất. Giá trị âm thường đưa mesh gần camera hơn trong scene 2D.")]
+        public float combinedRendererZOffset = -0.002f;
+
+        [Tooltip("Khoảng cách tối đa để coi knot cuối nguồn và knot đầu nhánh là cùng một knot.")]
+        [Min(0.0001f)] public float duplicateKnotTolerance = 0.01f;
+
+        [Tooltip("Sorting order cộng thêm so với renderer nguồn.")]
+        public int combinedSortingOrderOffset = 1;
+
+        [Header("Legacy visual settings")]
+        [Tooltip("Giữ lại để prefab cũ không mất dữ liệu. Bản Simple không tạo dim overlay.")]
         [Range(0f, 1f)] public float inactiveDimAlpha = 0.45f;
-        [Tooltip("Đẩy nhánh không chọn ra sau theo Z (world) để nằm KHUẤT dưới nhánh đang chọn " +
-                 "và băng nguồn tại chỗ giao nhau.")]
+        [Tooltip("Giữ lại để tương thích prefab cũ. Bản Simple không đổi Z của branch.")]
         [Min(0f)] public float inactiveBranchZOffset = 0.35f;
-        [Tooltip("Hạ sorting order của nhánh inactive để nó luôn nằm sau source và nhánh active.")]
+        [Tooltip("Giữ lại để tương thích prefab cũ. Bản Simple không đổi sorting order.")]
         [Min(1)] public int inactiveBranchSortingOffset = 20;
-        [Tooltip("Số knot spline đầu của nhánh active được conveyor gốc render tiếp. 2 = knot 0 và knot 1.")]
         [FormerlySerializedAs("activeBranchOwnedDotCount")]
         [Min(2)] public int activeBranchOwnedKnotCount = 2;
 
-        const string DimOverlayName = "SwitchDimOverlay";
-
         ConveyorSpline _spline;
-        ConveyorConnections _conn;
-        SpriteRenderer _indicatorSprite;
-        Transform _indicatorRoot;
-        Texture2D _runtimeIndicatorTexture;
-        Sprite _runtimeIndicatorSprite;
-        Material _dimMaterial;
+        ConveyorConnections _connections;
+        ConveyorBeltRenderer _sourceBeltRenderer;
+        MeshRenderer _sourceMeshRenderer;
+
+        SpriteRenderer _indicator;
+        Sprite _fallbackSprite;
         int _activeIndex;
 
-        /// <summary>Index nhánh đang chọn trong ConveyorConnections.next (tự sanitize).</summary>
+        GameObject _combinedObject;
+        SplineContainer _combinedContainer;
+        ConveyorSpline _combinedSpline;
+        ConveyorBeltRenderer _combinedBeltRenderer;
+        MeshRenderer _combinedMeshRenderer;
+
+        bool _sourceRendererStateCaptured;
+        bool _sourceRendererWasEnabled;
+
         public int ActiveIndex
         {
-            get { SanitizeIndex(); return _activeIndex; }
-            set { _activeIndex = Mathf.Max(0, value); SanitizeIndex(); RefreshIndicator(); }
+            get
+            {
+                SanitizeActiveIndex();
+                return _activeIndex;
+            }
+            set
+            {
+                _activeIndex = Mathf.Max(0, value);
+                SanitizeActiveIndex();
+                RefreshVisuals();
+            }
         }
 
-        /// <summary>Điểm cuối băng (t=1) — tâm vùng click và gốc mũi tên.</summary>
         public Vector3 SwitchPosition
         {
             get
             {
-                if (_spline == null) _spline = GetComponent<ConveyorSpline>();
-                if (_spline != null && _spline.TrySampleCenterline(1f, out Vector3 pos, out _))
-                    return pos;
-                return transform.position;
+                EnsureReferences();
+                return _spline != null
+                    ? _spline.GetPositionOnSpline(1f, 0f)
+                    : transform.position;
             }
         }
 
-        /// <summary>Số nhánh next khác null. Switch chỉ có nghĩa khi >= 2.</summary>
         public int ValidBranchCount
         {
             get
             {
-                if (_conn == null) _conn = GetComponent<ConveyorConnections>();
-                if (_conn == null || _conn.next == null) return 0;
-                int n = 0;
-                for (int i = 0; i < _conn.next.Count; i++)
-                    if (_conn.next[i] != null) n++;
-                return n;
+                EnsureReferences();
+                if (_connections == null || _connections.next == null)
+                    return 0;
+
+                int count = 0;
+                for (int i = 0; i < _connections.next.Count; i++)
+                {
+                    if (_connections.next[i] != null)
+                        count++;
+                }
+                return count;
             }
         }
 
         void Awake()
         {
-            _spline = GetComponent<ConveyorSpline>();
-            _conn = GetComponent<ConveyorConnections>();
+            EnsureReferences();
         }
 
         void OnEnable()
         {
-            RefreshIndicator();
+            EnsureReferences();
+            SanitizeActiveIndex();
+            RefreshVisuals();
+        }
+
+        void OnDisable()
+        {
+            RestoreSourceRenderer();
+            SetCombinedRendererActive(false);
+        }
+
+        void OnValidate()
+        {
+            clickRadius = Mathf.Max(0.1f, clickRadius);
+            branchClickPadding = Mathf.Max(0f, branchClickPadding);
+            linkedSpriteSize = Mathf.Max(0.05f, linkedSpriteSize);
+            activeBranchOwnedKnotCount = Mathf.Max(2, activeBranchOwnedKnotCount);
+            linkedKnotCount = Mathf.Max(0, linkedKnotCount);
+            duplicateKnotTolerance = Mathf.Max(0.0001f, duplicateKnotTolerance);
+
+            if (Application.isPlaying)
+                RefreshVisuals();
         }
 
         void Update()
         {
-            // Popup đang đè -> không nhận click gameplay (input là polling, UI không chặn được).
-            if (GameplayPause.IsPaused) return;
-            if (_spline == null || _conn == null) return;
-            // Băng khép kín không bao giờ Advance; < 2 nhánh thì không có gì để đổi.
-            if (_spline.IsClosed || ValidBranchCount < 2) return;
-            if (!PointerInput.PressedThisFrame()) return;
+            if (GameplayPause.IsPaused || UIPointerGuard.IsPointerOverUI())
+                return;
+            if (ValidBranchCount < 2 || _spline == null || _spline.IsClosed)
+                return;
+            if (!PointerInput.PressedThisFrame())
+                return;
+            if (!PointerInput.TryGetPosition(out Vector2 pointerPosition))
+                return;
 
-            // UI đang đè lên -> không cho click xuyên qua xuống switch.
-            if (UIPointerGuard.IsPointerOverUI()) return;
+            Camera camera = Camera.main;
+            if (camera == null)
+                return;
 
-            Camera cam = Camera.main;
-            if (cam == null) return;
-            if (!PointerInput.TryGetPosition(out Vector2 pointerPos)) return;
+            Vector3 screen = pointerPosition;
+            screen.z = Mathf.Abs(camera.transform.position.z - SwitchPosition.z);
+            Vector3 world = camera.ScreenToWorldPoint(screen);
 
-            Vector3 screen = pointerPos;
-            Vector3 pivot = SwitchPosition;
-            screen.z = Mathf.Abs(cam.transform.position.z - pivot.z);
-            Vector3 world = cam.ScreenToWorldPoint(screen);
-
-            TrySwitchToBranchAtWorldPosition(world);
+            if (Vector2.Distance(world, SwitchPosition) <= clickRadius)
+                Toggle();
+            else
+                TrySwitchToBranchAtWorldPosition(world);
         }
 
-        /// <summary>Nhánh đang chọn. Trả về false nếu không có nhánh hợp lệ (đích cuối).</summary>
+        void EnsureReferences()
+        {
+            _spline = _spline != null ? _spline : GetComponent<ConveyorSpline>();
+            _connections = _connections != null
+                ? _connections
+                : GetComponent<ConveyorConnections>();
+            _sourceBeltRenderer = _sourceBeltRenderer != null
+                ? _sourceBeltRenderer
+                : GetComponent<ConveyorBeltRenderer>();
+            _sourceMeshRenderer = _sourceMeshRenderer != null
+                ? _sourceMeshRenderer
+                : GetComponent<MeshRenderer>();
+        }
+
         public bool TryGetActiveNext(out ConveyorSpline next)
         {
-            SanitizeIndex();
-            var list = _conn != null ? _conn.next : null;
-            next = list != null && _activeIndex >= 0 && _activeIndex < list.Count
-                ? list[_activeIndex]
-                : null;
+            EnsureReferences();
+            SanitizeActiveIndex();
+
+            if (_connections == null || _connections.next == null ||
+                _activeIndex < 0 || _activeIndex >= _connections.next.Count)
+            {
+                next = null;
+                return false;
+            }
+
+            next = _connections.next[_activeIndex];
             return next != null;
         }
 
-        /// <summary>Chuyển sang nhánh hợp lệ kế tiếp (vòng) + feedback + notify save.</summary>
         public void Toggle()
         {
-            var list = _conn != null ? _conn.next : null;
-            if (list == null || list.Count == 0) return;
+            EnsureReferences();
+            if (_connections == null || _connections.next == null ||
+                _connections.next.Count == 0)
+                return;
 
-            for (int step = 1; step <= list.Count; step++)
+            SanitizeActiveIndex();
+            for (int step = 1; step <= _connections.next.Count; step++)
             {
-                int i = (_activeIndex + step) % list.Count;
-                if (list[i] != null) { _activeIndex = i; break; }
+                int index = (_activeIndex + step) % _connections.next.Count;
+                if (_connections.next[index] == null)
+                    continue;
+
+                SetActiveIndex(index);
+                return;
             }
-
-            RefreshIndicator();
-
-            if (_indicatorRoot != null)
-            {
-                _indicatorRoot.DOKill(true); // hoàn tất punch dở để không lệch scale gốc
-                _indicatorRoot.localScale = Vector3.one;
-                _indicatorRoot.DOPunchScale(Vector3.one * 0.3f, 0.2f, 8, 0.8f);
-            }
-
-            // Trạng thái switch nằm trong save tiến trình -> ghi lại ngay sau khi đổi.
-            GamePlayManager.NotifyStateChangedForSave();
         }
 
-        /// <summary>
-        /// Runtime click behavior: click the target conveyor branch itself, then route to that branch.
-        /// Returns false when the click misses all valid next conveyors or the selected branch is already active.
-        /// </summary>
         public bool TrySwitchToBranchAtWorldPosition(Vector3 worldPosition)
         {
-            if (TryFindBranchIndexAtWorldPosition(worldPosition, out int branchIndex))
-                return TrySwitchToBranchIndex(branchIndex);
-
-            return false;
+            return TryFindBranchIndexAtWorldPosition(worldPosition, out int branchIndex) &&
+                   TrySwitchToBranchIndex(branchIndex);
         }
 
         public bool TryFindBranchIndexAtWorldPosition(Vector3 worldPosition, out int branchIndex)
         {
+            EnsureReferences();
             branchIndex = -1;
-            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
-            var list = _conn != null ? _conn.next : null;
-            if (list == null || list.Count == 0) return false;
+
+            if (_connections == null || _connections.next == null)
+                return false;
 
             float bestDistance = float.MaxValue;
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < _connections.next.Count; i++)
             {
-                ConveyorSpline branch = list[i];
-                if (branch == null) continue;
+                ConveyorSpline branch = _connections.next[i];
+                if (branch == null)
+                    continue;
 
                 float progress = branch.FindClosestProgress(worldPosition, out float distance);
-                if (progress < branchClickStartProgress) continue;
+                if (progress < branchClickStartProgress)
+                    continue;
 
-                float hitRadius = Mathf.Max(0.01f, branch.HalfWidth + branchClickPadding);
-                if (distance > hitRadius || distance >= bestDistance) continue;
+                float hitRadius = branch.HalfWidth + branchClickPadding;
+                if (distance > hitRadius || distance >= bestDistance)
+                    continue;
 
                 bestDistance = distance;
                 branchIndex = i;
@@ -205,274 +267,363 @@ namespace FruitSort
 
         public bool TrySwitchToBranchIndex(int branchIndex)
         {
-            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
-            var list = _conn != null ? _conn.next : null;
-            if (list == null || branchIndex < 0 || branchIndex >= list.Count || list[branchIndex] == null)
+            EnsureReferences();
+            if (_connections == null || _connections.next == null ||
+                branchIndex < 0 || branchIndex >= _connections.next.Count ||
+                _connections.next[branchIndex] == null)
                 return false;
 
-            SanitizeIndex();
-            if (_activeIndex == branchIndex) return false;
+            SanitizeActiveIndex();
+            if (_activeIndex == branchIndex)
+                return false;
 
-            _activeIndex = branchIndex;
-            RefreshIndicator();
-            GamePlayManager.NotifyStateChangedForSave();
+            SetActiveIndex(branchIndex);
             return true;
         }
 
-        /// <summary>
-        /// Conveyor gốc sở hữu đoạn từ knot 0 tới knot cuối trong activeBranchOwnedKnotCount.
-        /// </summary>
+        void SetActiveIndex(int index)
+        {
+            _activeIndex = index;
+            RefreshVisuals();
+            GamePlayManager.NotifyStateChangedForSave();
+        }
+
         public float GetActiveBranchOwnedProgress(ConveyorSpline branch)
         {
-            if (branch == null) return 0f;
-
-            if (branch.Container == null || branch.Container.Spline == null ||
+            if (branch == null || branch.Container == null || branch.Container.Spline == null ||
                 branch.Container.Spline.Count < 2)
                 return 0f;
 
             int knotIndex = Mathf.Min(
-                Mathf.Max(2, activeBranchOwnedKnotCount) - 1,
+                activeBranchOwnedKnotCount - 1,
                 branch.Container.Spline.Count - 1);
-            if (knotIndex >= branch.Container.Spline.Count - 1) return 1f;
-
             return branch.GetProgressThroughKnot(knotIndex);
         }
 
-        void SanitizeIndex()
+        void SanitizeActiveIndex()
         {
-            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
-            var list = _conn != null ? _conn.next : null;
-            if (list == null || list.Count == 0) { _activeIndex = 0; return; }
-
-            _activeIndex = Mathf.Clamp(_activeIndex, 0, list.Count - 1);
-            if (list[_activeIndex] != null) return;
-
-            // Entry đang trỏ null (băng bị xoá) -> nhích tới entry hợp lệ gần nhất (vòng).
-            for (int step = 1; step < list.Count; step++)
+            EnsureReferences();
+            if (_connections == null || _connections.next == null ||
+                _connections.next.Count == 0)
             {
-                int i = (_activeIndex + step) % list.Count;
-                if (list[i] != null) { _activeIndex = i; return; }
+                _activeIndex = 0;
+                return;
+            }
+
+            _activeIndex = Mathf.Clamp(_activeIndex, 0, _connections.next.Count - 1);
+            if (_connections.next[_activeIndex] != null)
+                return;
+
+            for (int step = 1; step < _connections.next.Count; step++)
+            {
+                int index = (_activeIndex + step) % _connections.next.Count;
+                if (_connections.next[index] == null)
+                    continue;
+
+                _activeIndex = index;
+                return;
             }
         }
 
-        // ---- Sprite marker chỉ nhánh đang chọn ----
+        void RefreshVisuals()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureReferences();
+            EnsureIndicator();
+
+            ConveyorSpline active = null;
+            bool visible = ValidBranchCount >= 2 && TryGetActiveNext(out active);
+            _indicator.enabled = visible;
+
+            if (visible)
+            {
+                RefreshIndicator(active);
+                RefreshCombinedRenderer(active);
+            }
+            else
+            {
+                RestoreSourceRenderer();
+                SetCombinedRendererActive(false);
+            }
+
+            ConveyorConnections.RebuildNetwork(_spline);
+        }
+
+        void RefreshIndicator(ConveyorSpline active)
+        {
+            if (_indicator == null || active == null)
+                return;
+
+            _indicator.transform.SetParent(active.transform, true);
+            _indicator.transform.position =
+                active.GetPositionOnSpline(linkedSpriteProgress, 0f);
+            _indicator.transform.rotation = Quaternion.identity;
+            _indicator.sprite = linkedBranchSprite != null
+                ? linkedBranchSprite
+                : GetFallbackSprite();
+            _indicator.color = indicatorColor;
+            _indicator.sortingLayerID =
+                active.GetComponent<MeshRenderer>()?.sortingLayerID ?? 0;
+            _indicator.sortingOrder = linkedSpriteSortingOrder;
+
+            Vector2 spriteSize = _indicator.sprite != null
+                ? _indicator.sprite.bounds.size
+                : Vector2.one;
+            float size = Mathf.Max(0.01f, spriteSize.x, spriteSize.y);
+            _indicator.transform.localScale = Vector3.one * (linkedSpriteSize / size);
+        }
+
+        void RefreshCombinedRenderer(ConveyorSpline active)
+        {
+            if (!useCombinedRenderer || active == null || _spline == null ||
+                _sourceBeltRenderer == null)
+            {
+                RestoreSourceRenderer();
+                SetCombinedRendererActive(false);
+                return;
+            }
+
+            if (!EnsureCombinedRenderer())
+            {
+                RestoreSourceRenderer();
+                return;
+            }
+
+            if (!BuildCombinedSpline(active))
+            {
+                RestoreSourceRenderer();
+                SetCombinedRendererActive(false);
+                return;
+            }
+
+            CopySplineSettings(_spline, _combinedSpline);
+            CopyRendererSettings(_sourceBeltRenderer, _combinedBeltRenderer);
+
+            _combinedSpline.Bake();
+            _combinedBeltRenderer.RebuildMeshAndMaterials();
+            CopySortingSettings();
+            SetCombinedRendererActive(true);
+            HideSourceRendererIfNeeded();
+        }
+
+        bool EnsureCombinedRenderer()
+        {
+            if (_combinedObject != null && _combinedContainer != null &&
+                _combinedSpline != null && _combinedBeltRenderer != null)
+                return true;
+
+            Transform existing = transform.Find(CombinedRendererObjectName);
+            if (existing != null)
+                DestroyGeneratedObject(existing.gameObject);
+
+            _combinedObject = new GameObject(CombinedRendererObjectName);
+            _combinedObject.SetActive(false);
+            _combinedObject.transform.SetParent(transform, false);
+            _combinedObject.transform.localPosition = Vector3.zero;
+            _combinedObject.transform.localRotation = Quaternion.identity;
+            _combinedObject.transform.localScale = Vector3.one;
+
+            _combinedContainer = _combinedObject.AddComponent<SplineContainer>();
+            _combinedSpline = _combinedObject.AddComponent<ConveyorSpline>();
+            _combinedBeltRenderer = _combinedObject.AddComponent<ConveyorBeltRenderer>();
+            _combinedMeshRenderer = _combinedObject.GetComponent<MeshRenderer>();
+
+            _combinedSpline.registerWithFallingPixelManager = false;
+            _combinedSpline.autoRebakeAtRuntime = false;
+            _combinedBeltRenderer.renderConnections = false;
+
+            _combinedObject.SetActive(true);
+            return _combinedContainer != null && _combinedSpline != null &&
+                   _combinedBeltRenderer != null && _combinedMeshRenderer != null;
+        }
+
+        bool BuildCombinedSpline(ConveyorSpline active)
+        {
+            if (_combinedContainer == null || _combinedContainer.Spline == null ||
+                !HasUsableSpline(_spline) || !HasUsableSpline(active))
+                return false;
+
+            Spline output = _combinedContainer.Spline;
+            output.Clear();
+            output.Closed = false;
+
+            AppendKnots(output, _spline, _spline.Container.Spline.Count);
+
+            int targetCount = linkedKnotCount <= 0
+                ? active.Container.Spline.Count
+                : Mathf.Min(linkedKnotCount, active.Container.Spline.Count);
+            AppendKnots(output, active, targetCount);
+
+            return output.Count >= 2;
+        }
+
+        void AppendKnots(Spline output, ConveyorSpline conveyor, int count)
+        {
+            if (output == null || !HasUsableSpline(conveyor))
+                return;
+
+            count = Mathf.Clamp(count, 0, conveyor.Container.Spline.Count);
+            float toleranceSquared = duplicateKnotTolerance * duplicateKnotTolerance;
+
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 sourceLocal = (Vector3)conveyor.Container.Spline[i].Position;
+                Vector3 world = conveyor.transform.TransformPoint(sourceLocal);
+                Vector3 combinedLocal = _combinedObject.transform.InverseTransformPoint(world);
+
+                if (output.Count > 0)
+                {
+                    Vector3 previous = (Vector3)output[output.Count - 1].Position;
+                    if ((previous - combinedLocal).sqrMagnitude <= toleranceSquared)
+                        continue;
+                }
+
+                output.Add(new BezierKnot((float3)combinedLocal));
+            }
+        }
+
+        static bool HasUsableSpline(ConveyorSpline conveyor)
+        {
+            return conveyor != null && conveyor.Container != null &&
+                   conveyor.Container.Spline != null &&
+                   conveyor.Container.Spline.Count >= 2;
+        }
+
+        static void CopySplineSettings(ConveyorSpline source, ConveyorSpline destination)
+        {
+            destination.beltWidth = source.beltWidth;
+            destination.bakeResolution = source.bakeResolution;
+            destination.straightEdges = true;
+            destination.cornerRadius = source.cornerRadius;
+            destination.cornerSegments = source.cornerSegments;
+            destination.autoRebakeAtRuntime = false;
+            destination.registerWithFallingPixelManager = false;
+        }
+
+        void CopyRendererSettings(ConveyorBeltRenderer source,
+            ConveyorBeltRenderer destination)
+        {
+            destination.beltMaterial = source.beltMaterial;
+            destination.texture = source.texture;
+            destination.segments = source.segments;
+            destination.zOffset = source.zOffset + combinedRendererZOffset;
+
+            destination.renderConnections = false;
+            destination.connectionSegments = source.connectionSegments;
+            destination.connectionMinLead = source.connectionMinLead;
+            destination.connectionWidthFactor = source.connectionWidthFactor;
+            destination.connectionMaxProgress = source.connectionMaxProgress;
+            destination.straightConnectionDot = source.straightConnectionDot;
+            destination.connectionSnapWidthFactor = source.connectionSnapWidthFactor;
+
+            destination.tilesAcrossWidth = source.tilesAcrossWidth;
+            destination.scrollSpeed = source.scrollSpeed;
+
+            destination.showWalls = source.showWalls;
+            destination.wallWidth = source.wallWidth;
+            destination.wallZOffset = source.wallZOffset;
+            destination.scrollWalls = source.scrollWalls;
+            destination.wallMaterialOuter = source.wallMaterialOuter;
+            destination.wallTextureOuter = source.wallTextureOuter;
+            destination.wallMaterialInner = source.wallMaterialInner;
+            destination.wallTextureInner = source.wallTextureInner;
+        }
+
+        void CopySortingSettings()
+        {
+            if (_sourceMeshRenderer == null || _combinedMeshRenderer == null)
+                return;
+
+            _combinedMeshRenderer.sortingLayerID = _sourceMeshRenderer.sortingLayerID;
+            _combinedMeshRenderer.sortingOrder =
+                _sourceMeshRenderer.sortingOrder + combinedSortingOrderOffset;
+        }
+
+        void HideSourceRendererIfNeeded()
+        {
+            if (!hideSourceRenderer || _sourceMeshRenderer == null)
+            {
+                RestoreSourceRenderer();
+                return;
+            }
+
+            if (!_sourceRendererStateCaptured)
+            {
+                _sourceRendererWasEnabled = _sourceMeshRenderer.enabled;
+                _sourceRendererStateCaptured = true;
+            }
+
+            _sourceMeshRenderer.enabled = false;
+        }
+
+        void RestoreSourceRenderer()
+        {
+            if (!_sourceRendererStateCaptured || _sourceMeshRenderer == null)
+                return;
+
+            _sourceMeshRenderer.enabled = _sourceRendererWasEnabled;
+            _sourceRendererStateCaptured = false;
+        }
+
+        void SetCombinedRendererActive(bool active)
+        {
+            if (_combinedObject != null && _combinedObject.activeSelf != active)
+                _combinedObject.SetActive(active);
+        }
 
         void EnsureIndicator()
         {
-            if (_indicatorSprite != null) return;
+            if (_indicator != null)
+                return;
 
-            var go = new GameObject("SwitchIndicator");
-            go.transform.SetParent(transform, false);
-            _indicatorRoot = go.transform;
-
-            _indicatorSprite = go.AddComponent<SpriteRenderer>();
-            _indicatorSprite.sprite = linkedBranchSprite != null
+            GameObject indicatorObject = new GameObject("SwitchIndicator");
+            indicatorObject.transform.SetParent(transform, false);
+            _indicator = indicatorObject.AddComponent<SpriteRenderer>();
+            _indicator.sprite = linkedBranchSprite != null
                 ? linkedBranchSprite
-                : CreateFallbackIndicatorSprite();
-            _indicatorSprite.color = indicatorColor;
-            _indicatorSprite.sortingOrder = linkedSpriteSortingOrder;
+                : GetFallbackSprite();
         }
 
-        void RefreshIndicator()
+        Sprite GetFallbackSprite()
         {
-            if (!Application.isPlaying) return;
-            EnsureIndicator();
-            RefreshBranchVisuals();
-            // Connector liên tục trim cả cuối source và đầu target. Khi đổi route phải rebuild
-            // source + toàn bộ target: target cũ trả lại phần đầu, target mới được trim để nhận cung nối.
-            RebuildConnectionMeshes();
-            if (_indicatorSprite == null) return;
+            if (_fallbackSprite != null)
+                return _fallbackSprite;
 
-            ConveyorSpline next = null;
-            bool show = _spline != null && !_spline.IsClosed &&
-                        ValidBranchCount >= 2 && TryGetActiveNext(out next);
-            _indicatorSprite.enabled = show;
-            if (!show) return;
-
-            _indicatorRoot.SetParent(next.transform, true);
-            _indicatorRoot.position = next.GetPositionOnSpline(linkedSpriteProgress, 0f);
-            _indicatorRoot.rotation = Quaternion.identity;
-            _indicatorSprite.sprite = linkedBranchSprite != null
-                ? linkedBranchSprite
-                : CreateFallbackIndicatorSprite();
-            _indicatorSprite.color = indicatorColor;
-            _indicatorSprite.sortingLayerID = next.GetComponent<MeshRenderer>()?.sortingLayerID ?? 0;
-            _indicatorSprite.sortingOrder = linkedSpriteSortingOrder;
-
-            Vector2 spriteSize = _indicatorSprite.sprite != null
-                ? _indicatorSprite.sprite.bounds.size
-                : Vector2.one;
-            float largestSide = Mathf.Max(0.01f, spriteSize.x, spriteSize.y);
-            _indicatorRoot.localScale = Vector3.one * (linkedSpriteSize / largestSide);
-        }
-
-
-        void RebuildConnectionMeshes()
-        {
-            ConveyorBeltRenderer sourceRenderer = GetComponent<ConveyorBeltRenderer>();
-            if (sourceRenderer != null) sourceRenderer.RebuildMeshAndMaterials();
-
-            if (_conn == null || _conn.next == null) return;
-            var rebuilt = new HashSet<ConveyorBeltRenderer>();
-            for (int i = 0; i < _conn.next.Count; i++)
-            {
-                ConveyorSpline target = _conn.next[i];
-                if (target == null) continue;
-                ConveyorBeltRenderer targetRenderer = target.GetComponent<ConveyorBeltRenderer>();
-                if (targetRenderer == null || !rebuilt.Add(targetRenderer)) continue;
-                targetRenderer.RebuildMeshAndMaterials();
-            }
-        }
-
-        /// <summary>
-        /// Nhánh KHÔNG được chọn: phủ lớp tối + đẩy lùi ra sau (Z) để nằm khuất dưới nhánh
-        /// đang chọn tại chỗ giao nhau; nhánh được chọn: sáng, cùng mặt phẳng với băng nguồn.
-        /// Phủ tối bằng MESH OVERLAY (share mesh của băng, material Sprites/Default màu đen
-        /// bán trong suốt) vì shader băng (Mobile/Particles) không có property màu để tint.
-        /// Overlay share mesh THEO THAM CHIẾU nên tự khớp khi ConveyorBeltRenderer rebuild.
-        /// </summary>
-        void RefreshBranchVisuals()
-        {
-            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
-            if (_conn == null || _conn.next == null) return;
-
-            TryGetActiveNext(out ConveyorSpline active);
-            MeshRenderer sourceMeshRenderer = GetComponent<MeshRenderer>();
-            int sourceSortingLayer = sourceMeshRenderer != null
-                ? sourceMeshRenderer.sortingLayerID
-                : 0;
-            int sourceSortingOrder = sourceMeshRenderer != null
-                ? sourceMeshRenderer.sortingOrder
-                : 0;
-            int sortingOffset = Mathf.Max(1, inactiveBranchSortingOffset);
-
-            for (int i = 0; i < _conn.next.Count; i++)
-            {
-                ConveyorSpline belt = _conn.next[i];
-                if (belt == null) continue;
-                bool isActive = belt == active;
-
-                ConveyorBeltRenderer beltRenderer = belt.GetComponent<ConveyorBeltRenderer>();
-                if (beltRenderer != null)
-                {
-                    float visualZ = isActive ? 0f : -Mathf.Max(0f, inactiveBranchZOffset);
-                    beltRenderer.SetRuntimeVisualZOffset(visualZ, false);
-                }
-
-                MeshRenderer branchMeshRenderer = belt.GetComponent<MeshRenderer>();
-                if (branchMeshRenderer != null)
-                {
-                    branchMeshRenderer.sortingLayerID = sourceSortingLayer;
-                    branchMeshRenderer.sortingOrder = isActive
-                        ? sourceSortingOrder
-                        : sourceSortingOrder - sortingOffset;
-                }
-
-                Transform overlay = belt.transform.Find(DimOverlayName);
-                if (!isActive && overlay == null) overlay = CreateDimOverlay(belt);
-                if (overlay != null)
-                {
-                    overlay.gameObject.SetActive(!isActive);
-                    MeshRenderer overlayRenderer = overlay.GetComponent<MeshRenderer>();
-                    if (overlayRenderer != null)
-                    {
-                        overlayRenderer.sortingLayerID = sourceSortingLayer;
-                        overlayRenderer.sortingOrder = sourceSortingOrder - sortingOffset + 1;
-                    }
-                }
-            }
-        }
-
-        Sprite CreateFallbackIndicatorSprite()
-        {
-            if (_runtimeIndicatorSprite != null) return _runtimeIndicatorSprite;
-
-            const int size = 32;
-            _runtimeIndicatorTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
-            {
-                name = "SwitchIndicatorFallbackTexture",
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-                hideFlags = HideFlags.HideAndDontSave,
-            };
-
-            var pixels = new Color32[size * size];
-            float center = (size - 1) * 0.5f;
-            float radius = size * 0.44f;
-            float radiusSquared = radius * radius;
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = x - center;
-                    float dy = y - center;
-                    pixels[y * size + x] = dx * dx + dy * dy <= radiusSquared
-                        ? new Color32(255, 255, 255, 255)
-                        : new Color32(255, 255, 255, 0);
-                }
-            }
-
-            _runtimeIndicatorTexture.SetPixels32(pixels);
-            _runtimeIndicatorTexture.Apply(false, true);
-            _runtimeIndicatorSprite = Sprite.Create(
-                _runtimeIndicatorTexture,
-                new Rect(0f, 0f, size, size),
+            _fallbackSprite = Sprite.Create(
+                Texture2D.whiteTexture,
+                new Rect(0f, 0f, 1f, 1f),
                 new Vector2(0.5f, 0.5f),
-                size);
-            _runtimeIndicatorSprite.name = "SwitchIndicatorFallbackSprite";
-            _runtimeIndicatorSprite.hideFlags = HideFlags.HideAndDontSave;
-            return _runtimeIndicatorSprite;
-        }
-
-        Transform CreateDimOverlay(ConveyorSpline belt)
-        {
-            MeshFilter sourceFilter = belt.GetComponent<MeshFilter>();
-            if (sourceFilter == null || sourceFilter.sharedMesh == null) return null;
-
-            var go = new GameObject(DimOverlayName);
-            go.transform.SetParent(belt.transform, false);
-            // Nhích lên trước mặt băng CỦA CHÍNH NÓ một chút (vẫn sau nhánh active vì cả
-            // object nhánh inactive đã bị đẩy lùi inactiveBranchZOffset).
-            go.transform.localPosition = new Vector3(0f, 0f, -0.02f);
-
-            var overlayFilter = go.AddComponent<MeshFilter>();
-            overlayFilter.sharedMesh = sourceFilter.sharedMesh;
-
-            if (_dimMaterial == null)
-            {
-                _dimMaterial = new Material(Shader.Find("Sprites/Default"))
-                {
-                    color = new Color(0f, 0f, 0f, Mathf.Clamp01(inactiveDimAlpha))
-                };
-            }
-
-            var overlayRenderer = go.AddComponent<MeshRenderer>();
-            int subMeshCount = Mathf.Max(1, sourceFilter.sharedMesh.subMeshCount);
-            var mats = new Material[subMeshCount];
-            for (int i = 0; i < subMeshCount; i++) mats[i] = _dimMaterial;
-            overlayRenderer.sharedMaterials = mats;
-            overlayRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            overlayRenderer.receiveShadows = false;
-            return go.transform;
+                1f);
+            _fallbackSprite.name = "Switch Indicator Fallback";
+            return _fallbackSprite;
         }
 
         void OnDestroy()
         {
-            if (_indicatorRoot != null)
+            RestoreSourceRenderer();
+            DestroyGeneratedObject(_combinedObject);
+            _combinedObject = null;
+
+            if (_fallbackSprite != null)
             {
-                _indicatorRoot.gameObject.SetActive(false);
-                DestroyRuntimeIndicatorAsset(_indicatorRoot.gameObject);
+                if (Application.isPlaying)
+                    Destroy(_fallbackSprite);
+                else
+                    DestroyImmediate(_fallbackSprite);
             }
-            if (_dimMaterial != null) Destroy(_dimMaterial);
-            DestroyRuntimeIndicatorAsset(_runtimeIndicatorSprite);
-            DestroyRuntimeIndicatorAsset(_runtimeIndicatorTexture);
         }
 
-        static void DestroyRuntimeIndicatorAsset(Object asset)
+        static void DestroyGeneratedObject(GameObject value)
         {
-            if (asset == null) return;
-            if (Application.isPlaying) Destroy(asset);
-            else DestroyImmediate(asset);
+            if (value == null)
+                return;
+
+            if (Application.isPlaying)
+                Object.Destroy(value);
+            else
+                Object.DestroyImmediate(value);
         }
 
         void OnDrawGizmosSelected()

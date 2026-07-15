@@ -244,7 +244,7 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
-        public void ConveyorSwitch_InactiveBranchSortsBehindSourceAndActiveBranch()
+        public void ConveyorSwitch_UsesConnectionAwareRendererWithoutCombinedDuplicate()
         {
             LevelData data = CreateSwitchLevelData();
             GameObject conveyorAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ConveyorPrefabPath);
@@ -253,18 +253,8 @@ namespace FruitSort.EditorTests
             try
             {
                 ConveyorSwitch routeSwitch = root.transform.Find("Belt_Source").GetComponent<ConveyorSwitch>();
-                MethodInfo refresh = typeof(ConveyorSwitch).GetMethod(
-                    "RefreshBranchVisuals", BindingFlags.Instance | BindingFlags.NonPublic);
-                Assert.That(refresh, Is.Not.Null);
-
-                refresh.Invoke(routeSwitch, null);
-
-                MeshRenderer source = root.transform.Find("Belt_Source").GetComponent<MeshRenderer>();
-                MeshRenderer active = root.transform.Find("Belt_Up").GetComponent<MeshRenderer>();
-                MeshRenderer inactive = root.transform.Find("Belt_Down").GetComponent<MeshRenderer>();
-                Assert.That(active.sortingOrder, Is.EqualTo(source.sortingOrder));
-                Assert.That(inactive.sortingOrder, Is.LessThan(source.sortingOrder),
-                    "The inactive branch must sort behind both the source and active branch.");
+                Assert.That(routeSwitch.useCombinedRenderer, Is.False,
+                    "The connection-aware belt renderer must be the only switch visual so an inactive branch is not pushed behind a duplicate active mesh.");
             }
             finally
             {

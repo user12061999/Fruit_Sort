@@ -23,39 +23,171 @@ MonoBehaviour:
   moveLimit: 10
   conveyors:
   - name: Belt_Feed
-    beltWidth: 1
+    beltWidth: 0.7
     closed: 0
     hasSwitch: 1
+    hasSwitchSettings: 1
+    switchClickRadius: 1.1
+    switchBranchClickPadding: 0.15
+    switchBranchClickStartProgress: 0.08
+    switchLinkedBranchSprite: {fileID: 21300000, guid: 0fc7e7cf5f0fbbc4299f634794fabc98, type: 3}
+    switchIndicatorColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+    switchLinkedSpriteProgress: 0.35
+    switchLinkedSpriteSize: 0.45
+    switchLinkedSpriteSortingOrder: 60
+    switchUseCombinedRenderer: 1
+    switchLinkedKnotCount: 0
+    switchHideSourceRenderer: 1
+    switchCombinedRendererZOffset: -0.002
+    switchDuplicateKnotTolerance: 0.01
+    switchCombinedSortingOrderOffset: 1
+    switchInactiveDimAlpha: 0.45
+    switchInactiveBranchZOffset: 0.35
+    switchInactiveBranchSortingOffset: 20
+    switchActiveBranchOwnedKnotCount: 2
+    switchActiveIndex: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.5
     cornerSegments: 12
+    bakeResolution: 500
+    autoRebakeAtRuntime: 0
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
+    rendererZOffset: 0.05
+    renderConnections: 1
+    connectionSegments: 40
+    connectionMinLead: 0.9
+    connectionWidthFactor: 1.25
+    connectionMaxProgress: 0.35
+    straightConnectionDot: 0.995
+    connectionSnapWidthFactor: 0.08
+    tilesAcrossWidth: 1
+    scrollSpeed: 0.5
+    showWalls: 1
+    wallWidth: 0.15
+    wallZOffset: -0.01
+    scrollWalls: 0
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
-    - {x: -2, y: 1, z: 0}
-    - {x: 2.5, y: 1, z: 0}
-    - {x: 2.5, y: 4, z: 0}
+    - {x: -2, y: 3, z: 0}
+    - {x: 3, y: 3, z: 0}
+    - {x: 3, y: 4, z: 0}
   - name: Belt_Left
-    beltWidth: 1
+    beltWidth: 0.7
     closed: 0
     hasSwitch: 0
+    hasSwitchSettings: 0
+    switchClickRadius: 1.1
+    switchBranchClickPadding: 0.15
+    switchBranchClickStartProgress: 0.08
+    switchLinkedBranchSprite: {fileID: 0}
+    switchIndicatorColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+    switchLinkedSpriteProgress: 0.35
+    switchLinkedSpriteSize: 0.45
+    switchLinkedSpriteSortingOrder: 60
+    switchUseCombinedRenderer: 0
+    switchLinkedKnotCount: 0
+    switchHideSourceRenderer: 1
+    switchCombinedRendererZOffset: -0.002
+    switchDuplicateKnotTolerance: 0.01
+    switchCombinedSortingOrderOffset: 1
+    switchInactiveDimAlpha: 0.45
+    switchInactiveBranchZOffset: 0.35
+    switchInactiveBranchSortingOffset: 20
+    switchActiveBranchOwnedKnotCount: 2
+    switchActiveIndex: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.5
     cornerSegments: 12
+    bakeResolution: 500
+    autoRebakeAtRuntime: 0
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
+    rendererZOffset: 0.05
+    renderConnections: 1
+    connectionSegments: 40
+    connectionMinLead: 0.9
+    connectionWidthFactor: 1.25
+    connectionMaxProgress: 0.35
+    straightConnectionDot: 0.995
+    connectionSnapWidthFactor: 0.08
+    tilesAcrossWidth: 1
+    scrollSpeed: 0.5
+    showWalls: 1
+    wallWidth: 0.15
+    wallZOffset: -0.01
+    scrollWalls: 0
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
-    - {x: 2.6, y: 4.1, z: 0}
-    - {x: -0.3, y: 4.1, z: 0}
-    - {x: -0.7, y: 5.1, z: 0}
-    - {x: -2.6, y: 5.1, z: 0}
+    - {x: 3, y: 4, z: 0}
+    - {x: -0.5, y: 4, z: 0}
+    - {x: -0.5, y: 5, z: 0}
+    - {x: -2.5, y: 5, z: 0}
   - name: Belt_Right
-    beltWidth: 1
+    beltWidth: 0.7
     closed: 0
     hasSwitch: 0
+    hasSwitchSettings: 0
+    switchClickRadius: 1.1
+    switchBranchClickPadding: 0.15
+    switchBranchClickStartProgress: 0.08
+    switchLinkedBranchSprite: {fileID: 0}
+    switchIndicatorColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+    switchLinkedSpriteProgress: 0.35
+    switchLinkedSpriteSize: 0.45
+    switchLinkedSpriteSortingOrder: 60
+    switchUseCombinedRenderer: 0
+    switchLinkedKnotCount: 0
+    switchHideSourceRenderer: 1
+    switchCombinedRendererZOffset: -0.002
+    switchDuplicateKnotTolerance: 0.01
+    switchCombinedSortingOrderOffset: 1
+    switchInactiveDimAlpha: 0.45
+    switchInactiveBranchZOffset: 0.35
+    switchInactiveBranchSortingOffset: 20
+    switchActiveBranchOwnedKnotCount: 2
+    switchActiveIndex: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.5
     cornerSegments: 12
+    bakeResolution: 500
+    autoRebakeAtRuntime: 0
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
+    rendererZOffset: 0.05
+    renderConnections: 1
+    connectionSegments: 40
+    connectionMinLead: 0.9
+    connectionWidthFactor: 1.25
+    connectionMaxProgress: 0.35
+    straightConnectionDot: 0.995
+    connectionSnapWidthFactor: 0.08
+    tilesAcrossWidth: 1
+    scrollSpeed: 0.5
+    showWalls: 1
+    wallWidth: 0.15
+    wallZOffset: -0.01
+    scrollWalls: 0
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
-    - {x: 2.6, y: 4.1, z: 0}
-    - {x: 2.6, y: 5.1, z: 0}
-    - {x: 0.4, y: 5.1, z: 0}
+    - {x: 3, y: 4, z: 0}
+    - {x: 3, y: 5, z: 0}
+    - {x: 0.5, y: 5, z: 0}
   conveyorLinks:
   - from: 0
     to: 1

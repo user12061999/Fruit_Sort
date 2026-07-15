@@ -84,9 +84,57 @@ namespace FruitSort
             [Tooltip("Đặt switch định tuyến ở cuối băng: người chơi click đổi nhánh dot đi tiếp. " +
                      "Chỉ có nghĩa khi băng HỞ và có >= 2 link đi ra.")]
             public bool hasSwitch;
+            [Tooltip("Đánh dấu ConveyorSwitch đã được lưu đầy đủ.")]
+            public bool hasSwitchSettings;
+            [Min(0.1f)] public float switchClickRadius = 1.1f;
+            [Min(0f)] public float switchBranchClickPadding = 0.15f;
+            [Range(0f, 0.5f)] public float switchBranchClickStartProgress = 0.08f;
+            public Sprite switchLinkedBranchSprite;
+            public Color switchIndicatorColor = new Color(1f, 0.85f, 0.2f);
+            [Range(0.05f, 0.95f)] public float switchLinkedSpriteProgress = 0.35f;
+            [Min(0.05f)] public float switchLinkedSpriteSize = 0.45f;
+            public int switchLinkedSpriteSortingOrder = 60;
+            public bool switchUseCombinedRenderer;
+            [Min(0)] public int switchLinkedKnotCount;
+            public bool switchHideSourceRenderer = true;
+            public float switchCombinedRendererZOffset = -0.002f;
+            [Min(0.0001f)] public float switchDuplicateKnotTolerance = 0.01f;
+            public int switchCombinedSortingOrderOffset = 1;
+            [Range(0f, 1f)] public float switchInactiveDimAlpha = 0.45f;
+            [Min(0f)] public float switchInactiveBranchZOffset = 0.35f;
+            [Min(1)] public int switchInactiveBranchSortingOffset = 20;
+            [Min(2)] public int switchActiveBranchOwnedKnotCount = 2;
+            public int switchActiveIndex;
+            [Tooltip("Đánh dấu ConveyorBeltRenderer đã được lưu đầy đủ. Asset cũ giữ nguyên cấu hình prefab.")]
+            public bool hasRendererSettings;
             public bool straightEdges = true;
             [Min(0f)] public float cornerRadius = 0.5f;
             [Min(1)] public int cornerSegments = 8;
+            [Min(8)] public int bakeResolution = 96;
+            public bool autoRebakeAtRuntime;
+
+            public Material beltMaterial;
+            public Texture beltTexture;
+            [Min(2)] public int rendererSegments = 64;
+            public float rendererZOffset = 0.05f;
+            public bool renderConnections = true;
+            [Min(4)] public int connectionSegments = 16;
+            [Min(0.05f)] public float connectionMinLead = 0.9f;
+            [Min(0.5f)] public float connectionWidthFactor = 1.25f;
+            [Range(0.05f, 0.5f)] public float connectionMaxProgress = 0.35f;
+            [Range(0.9f, 0.9999f)] public float straightConnectionDot = 0.995f;
+            [Min(0.01f)] public float connectionSnapWidthFactor = 0.08f;
+            public float tilesAcrossWidth = 1f;
+            public float scrollSpeed = 0.5f;
+            [Tooltip("Hiển thị hai thành viền của băng chuyền.")]
+            public bool showWalls;
+            [Min(0f)] public float wallWidth = 0.15f;
+            public float wallZOffset = -0.01f;
+            public bool scrollWalls;
+            public Material wallMaterialOuter;
+            public Texture wallTextureOuter;
+            public Material wallMaterialInner;
+            public Texture wallTextureInner;
             [Tooltip("Vị trí WORLD của các knot.")]
             public List<Vector3> knots = new List<Vector3>();
         }

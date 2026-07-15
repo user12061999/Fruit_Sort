@@ -66,6 +66,8 @@ namespace FruitSort
                 var go = conveyors[i].gameObject;
                 var routeSwitch = go.GetComponent<ConveyorSwitch>();
                 if (routeSwitch == null) routeSwitch = go.AddComponent<ConveyorSwitch>();
+                if (data.conveyors[i].hasSwitchSettings)
+                    ConfigureSwitch(routeSwitch, data.conveyors[i]);
                 MarkModified(routeSwitch);
             }
 
@@ -97,6 +99,29 @@ namespace FruitSort
                     BuildObstacle(data, data.obstacles[i], i, root.transform);
 
             return root;
+        }
+
+        static void ConfigureSwitch(ConveyorSwitch routeSwitch, LevelData.ConveyorData data)
+        {
+            routeSwitch.clickRadius = data.switchClickRadius;
+            routeSwitch.branchClickPadding = data.switchBranchClickPadding;
+            routeSwitch.branchClickStartProgress = data.switchBranchClickStartProgress;
+            routeSwitch.linkedBranchSprite = data.switchLinkedBranchSprite;
+            routeSwitch.indicatorColor = data.switchIndicatorColor;
+            routeSwitch.linkedSpriteProgress = data.switchLinkedSpriteProgress;
+            routeSwitch.linkedSpriteSize = data.switchLinkedSpriteSize;
+            routeSwitch.linkedSpriteSortingOrder = data.switchLinkedSpriteSortingOrder;
+            routeSwitch.useCombinedRenderer = data.switchUseCombinedRenderer;
+            routeSwitch.linkedKnotCount = data.switchLinkedKnotCount;
+            routeSwitch.hideSourceRenderer = data.switchHideSourceRenderer;
+            routeSwitch.combinedRendererZOffset = data.switchCombinedRendererZOffset;
+            routeSwitch.duplicateKnotTolerance = data.switchDuplicateKnotTolerance;
+            routeSwitch.combinedSortingOrderOffset = data.switchCombinedSortingOrderOffset;
+            routeSwitch.inactiveDimAlpha = data.switchInactiveDimAlpha;
+            routeSwitch.inactiveBranchZOffset = data.switchInactiveBranchZOffset;
+            routeSwitch.inactiveBranchSortingOffset = data.switchInactiveBranchSortingOffset;
+            routeSwitch.activeBranchOwnedKnotCount = data.switchActiveBranchOwnedKnotCount;
+            routeSwitch.ActiveIndex = data.switchActiveIndex;
         }
 
         static void BuildGrinder(LevelData level, LevelData.GrinderData data, int index, List<ConveyorSpline> conveyors, Transform parent)
@@ -165,6 +190,11 @@ namespace FruitSort
             conv.straightEdges = cd.straightEdges;
             conv.cornerRadius = cd.cornerRadius;
             conv.cornerSegments = cd.cornerSegments;
+            if (cd.hasRendererSettings)
+            {
+                conv.bakeResolution = cd.bakeResolution;
+                conv.autoRebakeAtRuntime = cd.autoRebakeAtRuntime;
+            }
 
             if (go.GetComponent<ConveyorConnections>() == null)
                 go.AddComponent<ConveyorConnections>();
@@ -173,7 +203,42 @@ namespace FruitSort
 
             var beltRenderer = go.GetComponent<ConveyorBeltRenderer>();
             if (beltRenderer != null)
+            {
+                if (cd.hasRendererSettings)
+                {
+                    beltRenderer.beltMaterial = cd.beltMaterial;
+                    beltRenderer.texture = cd.beltTexture;
+                    beltRenderer.segments = cd.rendererSegments;
+                    beltRenderer.zOffset = cd.rendererZOffset;
+                    beltRenderer.renderConnections = cd.renderConnections;
+                    beltRenderer.connectionSegments = cd.connectionSegments;
+                    beltRenderer.connectionMinLead = cd.connectionMinLead;
+                    beltRenderer.connectionWidthFactor = cd.connectionWidthFactor;
+                    beltRenderer.connectionMaxProgress = cd.connectionMaxProgress;
+                    beltRenderer.straightConnectionDot = cd.straightConnectionDot;
+                    beltRenderer.connectionSnapWidthFactor = cd.connectionSnapWidthFactor;
+                    beltRenderer.tilesAcrossWidth = cd.tilesAcrossWidth;
+                    beltRenderer.scrollSpeed = cd.scrollSpeed;
+                    beltRenderer.showWalls = cd.showWalls;
+                    beltRenderer.wallWidth = cd.wallWidth;
+                    beltRenderer.wallZOffset = cd.wallZOffset;
+                    beltRenderer.scrollWalls = cd.scrollWalls;
+                    beltRenderer.wallMaterialOuter = cd.wallMaterialOuter;
+                    beltRenderer.wallTextureOuter = cd.wallTextureOuter;
+                    beltRenderer.wallMaterialInner = cd.wallMaterialInner;
+                    beltRenderer.wallTextureInner = cd.wallTextureInner;
+                }
+                else if (cd.showWalls)
+                {
+                    // Migration for levels saved by the earlier wall-only format.
+                    beltRenderer.showWalls = true;
+                    beltRenderer.wallWidth = cd.wallWidth;
+                    beltRenderer.wallZOffset = cd.wallZOffset;
+                    beltRenderer.scrollWalls = cd.scrollWalls;
+                }
+
                 beltRenderer.RebuildMeshAndMaterials();
+            }
 
             MarkModified(conv);
             MarkModified(container);
