@@ -30,9 +30,9 @@ MonoBehaviour:
     cornerRadius: 0.5
     cornerSegments: 12
     knots:
-    - {x: -2.6, y: 3, z: 0}
-    - {x: 2.6, y: 3, z: 0}
-    - {x: 2.6, y: 4.1, z: 0}
+    - {x: -2, y: 1, z: 0}
+    - {x: 2.5, y: 1, z: 0}
+    - {x: 2.5, y: 4, z: 0}
   - name: Belt_Left
     beltWidth: 1
     closed: 0
@@ -56,56 +56,18 @@ MonoBehaviour:
     - {x: 2.6, y: 4.1, z: 0}
     - {x: 2.6, y: 5.1, z: 0}
     - {x: 0.4, y: 5.1, z: 0}
-  - name: Conveyor
-    beltWidth: 1
-    closed: 0
-    hasSwitch: 0
-    straightEdges: 1
-    cornerRadius: 1
-    cornerSegments: 45
-    knots:
-    - {x: 1.5, y: -4.5, z: 0}
-    - {x: 4, y: -4.5, z: 0}
-    - {x: 4.5, y: -7, z: 0}
-  - name: Conveyor
-    beltWidth: 1
-    closed: 0
-    hasSwitch: 0
-    straightEdges: 1
-    cornerRadius: 1
-    cornerSegments: 45
-    knots:
-    - {x: -3, y: -6.5, z: 0}
-    - {x: 0.5, y: -7, z: 0}
-    - {x: 2, y: -6.5, z: 0}
-  - name: Conveyor
-    beltWidth: 1
-    closed: 0
-    hasSwitch: 1
-    straightEdges: 1
-    cornerRadius: 1
-    cornerSegments: 45
-    knots:
-    - {x: -3.5, y: -1.5, z: 0}
-    - {x: 0, y: -2, z: 0}
-    - {x: 0.5, y: -3.5, z: 0}
-    - {x: -2, y: -4.5, z: 0}
   conveyorLinks:
   - from: 0
     to: 1
   - from: 0
     to: 2
-  - from: 5
-    to: 4
-  - from: 5
-    to: 3
   buckets:
-  - position: {x: -1.2, y: 6.2, z: 0}
-    colorId: 0
-    maxFill: 30
-    launchDirection: {x: 0, y: -1}
   - position: {x: 1.2, y: 6.2, z: 0}
     colorId: 1
+    maxFill: 30
+    launchDirection: {x: 0, y: -1}
+  - position: {x: -1.2, y: 6.2, z: 0}
+    colorId: 0
     maxFill: 30
     launchDirection: {x: 0, y: -1}
   spawners:

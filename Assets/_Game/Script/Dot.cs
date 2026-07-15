@@ -44,6 +44,14 @@ namespace FruitSort
 
         // Băng chuyền dot đang chạy trên đó (đổi khi đi qua liên kết sang băng kế). Không serialize.
         [System.NonSerialized] public ConveyorSpline conveyor;
+        // Trong lúc đi qua đoạn bo nối giữa hai conveyor, conveyor vẫn là source và target được
+        // giữ riêng để dot đi theo đúng connection path thay vì đổi pháp tuyến tức thời.
+        [System.NonSerialized] public ConveyorSpline connectionTarget;
+        [System.NonSerialized] public float connectionDistance;
+        // Snapshot của route tại lúc dot bắt đầu chuyển conveyor. Giữ hai giá trị này ổn định
+        // nếu người chơi đổi switch trong lúc dot đang đi qua đoạn nối.
+        [System.NonSerialized] public float connectionRouteLength;
+        [System.NonSerialized] public float connectionTargetEndProgress;
 
         // Hệ số tốc độ riêng từng dot để tạo nhiễu (set khi lên belt). Không serialize.
         [System.NonSerialized] public float beltSpeedFactor = 1f;

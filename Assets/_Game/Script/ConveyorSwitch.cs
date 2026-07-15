@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FruitSort
 {
@@ -20,12 +21,21 @@ namespace FruitSort
     {
         [Tooltip("Bán kính vùng click quanh điểm cuối băng (world unit).")]
         [Min(0.1f)] public float clickRadius = 1.1f;
-        [Tooltip("Màu mũi tên chỉ nhánh đang chọn.")]
+        [Tooltip("Biên nới thêm khi bấm trực tiếp lên conveyor nhánh để đổi route (world unit).")]
+        [Min(0f)] public float branchClickPadding = 0.15f;
+        [Tooltip("Bỏ qua phần đầu conveyor nhánh sát điểm giao để người chơi không còn switch bằng cách bấm đúng điểm junction.")]
+        [Range(0f, 0.5f)] public float branchClickStartProgress = 0.08f;
+        [Header("Marker nhánh đang chọn")]
+        [Tooltip("Sprite hiển thị trực tiếp trên conveyor đang được link. Để trống sẽ dùng marker tròn mặc định.")]
+        public Sprite linkedBranchSprite;
+        [Tooltip("Màu marker của nhánh đang chọn.")]
         public Color indicatorColor = new Color(1f, 0.85f, 0.2f);
-        [Tooltip("Chiều dài tối đa của mũi tên chỉ hướng (uốn theo nhánh được chọn).")]
-        [Min(0.2f)] public float indicatorLength = 1.6f;
-        [Tooltip("Bề rộng nét mũi tên.")]
-        [Min(0.02f)] public float indicatorWidth = 0.18f;
+        [Tooltip("Vị trí marker dọc theo conveyor được link (0 = đầu conveyor, 1 = cuối conveyor).")]
+        [Range(0.05f, 0.95f)] public float linkedSpriteProgress = 0.35f;
+        [Tooltip("Kích thước marker theo world unit.")]
+        [Min(0.05f)] public float linkedSpriteSize = 0.45f;
+        [Tooltip("Sorting order của marker.")]
+        public int linkedSpriteSortingOrder = 60;
 
         [Header("Nhánh chọn / không chọn")]
         [Tooltip("Độ tối phủ lên nhánh KHÔNG được chọn (0 = không phủ, 1 = đen kịt). " +
@@ -34,17 +44,22 @@ namespace FruitSort
         [Tooltip("Đẩy nhánh không chọn ra sau theo Z (world) để nằm KHUẤT dưới nhánh đang chọn " +
                  "và băng nguồn tại chỗ giao nhau.")]
         [Min(0f)] public float inactiveBranchZOffset = 0.35f;
+        [Tooltip("Hạ sorting order của nhánh inactive để nó luôn nằm sau source và nhánh active.")]
+        [Min(1)] public int inactiveBranchSortingOffset = 20;
+        [Tooltip("Số knot spline đầu của nhánh active được conveyor gốc render tiếp. 2 = knot 0 và knot 1.")]
+        [FormerlySerializedAs("activeBranchOwnedDotCount")]
+        [Min(2)] public int activeBranchOwnedKnotCount = 2;
 
         const string DimOverlayName = "SwitchDimOverlay";
 
         ConveyorSpline _spline;
         ConveyorConnections _conn;
-        LineRenderer _line;
+        SpriteRenderer _indicatorSprite;
         Transform _indicatorRoot;
+        Texture2D _runtimeIndicatorTexture;
+        Sprite _runtimeIndicatorSprite;
         Material _dimMaterial;
         int _activeIndex;
-        // Z gốc của từng nhánh (trước khi bị đẩy lùi) để trả lại khi được chọn.
-        readonly Dictionary<ConveyorSpline, float> _branchBaseZ = new Dictionary<ConveyorSpline, float>();
 
         /// <summary>Index nhánh đang chọn trong ConveyorConnections.next (tự sanitize).</summary>
         public int ActiveIndex
@@ -106,14 +121,12 @@ namespace FruitSort
             if (cam == null) return;
             if (!PointerInput.TryGetPosition(out Vector2 pointerPos)) return;
 
-            Vector3 pivot = SwitchPosition;
             Vector3 screen = pointerPos;
+            Vector3 pivot = SwitchPosition;
             screen.z = Mathf.Abs(cam.transform.position.z - pivot.z);
             Vector3 world = cam.ScreenToWorldPoint(screen);
 
-            float dx = world.x - pivot.x;
-            float dy = world.y - pivot.y;
-            if (dx * dx + dy * dy <= clickRadius * clickRadius) Toggle();
+            TrySwitchToBranchAtWorldPosition(world);
         }
 
         /// <summary>Nhánh đang chọn. Trả về false nếu không có nhánh hợp lệ (đích cuối).</summary>
@@ -152,6 +165,79 @@ namespace FruitSort
             GamePlayManager.NotifyStateChangedForSave();
         }
 
+        /// <summary>
+        /// Runtime click behavior: click the target conveyor branch itself, then route to that branch.
+        /// Returns false when the click misses all valid next conveyors or the selected branch is already active.
+        /// </summary>
+        public bool TrySwitchToBranchAtWorldPosition(Vector3 worldPosition)
+        {
+            if (TryFindBranchIndexAtWorldPosition(worldPosition, out int branchIndex))
+                return TrySwitchToBranchIndex(branchIndex);
+
+            return false;
+        }
+
+        public bool TryFindBranchIndexAtWorldPosition(Vector3 worldPosition, out int branchIndex)
+        {
+            branchIndex = -1;
+            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
+            var list = _conn != null ? _conn.next : null;
+            if (list == null || list.Count == 0) return false;
+
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < list.Count; i++)
+            {
+                ConveyorSpline branch = list[i];
+                if (branch == null) continue;
+
+                float progress = branch.FindClosestProgress(worldPosition, out float distance);
+                if (progress < branchClickStartProgress) continue;
+
+                float hitRadius = Mathf.Max(0.01f, branch.HalfWidth + branchClickPadding);
+                if (distance > hitRadius || distance >= bestDistance) continue;
+
+                bestDistance = distance;
+                branchIndex = i;
+            }
+
+            return branchIndex >= 0;
+        }
+
+        public bool TrySwitchToBranchIndex(int branchIndex)
+        {
+            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
+            var list = _conn != null ? _conn.next : null;
+            if (list == null || branchIndex < 0 || branchIndex >= list.Count || list[branchIndex] == null)
+                return false;
+
+            SanitizeIndex();
+            if (_activeIndex == branchIndex) return false;
+
+            _activeIndex = branchIndex;
+            RefreshIndicator();
+            GamePlayManager.NotifyStateChangedForSave();
+            return true;
+        }
+
+        /// <summary>
+        /// Conveyor gốc sở hữu đoạn từ knot 0 tới knot cuối trong activeBranchOwnedKnotCount.
+        /// </summary>
+        public float GetActiveBranchOwnedProgress(ConveyorSpline branch)
+        {
+            if (branch == null) return 0f;
+
+            if (branch.Container == null || branch.Container.Spline == null ||
+                branch.Container.Spline.Count < 2)
+                return 0f;
+
+            int knotIndex = Mathf.Min(
+                Mathf.Max(2, activeBranchOwnedKnotCount) - 1,
+                branch.Container.Spline.Count - 1);
+            if (knotIndex >= branch.Container.Spline.Count - 1) return 1f;
+
+            return branch.GetProgressThroughKnot(knotIndex);
+        }
+
         void SanitizeIndex()
         {
             if (_conn == null) _conn = GetComponent<ConveyorConnections>();
@@ -169,23 +255,22 @@ namespace FruitSort
             }
         }
 
-        // ---- Mũi tên chỉ nhánh đang chọn (chỉ tạo lúc play, tránh đẻ object vào scene edit) ----
+        // ---- Sprite marker chỉ nhánh đang chọn ----
 
         void EnsureIndicator()
         {
-            if (!Application.isPlaying || _line != null) return;
+            if (_indicatorSprite != null) return;
 
             var go = new GameObject("SwitchIndicator");
             go.transform.SetParent(transform, false);
             _indicatorRoot = go.transform;
 
-            _line = go.AddComponent<LineRenderer>();
-            _line.useWorldSpace = false; // local để punch scale root có tác dụng
-            _line.material = new Material(Shader.Find("Sprites/Default"));
-            _line.startWidth = _line.endWidth = indicatorWidth;
-            _line.numCapVertices = 4;
-            _line.numCornerVertices = 4;
-            _line.sortingOrder = 60; // nổi trên băng chuyền + dot
+            _indicatorSprite = go.AddComponent<SpriteRenderer>();
+            _indicatorSprite.sprite = linkedBranchSprite != null
+                ? linkedBranchSprite
+                : CreateFallbackIndicatorSprite();
+            _indicatorSprite.color = indicatorColor;
+            _indicatorSprite.sortingOrder = linkedSpriteSortingOrder;
         }
 
         void RefreshIndicator()
@@ -196,45 +281,29 @@ namespace FruitSort
             // Connector liên tục trim cả cuối source và đầu target. Khi đổi route phải rebuild
             // source + toàn bộ target: target cũ trả lại phần đầu, target mới được trim để nhận cung nối.
             RebuildConnectionMeshes();
-            if (_line == null) return;
+            if (_indicatorSprite == null) return;
 
+            ConveyorSpline next = null;
             bool show = _spline != null && !_spline.IsClosed &&
-                        ValidBranchCount >= 2 && TryGetActiveNext(out ConveyorSpline next);
-            _line.enabled = show;
+                        ValidBranchCount >= 2 && TryGetActiveNext(out next);
+            _indicatorSprite.enabled = show;
             if (!show) return;
 
-            TryGetActiveNext(out ConveyorSpline target);
-            Vector3 from = SwitchPosition;
-            _indicatorRoot.position = from;
-            _line.startColor = _line.endColor = indicatorColor;
+            _indicatorRoot.SetParent(next.transform, true);
+            _indicatorRoot.position = next.GetPositionOnSpline(linkedSpriteProgress, 0f);
+            _indicatorRoot.rotation = Quaternion.identity;
+            _indicatorSprite.sprite = linkedBranchSprite != null
+                ? linkedBranchSprite
+                : CreateFallbackIndicatorSprite();
+            _indicatorSprite.color = indicatorColor;
+            _indicatorSprite.sortingLayerID = next.GetComponent<MeshRenderer>()?.sortingLayerID ?? 0;
+            _indicatorSprite.sortingOrder = linkedSpriteSortingOrder;
 
-            // Mũi tên UỐN THEO chính nhánh được chọn (nhánh bắt đầu tại điểm cuối băng nguồn,
-            // nên hướng "điểm-tới-điểm" luôn suy biến — phải lấy mẫu dọc spline của nhánh).
-            const int shaftSegments = 6;
-            float targetLength = Mathf.Max(0.01f, target.GetSplineLength());
-            float tEnd = Mathf.Clamp01(indicatorLength / targetLength);
-
-            _line.positionCount = shaftSegments + 4; // shaft + (headL, tip, headR)
-            Vector3 tip = Vector3.zero;
-            Vector3 beforeTip = Vector3.zero;
-            for (int i = 0; i <= shaftSegments; i++)
-            {
-                Vector3 p = target.GetPositionOnSpline(tEnd * i / shaftSegments, 0f);
-                p.z = from.z - 0.15f; // nổi lên trước mặt băng
-                _line.SetPosition(i, _indicatorRoot.InverseTransformPoint(p));
-                if (i == shaftSegments - 1) beforeTip = p;
-                if (i == shaftSegments) tip = p;
-            }
-
-            Vector3 dir = tip - beforeTip;
-            dir = dir.sqrMagnitude > 1e-6f ? dir.normalized : Vector3.up;
-            Vector3 headL = tip + Quaternion.Euler(0f, 0f, 150f) * (dir * 0.4f);
-            Vector3 headR = tip + Quaternion.Euler(0f, 0f, -150f) * (dir * 0.4f);
-
-            // Vẽ đè lại qua tip để có 2 cạnh đầu mũi tên bằng 1 LineRenderer.
-            _line.SetPosition(shaftSegments + 1, _indicatorRoot.InverseTransformPoint(headL));
-            _line.SetPosition(shaftSegments + 2, _indicatorRoot.InverseTransformPoint(tip));
-            _line.SetPosition(shaftSegments + 3, _indicatorRoot.InverseTransformPoint(headR));
+            Vector2 spriteSize = _indicatorSprite.sprite != null
+                ? _indicatorSprite.sprite.bounds.size
+                : Vector2.one;
+            float largestSide = Mathf.Max(0.01f, spriteSize.x, spriteSize.y);
+            _indicatorRoot.localScale = Vector3.one * (linkedSpriteSize / largestSide);
         }
 
 
@@ -264,28 +333,95 @@ namespace FruitSort
         /// </summary>
         void RefreshBranchVisuals()
         {
-            if (!Application.isPlaying || _conn == null || _conn.next == null) return;
+            if (_conn == null) _conn = GetComponent<ConveyorConnections>();
+            if (_conn == null || _conn.next == null) return;
 
             TryGetActiveNext(out ConveyorSpline active);
+            MeshRenderer sourceMeshRenderer = GetComponent<MeshRenderer>();
+            int sourceSortingLayer = sourceMeshRenderer != null
+                ? sourceMeshRenderer.sortingLayerID
+                : 0;
+            int sourceSortingOrder = sourceMeshRenderer != null
+                ? sourceMeshRenderer.sortingOrder
+                : 0;
+            int sortingOffset = Mathf.Max(1, inactiveBranchSortingOffset);
+
             for (int i = 0; i < _conn.next.Count; i++)
             {
                 ConveyorSpline belt = _conn.next[i];
                 if (belt == null) continue;
                 bool isActive = belt == active;
 
-                if (!_branchBaseZ.TryGetValue(belt, out float baseZ))
+                ConveyorBeltRenderer beltRenderer = belt.GetComponent<ConveyorBeltRenderer>();
+                if (beltRenderer != null)
                 {
-                    baseZ = belt.transform.position.z;
-                    _branchBaseZ[belt] = baseZ;
+                    float visualZ = isActive ? 0f : -Mathf.Max(0f, inactiveBranchZOffset);
+                    beltRenderer.SetRuntimeVisualZOffset(visualZ, false);
                 }
-                Vector3 pos = belt.transform.position;
-                pos.z = baseZ + (isActive ? 0f : inactiveBranchZOffset);
-                belt.transform.position = pos;
+
+                MeshRenderer branchMeshRenderer = belt.GetComponent<MeshRenderer>();
+                if (branchMeshRenderer != null)
+                {
+                    branchMeshRenderer.sortingLayerID = sourceSortingLayer;
+                    branchMeshRenderer.sortingOrder = isActive
+                        ? sourceSortingOrder
+                        : sourceSortingOrder - sortingOffset;
+                }
 
                 Transform overlay = belt.transform.Find(DimOverlayName);
                 if (!isActive && overlay == null) overlay = CreateDimOverlay(belt);
-                if (overlay != null) overlay.gameObject.SetActive(!isActive);
+                if (overlay != null)
+                {
+                    overlay.gameObject.SetActive(!isActive);
+                    MeshRenderer overlayRenderer = overlay.GetComponent<MeshRenderer>();
+                    if (overlayRenderer != null)
+                    {
+                        overlayRenderer.sortingLayerID = sourceSortingLayer;
+                        overlayRenderer.sortingOrder = sourceSortingOrder - sortingOffset + 1;
+                    }
+                }
             }
+        }
+
+        Sprite CreateFallbackIndicatorSprite()
+        {
+            if (_runtimeIndicatorSprite != null) return _runtimeIndicatorSprite;
+
+            const int size = 32;
+            _runtimeIndicatorTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "SwitchIndicatorFallbackTexture",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+
+            var pixels = new Color32[size * size];
+            float center = (size - 1) * 0.5f;
+            float radius = size * 0.44f;
+            float radiusSquared = radius * radius;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - center;
+                    float dy = y - center;
+                    pixels[y * size + x] = dx * dx + dy * dy <= radiusSquared
+                        ? new Color32(255, 255, 255, 255)
+                        : new Color32(255, 255, 255, 0);
+                }
+            }
+
+            _runtimeIndicatorTexture.SetPixels32(pixels);
+            _runtimeIndicatorTexture.Apply(false, true);
+            _runtimeIndicatorSprite = Sprite.Create(
+                _runtimeIndicatorTexture,
+                new Rect(0f, 0f, size, size),
+                new Vector2(0.5f, 0.5f),
+                size);
+            _runtimeIndicatorSprite.name = "SwitchIndicatorFallbackSprite";
+            _runtimeIndicatorSprite.hideFlags = HideFlags.HideAndDontSave;
+            return _runtimeIndicatorSprite;
         }
 
         Transform CreateDimOverlay(ConveyorSpline belt)
@@ -322,7 +458,21 @@ namespace FruitSort
 
         void OnDestroy()
         {
+            if (_indicatorRoot != null)
+            {
+                _indicatorRoot.gameObject.SetActive(false);
+                DestroyRuntimeIndicatorAsset(_indicatorRoot.gameObject);
+            }
             if (_dimMaterial != null) Destroy(_dimMaterial);
+            DestroyRuntimeIndicatorAsset(_runtimeIndicatorSprite);
+            DestroyRuntimeIndicatorAsset(_runtimeIndicatorTexture);
+        }
+
+        static void DestroyRuntimeIndicatorAsset(Object asset)
+        {
+            if (asset == null) return;
+            if (Application.isPlaying) Destroy(asset);
+            else DestroyImmediate(asset);
         }
 
         void OnDrawGizmosSelected()

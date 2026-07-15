@@ -88,7 +88,17 @@ namespace FruitSort
         Material[] _scrollMats;      // material instances dùng để cuộn lúc play
         float _scroll;
         float _vTiles = 1f;
+        float _runtimeVisualZOffset;
         bool _rebuildQueued;         // sửa field trên Inspector LÚC PLAY -> rebuild ở Update kế tiếp
+
+        public float RuntimeVisualZOffset => _runtimeVisualZOffset;
+
+        public void SetRuntimeVisualZOffset(float offset, bool rebuild = true)
+        {
+            if (Mathf.Approximately(_runtimeVisualZOffset, offset)) return;
+            _runtimeVisualZOffset = offset;
+            if (rebuild) BuildMesh();
+        }
 
         // Bộ đệm dựng mesh (tái dùng để giảm GC).
         readonly List<Vector3> _verts = new List<Vector3>();
@@ -99,7 +109,21 @@ namespace FruitSort
 
         readonly List<Vector3> _connectionPath = new List<Vector3>(64);
         readonly List<float> _connectionDistances = new List<float>(64);
+        readonly List<Vector3> _stripPath = new List<Vector3>(1024);
         readonly List<ConnectionGeometry> _outgoingConnections = new List<ConnectionGeometry>(4);
+        readonly Dictionary<ConveyorSpline, ConnectionRouteCache> _connectionRoutes =
+            new Dictionary<ConveyorSpline, ConnectionRouteCache>(4);
+        int _connectionRouteVersion;
+
+        sealed class ConnectionRouteCache
+        {
+            public readonly List<Vector3> points = new List<Vector3>(64);
+            public readonly List<float> distances = new List<float>(64);
+            public int version = -1;
+            public float sourceStartProgress;
+            public float targetEndProgress;
+            public float length;
+        }
 
         struct ConnectionGeometry
         {
@@ -244,6 +268,7 @@ namespace FruitSort
         {
             if (Conveyor == null) return;
             EnsureComponents();
+            _connectionRouteVersion++;
 
             int n = Mathf.Max(2, segments);
             float halfW = Conveyor.HalfWidth;
@@ -276,7 +301,6 @@ namespace FruitSort
                 startProgress = Mathf.Max(0f, middle - 0.0005f);
                 endProgress = Mathf.Min(1f, middle + 0.0005f);
             }
-
             // Mesh chính được trim tại junction. Connector sẽ điền chính xác phần đã trim,
             // vì vậy không còn hai strip đầy đủ chồng lên nhau và làm góc bị phình.
             AppendStripRange(n, startProgress, endProgress, +halfW, -halfW,
@@ -297,6 +321,18 @@ namespace FruitSort
 
             if (showWalls)
                 AppendMultiIncomingJunction(width);
+
+            // Runtime layering áp trực tiếp lên local vertex. Cách này không phụ thuộc Z của knot
+            // và không thay đổi Transform/LUT world-space của ConveyorSpline.
+            if (!Mathf.Approximately(_runtimeVisualZOffset, 0f))
+            {
+                for (int i = 0; i < _verts.Count; i++)
+                {
+                    Vector3 vertex = _verts[i];
+                    vertex.z += _runtimeVisualZOffset;
+                    _verts[i] = vertex;
+                }
+            }
 
             if (_mesh == null) _mesh = new Mesh { name = "ConveyorBeltMesh" };
             _mesh.Clear();
@@ -325,13 +361,34 @@ namespace FruitSort
             startProgress = Mathf.Clamp01(startProgress);
             endProgress = Mathf.Clamp01(endProgress);
 
+            _stripPath.Clear();
+            for (int i = 0; i <= n; i++)
+            {
+                float t = Mathf.Lerp(startProgress, endProgress, i / (float)n);
+                _stripPath.Add(Conveyor.GetPositionOnSpline(t, 0f));
+            }
+
             for (int i = 0; i <= n; i++)
             {
                 float normalized = i / (float)n;
                 float t = Mathf.Lerp(startProgress, endProgress, normalized);
 
-                Vector3 wa = Conveyor.GetPositionOnSpline(t, latA);
-                Vector3 wb = Conveyor.GetPositionOnSpline(t, latB);
+                Vector3 center = _stripPath[i];
+                Vector3 tangent;
+                if (i == 0) tangent = _stripPath[1] - _stripPath[0];
+                else if (i == n) tangent = _stripPath[n] - _stripPath[n - 1];
+                else tangent = _stripPath[i + 1] - _stripPath[i - 1];
+                tangent.z = 0f;
+                if (tangent.sqrMagnitude < 1e-6f) tangent = Vector3.right;
+                else tangent.Normalize();
+                Vector3 normal = new Vector3(-tangent.y, tangent.x, 0f);
+                float clearance = Mathf.Max(0.01f, Conveyor.beltWidth * 0.03f);
+                float safeLatA = ClampOffsetAgainstPathCurvature(
+                    _stripPath, i, normal, latA, clearance);
+                float safeLatB = ClampOffsetAgainstPathCurvature(
+                    _stripPath, i, normal, latB, clearance);
+                Vector3 wa = center + normal * safeLatA;
+                Vector3 wb = center + normal * safeLatB;
                 wa.z += zoff; wb.z += zoff;
 
                 _verts.Add(transform.InverseTransformPoint(wa));
@@ -345,13 +402,25 @@ namespace FruitSort
             for (int i = 0; i < n; i++)
             {
                 int vi = baseIndex + i * 2;
-                tris.Add(vi);
-                tris.Add(vi + 2);
-                tris.Add(vi + 1);
-                tris.Add(vi + 1);
-                tris.Add(vi + 2);
-                tris.Add(vi + 3);
+                AppendStripTriangle(tris, vi, vi + 2, vi + 1);
+                AppendStripTriangle(tris, vi + 1, vi + 2, vi + 3);
             }
+        }
+
+        void AppendStripTriangle(List<int> triangles, int a, int b, int c)
+        {
+            // Mặt belt luôn kín. Wall ở bán kính nhỏ hơn wallWidth có thể tự cắt và đảo winding;
+            // bỏ riêng tam giác đảo để tránh quạt đen, thay vì kéo rail xuyên qua tâm góc bo.
+            if (!ReferenceEquals(triangles, _triBelt))
+            {
+                Vector3 ab = _verts[b] - _verts[a];
+                Vector3 ac = _verts[c] - _verts[a];
+                if (Vector3.Cross(ab, ac).z >= -1e-8f) return;
+            }
+
+            triangles.Add(a);
+            triangles.Add(b);
+            triangles.Add(c);
         }
 
         void CollectOutgoingConnections(List<ConnectionGeometry> output)
@@ -391,10 +460,40 @@ namespace FruitSort
             for (int i = 0; i < geometries.Count; i++)
             {
                 ConnectionGeometry geometry = geometries[i];
-                float sharedTargetTrimProgress = GetIncomingTrimProgress(geometry.target);
+                float sharedTargetTrimProgress = Mathf.Max(
+                    GetIncomingTrimProgress(geometry.target),
+                    GetSwitchOwnedTargetProgress(geometry.target));
                 AppendConnectionPath(geometry, sharedSourceTrimProgress,
                     sharedTargetTrimProgress, sourceWidth);
             }
+        }
+
+        float GetSwitchOwnedTargetProgress(ConveyorSpline target)
+        {
+            if (!Application.isPlaying || target == null) return 0f;
+
+            ConveyorSwitch routeSwitch = GetComponent<ConveyorSwitch>();
+            if (routeSwitch == null ||
+                !routeSwitch.TryGetActiveNext(out ConveyorSpline active) || active != target)
+                return 0f;
+
+            return routeSwitch.GetActiveBranchOwnedProgress(target);
+        }
+
+        float GetStableConnectionRouteTargetProgress(ConveyorSpline target)
+        {
+            if (target == null) return 0f;
+
+            ConveyorSwitch routeSwitch = GetComponent<ConveyorSwitch>();
+            ConveyorConnections connections = GetComponent<ConveyorConnections>();
+            if (routeSwitch == null || routeSwitch.ValidBranchCount < 2 ||
+                connections == null || connections.next == null ||
+                !connections.next.Contains(target))
+                return GetSwitchOwnedTargetProgress(target);
+
+            // Movement route của mọi nhánh switch luôn kết thúc sau phần hai knot mà source
+            // sở hữu. Vì vậy route của dot đang chạy không đổi hình khi nhánh đó vừa inactive.
+            return routeSwitch.GetActiveBranchOwnedProgress(target);
         }
 
         float GetIncomingTrimProgress(ConveyorSpline target)
@@ -413,11 +512,22 @@ namespace FruitSort
 
                 ConveyorSpline source = connection.GetComponent<ConveyorSpline>();
                 if (source == null || source == target || source.IsClosed) continue;
+
+                // Chỉ nhánh active bỏ đoạn knot 0 -> knot 1 để conveyor gốc vẽ thay.
+                // Nhánh inactive giữ nguyên đoạn này và chỉ lùi Z, nhờ đó không xuất hiện khe hở.
+                if (Application.isPlaying)
+                {
+                    trimProgress = Mathf.Max(trimProgress,
+                        GetSwitchBranchTrimProgress(source, target));
+                }
                 if (!IsRuntimeRouteActive(source, target)) continue;
 
                 ConveyorBeltRenderer sourceRenderer = source.GetComponent<ConveyorBeltRenderer>();
-                if (sourceRenderer != null &&
-                    sourceRenderer.TryBuildConnectionGeometry(source, target,
+                if (sourceRenderer == null) continue;
+
+                trimProgress = Mathf.Max(trimProgress,
+                    sourceRenderer.GetSwitchOwnedTargetProgress(target));
+                if (sourceRenderer.TryBuildConnectionGeometry(source, target,
                         out ConnectionGeometry geometry) && !geometry.straight)
                 {
                     trimProgress = Mathf.Max(trimProgress, geometry.targetTrimProgress);
@@ -425,6 +535,17 @@ namespace FruitSort
             }
 
             return Mathf.Clamp01(trimProgress);
+        }
+
+        static float GetSwitchBranchTrimProgress(ConveyorSpline source, ConveyorSpline target)
+        {
+            if (source == null || target == null) return 0f;
+
+            ConveyorSwitch routeSwitch = source.GetComponent<ConveyorSwitch>();
+            if (routeSwitch == null || routeSwitch.ValidBranchCount < 2) return 0f;
+            if (!routeSwitch.TryGetActiveNext(out ConveyorSpline active) || active != target)
+                return 0f;
+            return routeSwitch.GetActiveBranchOwnedProgress(target);
         }
 
         static bool IsRuntimeRouteActive(ConveyorSpline source, ConveyorSpline target)
@@ -552,82 +673,114 @@ namespace FruitSort
                 conveyor.Container.Spline.Count < 2)
                 return Mathf.Max(0.01f, fallback);
 
-            int count = conveyor.Container.Spline.Count;
-            int indexA = atStart ? 0 : count - 1;
-            int indexB = atStart ? 1 : count - 2;
-            Vector3 a = conveyor.transform.TransformPoint(
-                (Vector3)conveyor.Container.Spline[indexA].Position);
-            Vector3 b = conveyor.transform.TransformPoint(
-                (Vector3)conveyor.Container.Spline[indexB].Position);
-            float segmentLength = Vector2.Distance(a, b);
-
-            // Chừa lại một phần trước corner nội bộ tiếp theo để hai bo góc không đè lên nhau.
-            float reserve = Mathf.Max(0f, conveyor.cornerRadius * 1.05f);
-            float usable = Mathf.Max(0.01f, segmentLength - reserve);
+            // ConveyorSpline đã clamp fillet theo nửa segment ngắn nhất. Dùng lead sau clamp để
+            // junction không bị ép xuống bán kính 0.01 khi cornerRadius cấu hình lớn hơn segment.
+            float usable = Mathf.Max(0.01f, conveyor.GetEndpointStraightLead(atStart));
             return Mathf.Min(usable, fallback);
+        }
+
+        /// <summary>
+        /// Trả thông tin path nối đang dùng để render giữa source và target. FallingPixelManager
+        /// dùng đúng path này để dot không đổi pháp tuyến đột ngột tại endpoint.
+        /// </summary>
+        public bool TryGetConnectionRoute(ConveyorSpline target,
+            out float sourceStartProgress, out float targetEndProgress, out float routeLength)
+        {
+            sourceStartProgress = 1f;
+            targetEndProgress = 0f;
+            routeLength = 0f;
+            if (!TryGetOrBuildConnectionRoute(target, out ConnectionRouteCache route)) return false;
+
+            sourceStartProgress = route.sourceStartProgress;
+            targetEndProgress = route.targetEndProgress;
+            routeLength = route.length;
+            return true;
+        }
+
+        public bool TrySampleConnectionRoute(ConveyorSpline target, float distance,
+            float lateralOffset, out Vector3 position, out Vector3 tangent)
+        {
+            position = default;
+            tangent = Vector3.right;
+            if (!TryGetOrBuildConnectionRoute(target, out ConnectionRouteCache route) ||
+                route.points.Count < 2 || route.length <= 1e-5f)
+                return false;
+
+            distance = Mathf.Clamp(distance, 0f, route.length);
+            int segment = 0;
+            while (segment < route.distances.Count - 2 &&
+                   route.distances[segment + 1] < distance)
+                segment++;
+
+            float startDistance = route.distances[segment];
+            float endDistance = route.distances[segment + 1];
+            float blend = Mathf.InverseLerp(startDistance, endDistance, distance);
+            Vector3 start = route.points[segment];
+            Vector3 end = route.points[segment + 1];
+            tangent = end - start;
+            tangent.z = 0f;
+            if (tangent.sqrMagnitude < 1e-6f) tangent = Vector3.right;
+            else tangent.Normalize();
+
+            Vector3 center = Vector3.LerpUnclamped(start, end, blend);
+            Vector3 normal = new Vector3(-tangent.y, tangent.x, 0f);
+            float safeOffset = ClampOffsetAgainstPathCurvature(
+                route.points, Mathf.Clamp(segment + 1, 0, route.points.Count - 1),
+                normal, lateralOffset, 0.01f);
+            position = center + normal * safeOffset;
+            return true;
+        }
+
+        bool TryGetOrBuildConnectionRoute(ConveyorSpline target,
+            out ConnectionRouteCache route)
+        {
+            route = null;
+            if (target == null) return false;
+
+            if (_connectionRoutes.TryGetValue(target, out route) &&
+                route.version == _connectionRouteVersion)
+                return route.length > 1e-5f;
+
+            if (!TryBuildConnectionGeometry(Conveyor, target,
+                    out ConnectionGeometry geometry))
+                return false;
+
+            if (route == null)
+            {
+                route = new ConnectionRouteCache();
+                _connectionRoutes.Add(target, route);
+            }
+
+            float sourceTrim = geometry.straight ? 0f : geometry.sourceTrimProgress;
+            float targetTrim = Mathf.Max(
+                GetIncomingTrimProgress(target),
+                GetStableConnectionRouteTargetProgress(target));
+            if (!geometry.straight)
+                targetTrim = Mathf.Max(targetTrim, geometry.targetTrimProgress);
+            BuildConnectionPath(geometry, sourceTrim, targetTrim);
+
+            route.points.Clear();
+            route.distances.Clear();
+            route.length = 0f;
+            for (int i = 0; i < _connectionPath.Count; i++)
+            {
+                Vector3 point = _connectionPath[i];
+                if (route.points.Count > 0)
+                    route.length += Vector2.Distance(route.points[route.points.Count - 1], point);
+                route.points.Add(point);
+                route.distances.Add(route.length);
+            }
+
+            route.sourceStartProgress = 1f - Mathf.Clamp(sourceTrim, 0f, connectionMaxProgress);
+            route.targetEndProgress = Mathf.Clamp01(targetTrim);
+            route.version = _connectionRouteVersion;
+            return route.points.Count >= 2 && route.length > 1e-5f;
         }
 
         void AppendConnectionPath(ConnectionGeometry geometry,
             float sharedSourceTrimProgress, float sharedTargetTrimProgress, float sourceWidth)
         {
-            _connectionPath.Clear();
-
-            Vector3 pathStart = Conveyor.GetPositionOnSpline(
-                1f - Mathf.Clamp(sharedSourceTrimProgress, 0f, connectionMaxProgress), 0f);
-            Vector3 pathEnd = geometry.target.GetPositionOnSpline(
-                Mathf.Clamp(sharedTargetTrimProgress, 0f, connectionMaxProgress), 0f);
-
-            AddConnectionPoint(pathStart);
-
-            if (geometry.straight)
-            {
-                AddConnectionPoint(geometry.sourceEnd);
-                AddConnectionPoint(geometry.targetStart);
-                AddConnectionPoint(pathEnd);
-            }
-            else if (geometry.exactFillet)
-            {
-                AddConnectionPoint(geometry.sourceTangentPoint);
-
-                Vector3 radialStart = geometry.sourceTangentPoint - geometry.arcCenter;
-                float startAngle = Mathf.Atan2(radialStart.y, radialStart.x);
-                int arcSegments = Mathf.Max(4,
-                    Mathf.CeilToInt(connectionSegments * geometry.turnAngle / (Mathf.PI * 0.5f)));
-
-                for (int i = 1; i <= arcSegments; i++)
-                {
-                    float f = i / (float)arcSegments;
-                    float angle = startAngle + geometry.turnSign * geometry.turnAngle * f;
-                    float radius = radialStart.magnitude;
-                    Vector3 point = geometry.arcCenter +
-                                    new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * radius;
-                    AddConnectionPoint(point);
-                }
-
-                // Dùng điểm thật trên target thay vì chỉ dựa vào control point. Đây là phần
-                // "mượn" lead-in của conveyor được kết nối để đường render liên tục.
-                AddConnectionPoint(geometry.targetTangentPoint);
-                AddConnectionPoint(pathEnd);
-            }
-            else
-            {
-                // Endpoint không snap: blend Hermite giữa hai điểm trim, không chèn disk.
-                Vector3 start = geometry.sourceTangentPoint;
-                Vector3 end = geometry.targetTangentPoint;
-                AddConnectionPoint(start);
-                float distance = Vector2.Distance(start, end);
-                float handle = distance * 0.45f;
-                Vector3 controlA = start + geometry.sourceDirection * handle;
-                Vector3 controlB = end - geometry.targetDirection * handle;
-                int count = Mathf.Max(4, connectionSegments);
-                for (int i = 1; i <= count; i++)
-                {
-                    float t = i / (float)count;
-                    AddConnectionPoint(EvaluateCubicBezier(start, controlA, controlB, end, t));
-                }
-                AddConnectionPoint(pathEnd);
-            }
-
+            BuildConnectionPath(geometry, sharedSourceTrimProgress, sharedTargetTrimProgress);
             if (_connectionPath.Count < 2) return;
 
             float sourceHalfWidth = Conveyor.HalfWidth;
@@ -651,6 +804,89 @@ namespace FruitSort
                     sourceWallWidth, targetWallWidth, 1, wallZ, sourceWidth, startV, _triOuter);
                 AppendConnectionStrip(_connectionPath, sourceHalfWidth, targetHalfWidth,
                     sourceWallWidth, targetWallWidth, 2, wallZ, sourceWidth, startV, _triInner);
+            }
+        }
+
+        void BuildConnectionPath(ConnectionGeometry geometry,
+            float sharedSourceTrimProgress, float sharedTargetTrimProgress)
+        {
+            _connectionPath.Clear();
+
+            Vector3 pathStart = Conveyor.GetPositionOnSpline(
+                1f - Mathf.Clamp(sharedSourceTrimProgress, 0f, connectionMaxProgress), 0f);
+            float targetEndProgress = Mathf.Clamp01(sharedTargetTrimProgress);
+
+            AddConnectionPoint(pathStart);
+
+            if (geometry.straight)
+            {
+                AddConnectionPoint(geometry.sourceEnd);
+                AddConnectionPoint(geometry.targetStart);
+                AppendTargetLeadPoints(geometry.target, 0f, targetEndProgress);
+            }
+            else if (geometry.exactFillet)
+            {
+                AddConnectionPoint(geometry.sourceTangentPoint);
+
+                Vector3 radialStart = geometry.sourceTangentPoint - geometry.arcCenter;
+                float startAngle = Mathf.Atan2(radialStart.y, radialStart.x);
+                int arcSegments = Mathf.Max(4,
+                    Mathf.CeilToInt(connectionSegments * geometry.turnAngle / (Mathf.PI * 0.5f)));
+
+                for (int i = 1; i <= arcSegments; i++)
+                {
+                    float f = i / (float)arcSegments;
+                    float angle = startAngle + geometry.turnSign * geometry.turnAngle * f;
+                    float radius = radialStart.magnitude;
+                    Vector3 point = geometry.arcCenter +
+                                    new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * radius;
+                    AddConnectionPoint(point);
+                }
+
+                // Dùng điểm thật trên target thay vì chỉ dựa vào control point. Đây là phần
+                // "mượn" lead-in của conveyor được kết nối để đường render liên tục.
+                AddConnectionPoint(geometry.targetTangentPoint);
+                AppendTargetLeadPoints(geometry.target, geometry.targetTrimProgress,
+                    targetEndProgress);
+            }
+            else
+            {
+                // Endpoint không snap: blend Hermite giữa hai điểm trim, không chèn disk.
+                Vector3 start = geometry.sourceTangentPoint;
+                Vector3 end = geometry.targetTangentPoint;
+                AddConnectionPoint(start);
+                float distance = Vector2.Distance(start, end);
+                float handle = distance * 0.45f;
+                Vector3 controlA = start + geometry.sourceDirection * handle;
+                Vector3 controlB = end - geometry.targetDirection * handle;
+                int count = Mathf.Max(4, connectionSegments);
+                for (int i = 1; i <= count; i++)
+                {
+                    float t = i / (float)count;
+                    AddConnectionPoint(EvaluateCubicBezier(start, controlA, controlB, end, t));
+                }
+                AppendTargetLeadPoints(geometry.target, geometry.targetTrimProgress,
+                    targetEndProgress);
+            }
+
+        }
+
+        void AppendTargetLeadPoints(ConveyorSpline target, float startProgress, float endProgress)
+        {
+            if (target == null) return;
+
+            startProgress = Mathf.Clamp01(startProgress);
+            endProgress = Mathf.Clamp01(endProgress);
+            if (endProgress <= startProgress + 1e-5f) return;
+
+            int sampleCount = Mathf.Clamp(
+                Mathf.CeilToInt(Mathf.Max(4, connectionSegments) * (endProgress - startProgress)),
+                2,
+                Mathf.Max(2, connectionSegments));
+            for (int i = 1; i <= sampleCount; i++)
+            {
+                float progress = Mathf.Lerp(startProgress, endProgress, i / (float)sampleCount);
+                AddConnectionPoint(target.GetPositionOnSpline(progress, 0f));
             }
         }
 
@@ -722,6 +958,12 @@ namespace FruitSort
                     uB = currentWallWidth * tilesAcrossWidth / Mathf.Max(1e-4f, sourceWidth);
                 }
 
+                float curvatureClearance = Mathf.Max(0.01f, sourceWidth * 0.03f);
+                offsetA = ClampOffsetAgainstPathCurvature(
+                    centers, i, normal, offsetA, curvatureClearance);
+                offsetB = ClampOffsetAgainstPathCurvature(
+                    centers, i, normal, offsetB, curvatureClearance);
+
                 Vector3 worldA = centers[i] + normal * offsetA;
                 Vector3 worldB = centers[i] + normal * offsetB;
                 worldA.z += zoff;
@@ -738,13 +980,55 @@ namespace FruitSort
             for (int i = 0; i < count - 1; i++)
             {
                 int vi = baseIndex + i * 2;
-                tris.Add(vi);
-                tris.Add(vi + 2);
-                tris.Add(vi + 1);
-                tris.Add(vi + 1);
-                tris.Add(vi + 2);
-                tris.Add(vi + 3);
+                AppendStripTriangle(tris, vi, vi + 2, vi + 1);
+                AppendStripTriangle(tris, vi + 1, vi + 2, vi + 3);
             }
+        }
+
+        static float ClampOffsetAgainstPathCurvature(List<Vector3> centers, int index,
+            Vector3 normal, float offset, float clearance)
+        {
+            if (centers == null || centers.Count < 3 || index < 0 || index >= centers.Count)
+                return offset;
+
+            int previous = index > 0 ? index - 1 : 0;
+            int next = index < centers.Count - 1 ? index + 1 : centers.Count - 1;
+            if (previous == index || next == index) return offset;
+
+            Vector2 a = centers[previous];
+            Vector2 b = centers[index];
+            Vector2 c = centers[next];
+            return ClampOffsetAgainstCurvature(a, b, c, normal, offset, clearance);
+        }
+
+        static float ClampOffsetAgainstCurvature(Vector2 a, Vector2 b, Vector2 c,
+            Vector3 normal, float offset, float clearance)
+        {
+            float determinant = 2f * (a.x * (b.y - c.y) +
+                                      b.x * (c.y - a.y) +
+                                      c.x * (a.y - b.y));
+            if (Mathf.Abs(determinant) <= 1e-6f) return offset;
+
+            float aSq = a.sqrMagnitude;
+            float bSq = b.sqrMagnitude;
+            float cSq = c.sqrMagnitude;
+            Vector2 center = new Vector2(
+                (aSq * (b.y - c.y) + bSq * (c.y - a.y) + cSq * (a.y - b.y)) /
+                determinant,
+                (aSq * (c.x - b.x) + bSq * (a.x - c.x) + cSq * (b.x - a.x)) /
+                determinant);
+
+            Vector2 radial = b - center;
+            float radius = radial.magnitude;
+            if (radius <= 1e-5f) return 0f;
+
+            float alignment = Vector2.Dot((Vector2)normal, radial / radius);
+            if (Mathf.Abs(alignment) < 0.75f || offset * alignment >= 0f)
+                return offset;
+
+            float maxInwardOffset = Mathf.Max(0f, radius - Mathf.Max(0f, clearance)) /
+                                    Mathf.Abs(alignment);
+            return Mathf.Sign(offset) * Mathf.Min(Mathf.Abs(offset), maxInwardOffset);
         }
 
         static Vector3 geometrySafeDirection(List<Vector3> centers, int index)

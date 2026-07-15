@@ -370,6 +370,96 @@ namespace FruitSort
             return bestIdx / (float)_bakedRes;
         }
 
+        /// <summary>
+        /// Progress đã đi qua knot chỉ định. Với straightEdges có bo góc, điểm này là tiếp điểm
+        /// cuối của cung bo trên đoạn knot hiện tại -> knot kế tiếp, không phải giữa cung.
+        /// </summary>
+        public float GetProgressThroughKnot(int knotIndex)
+        {
+            EnsureBaked();
+            if (!_baked || Container == null || Container.Spline == null) return 0f;
+
+            var spline = Container.Spline;
+            int count = spline.Count;
+            if (count < 2 || knotIndex <= 0) return 0f;
+            if (!spline.Closed && knotIndex >= count - 1) return 1f;
+
+            knotIndex = Mathf.Clamp(knotIndex, 0, count - 1);
+            Vector3 target = transform.TransformPoint((Vector3)spline[knotIndex].Position);
+            if (straightEdges && TryGetRoundedKnotExit(knotIndex, out Vector3 roundedExit))
+                target = roundedExit;
+
+            return FindClosestProgress(target, out _);
+        }
+
+        /// <summary>
+        /// Chiều dài đoạn thẳng thực tế từ endpoint đến cung bo nội bộ gần nhất.
+        /// Dùng bán kính đã clamp theo độ dài hai segment, không dùng trực tiếp cornerRadius cấu hình.
+        /// </summary>
+        public float GetEndpointStraightLead(bool atStart)
+        {
+            if (Container == null || Container.Spline == null || Container.Spline.Count < 2)
+                return 0f;
+
+            var spline = Container.Spline;
+            int count = spline.Count;
+            int endpointIndex = atStart ? 0 : count - 1;
+            int adjacentIndex = atStart ? 1 : count - 2;
+            Vector3 endpoint = transform.TransformPoint((Vector3)spline[endpointIndex].Position);
+            Vector3 adjacent = transform.TransformPoint((Vector3)spline[adjacentIndex].Position);
+
+            if (!straightEdges || count < 3 ||
+                !TryGetRoundedKnotTangentPoints(adjacentIndex, out Vector3 entry, out Vector3 exit))
+                return Vector2.Distance(endpoint, adjacent);
+
+            return atStart
+                ? Vector2.Distance(endpoint, entry)
+                : Vector2.Distance(exit, endpoint);
+        }
+
+        bool TryGetRoundedKnotExit(int knotIndex, out Vector3 exit)
+        {
+            return TryGetRoundedKnotTangentPoints(knotIndex, out _, out exit);
+        }
+
+        bool TryGetRoundedKnotTangentPoints(int knotIndex, out Vector3 entry, out Vector3 exit)
+        {
+            entry = default;
+            exit = default;
+            var spline = Container.Spline;
+            int count = spline.Count;
+            bool closed = spline.Closed;
+            if (count < 3 || (!closed && (knotIndex <= 0 || knotIndex >= count - 1)))
+                return false;
+
+            int previousIndex = (knotIndex - 1 + count) % count;
+            int nextIndex = (knotIndex + 1) % count;
+            Vector3 previous = transform.TransformPoint((Vector3)spline[previousIndex].Position);
+            Vector3 current = transform.TransformPoint((Vector3)spline[knotIndex].Position);
+            Vector3 next = transform.TransformPoint((Vector3)spline[nextIndex].Position);
+
+            Vector3 incoming = current - previous;
+            Vector3 outgoing = next - current;
+            float incomingLength = incoming.magnitude;
+            float outgoingLength = outgoing.magnitude;
+            if (incomingLength < 1e-5f || outgoingLength < 1e-5f) return false;
+            incoming /= incomingLength;
+            outgoing /= outgoingLength;
+
+            float angle = Mathf.Acos(Mathf.Clamp(Vector3.Dot(-incoming, outgoing), -1f, 1f));
+            float halfAngle = angle * 0.5f;
+            if (cornerRadius <= 1e-5f || halfAngle < 1e-3f ||
+                (Mathf.PI - angle) < 1e-3f)
+                return false;
+
+            float tangentDistance = cornerRadius / Mathf.Tan(halfAngle);
+            tangentDistance = Mathf.Min(tangentDistance,
+                Mathf.Min(incomingLength, outgoingLength) * 0.5f);
+            entry = current - incoming * tangentDistance;
+            exit = current + outgoing * tangentDistance;
+            return true;
+        }
+
         /// <summary>Hướng đi (tangent) đã chuẩn hoá tại t, trong mặt phẳng XY.</summary>
         public Vector3 GetTangent(float t)
         {

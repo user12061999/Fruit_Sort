@@ -123,6 +123,7 @@ namespace FruitSort
             d.fallSpeed = 0f;
             d.targetBucket = null;
             d.markedForRemoval = false;
+            ClearConnectionState(d);
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
             d.spin = Random.Range(-maxSpin, maxSpin);
             d.ApplyColor();
@@ -168,6 +169,7 @@ namespace FruitSort
             d.targetBucket = null;
             d.markedForRemoval = false;
             d.capturedByBucket = false;
+            ClearConnectionState(d);
             d.ignoredBucket = ignoredBucket;
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
             d.spin = Random.Range(-maxSpin, maxSpin);
@@ -196,6 +198,7 @@ namespace FruitSort
             d.state = DotState.OnBelt;
             d.conveyor = belt;
             d.beltProgress = Mathf.Repeat(Mathf.Max(0f, progress), 1f);
+            ClearConnectionState(d);
             d.lateralOffset = Mathf.Clamp(lateralOffset, -belt.HalfWidth, belt.HalfWidth);
             d.fallSpeed = 0f;
             d.targetBucket = null;
@@ -410,6 +413,7 @@ namespace FruitSort
                 d.state = DotState.OnBelt;
                 d.conveyor = belt;
                 d.beltProgress = t;
+                ClearConnectionState(d);
                 d.lateralOffset = lat;
                 d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
                 _posCache[idx] = pos;
@@ -446,6 +450,7 @@ namespace FruitSort
                     d.state = DotState.OnBelt;
                     d.conveyor = conveyor;
                     d.beltProgress = 0f;
+                    ClearConnectionState(d);
                     d.lateralOffset = Random.Range(-conveyor.HalfWidth, conveyor.HalfWidth);
                     d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
                 }
@@ -462,6 +467,12 @@ namespace FruitSort
             if (d.conveyor == null) d.conveyor = conveyor;
             if (d.conveyor == null) { d.markedForRemoval = true; return; }
 
+            if (d.connectionTarget != null)
+            {
+                StepOnConnection(d, sep, dt, idx, advanceByBeltSpeed: true);
+                return;
+            }
+
             // Lưu lại để hoàn tác khi frame này bị vật cản chặn (dot đứng yên trên băng).
             float prevProgress = d.beltProgress;
             float prevLateral = d.lateralOffset;
@@ -470,7 +481,20 @@ namespace FruitSort
             float half = d.conveyor.HalfWidth - dotSize * 0.5f;
 
             // Tiến dọc spline theo tốc độ riêng.
-            d.beltProgress += (beltSpeed * d.beltSpeedFactor / length) * dt;
+            float beltTravel = beltSpeed * d.beltSpeedFactor * dt;
+            d.beltProgress += beltTravel / length;
+            if (!d.conveyor.IsClosed && TryBeginConnection(d, length))
+            {
+                if (!StepOnConnection(d, sep, dt, idx, advanceByBeltSpeed: false))
+                {
+                    // TryBeginConnection đã đổi progress/state. Nếu frame đầu bị chặn hoặc
+                    // không sample được route thì hoàn tác toàn bộ, không để dot ở trạng thái nửa vời.
+                    d.beltProgress = prevProgress;
+                    d.lateralOffset = prevLateral;
+                    ClearConnectionState(d);
+                }
+                return;
+            }
             if (d.beltProgress >= 1f)
             {
                 if (d.conveyor.IsClosed)
@@ -523,21 +547,135 @@ namespace FruitSort
             TryAttract(d, idx);
         }
 
-        /// <summary>
-        /// Khi dot chạy hết băng hiện tại: chuyển sang băng được nối qua <see cref="ConveyorConnections"/>.
-        /// Có <see cref="ConveyorSwitch"/> -> đi theo nhánh người chơi đang chọn;
-        /// không có -> nhiều nhánh (splitter) chọn ngẫu nhiên. Trả về false nếu không có băng kế.
-        /// </summary>
-        bool AdvanceToNext(Dot d)
+        bool TryBeginConnection(Dot d, float sourceLength)
         {
             if (d.conveyor == null) return false;
-            var conn = d.conveyor.GetComponent<ConveyorConnections>();
+            if (!TrySelectNext(d.conveyor, out ConveyorSpline target)) return false;
+
+            ConveyorBeltRenderer renderer = d.conveyor.GetComponent<ConveyorBeltRenderer>();
+            if (renderer == null || !renderer.TryGetConnectionRoute(target,
+                    out float sourceStartProgress, out float targetEndProgress,
+                    out float routeLength))
+                return false;
+            if (d.beltProgress < sourceStartProgress) return false;
+
+            d.connectionTarget = target;
+            d.connectionDistance = Mathf.Max(0f,
+                (d.beltProgress - sourceStartProgress) * sourceLength);
+            d.connectionRouteLength = routeLength;
+            d.connectionTargetEndProgress = targetEndProgress;
+            d.beltProgress = sourceStartProgress;
+            return true;
+        }
+
+        bool StepOnConnection(Dot d, Vector2 sep, float dt, int idx,
+            bool advanceByBeltSpeed)
+        {
+            ConveyorSpline source = d.conveyor;
+            ConveyorSpline target = d.connectionTarget;
+            ConveyorBeltRenderer renderer = source != null
+                ? source.GetComponent<ConveyorBeltRenderer>()
+                : null;
+            if (source == null || target == null || renderer == null)
+                return false;
+
+            float routeLength = d.connectionRouteLength;
+            float targetEndProgress = d.connectionTargetEndProgress;
+            if (routeLength <= 1e-5f &&
+                !renderer.TryGetConnectionRoute(target, out _,
+                    out targetEndProgress, out routeLength))
+            {
+                return false;
+            }
+            d.connectionRouteLength = routeLength;
+            d.connectionTargetEndProgress = targetEndProgress;
+
+            float previousDistance = d.connectionDistance;
+            float previousLateral = d.lateralOffset;
+            if (advanceByBeltSpeed)
+                d.connectionDistance += beltSpeed * d.beltSpeedFactor * dt;
+
+            float sampleDistance = Mathf.Min(d.connectionDistance, routeLength);
+            if (!renderer.TrySampleConnectionRoute(target, sampleDistance, 0f,
+                    out _, out Vector3 tangent))
+            {
+                d.connectionDistance = previousDistance;
+                d.lateralOffset = previousLateral;
+                return false;
+            }
+
+            Vector3 normal = new Vector3(-tangent.y, tangent.x, 0f);
+            float maxSeparation = beltSpeed * dt * 0.5f;
+            float along = Mathf.Clamp(Vector2.Dot(sep, (Vector2)tangent),
+                0f, maxSeparation);
+            d.connectionDistance += along;
+
+            float half = Mathf.Max(0f,
+                Mathf.Min(source.HalfWidth, target.HalfWidth) - dotSize * 0.5f);
+            float lateralSeparation = Mathf.Clamp(Vector2.Dot(sep, (Vector2)normal),
+                -maxSeparation, maxSeparation);
+            d.lateralOffset = Mathf.Clamp(
+                d.lateralOffset + lateralSeparation, -half, half);
+
+            bool completesConnection = d.connectionDistance >= routeLength;
+            Vector3 candidate;
+            float completedTargetProgress = targetEndProgress;
+            if (completesConnection)
+            {
+                float excessDistance = Mathf.Max(0f, d.connectionDistance - routeLength);
+                float targetLength = Mathf.Max(0.01f, target.GetSplineLength());
+                completedTargetProgress = Mathf.Clamp01(
+                    targetEndProgress + excessDistance / targetLength);
+                if (!target.TrySampleCenterline(completedTargetProgress,
+                        out Vector3 targetCenter, out Vector3 targetTangent))
+                {
+                    d.connectionDistance = previousDistance;
+                    d.lateralOffset = previousLateral;
+                    return false;
+                }
+                Vector3 targetNormal = new Vector3(-targetTangent.y, targetTangent.x, 0f);
+                candidate = targetCenter + targetNormal * d.lateralOffset;
+            }
+            else if (!renderer.TrySampleConnectionRoute(target, d.connectionDistance,
+                         d.lateralOffset, out candidate, out tangent))
+            {
+                d.connectionDistance = previousDistance;
+                d.lateralOffset = previousLateral;
+                return false;
+            }
+
+            if (IsBlockedByObstacle(candidate, flying: false))
+            {
+                d.connectionDistance = previousDistance;
+                d.lateralOffset = previousLateral;
+                return false;
+            }
+
+            _posCache[idx] = candidate;
+            d.transform.Rotate(0f, 0f, d.spin * dt);
+
+            if (completesConnection)
+            {
+                d.conveyor = target;
+                d.beltProgress = completedTargetProgress;
+                ClearConnectionState(d);
+                float targetHalf = Mathf.Max(0f, target.HalfWidth - dotSize * 0.5f);
+                d.lateralOffset = Mathf.Clamp(d.lateralOffset, -targetHalf, targetHalf);
+                d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+            }
+
+            TryAttract(d, idx);
+            return true;
+        }
+
+        bool TrySelectNext(ConveyorSpline source, out ConveyorSpline pick)
+        {
+            pick = null;
+            if (source == null) return false;
+            var conn = source.GetComponent<ConveyorConnections>();
             if (conn == null || conn.next == null || conn.next.Count == 0) return false;
 
-            ConveyorSpline pick = null;
-
-            // Switch định tuyến: người chơi quyết định nhánh thay vì random.
-            var routeSwitch = d.conveyor.GetComponent<ConveyorSwitch>();
+            var routeSwitch = source.GetComponent<ConveyorSwitch>();
             if (routeSwitch != null && routeSwitch.isActiveAndEnabled &&
                 routeSwitch.TryGetActiveNext(out ConveyorSpline chosen))
             {
@@ -555,13 +693,33 @@ namespace FruitSort
                     if (Random.Range(0, valid) == 0) pick = nx; // reservoir sampling -> phân bố đều
                 }
             }
-            if (pick == null) return false;
+            return pick != null;
+        }
+
+        /// <summary>
+        /// Khi dot chạy hết băng hiện tại: chuyển sang băng được nối qua <see cref="ConveyorConnections"/>.
+        /// Có <see cref="ConveyorSwitch"/> -> đi theo nhánh người chơi đang chọn;
+        /// không có -> nhiều nhánh (splitter) chọn ngẫu nhiên. Trả về false nếu không có băng kế.
+        /// </summary>
+        bool AdvanceToNext(Dot d)
+        {
+            if (d.conveyor == null || !TrySelectNext(d.conveyor, out ConveyorSpline pick))
+                return false;
 
             d.conveyor = pick;
             d.beltProgress = 0f;
+            ClearConnectionState(d);
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -pick.HalfWidth, pick.HalfWidth);
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
             return true;
+        }
+
+        static void ClearConnectionState(Dot d)
+        {
+            d.connectionTarget = null;
+            d.connectionDistance = 0f;
+            d.connectionRouteLength = 0f;
+            d.connectionTargetEndProgress = 0f;
         }
 
         /// <summary>
