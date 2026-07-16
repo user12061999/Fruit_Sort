@@ -506,7 +506,11 @@ namespace FruitSort
                 int cid = containedColorIds[i];
                 if (_containedColorId < 0) _containedColorId = cid;
 
-                Dot d = Instantiate(dotPrefab);
+                FallingPixelManager manager = FallingPixelManager.Instance;
+                Dot d = manager != null
+                    ? manager.AcquireDot(dotPrefab, MouthPosition, Quaternion.identity)
+                    : Instantiate(dotPrefab);
+                if (d == null) continue;
                 FruitData fruit = fruitDatabase != null ? fruitDatabase.GetById(cid) : null;
                 d.Init(cid, fruit != null ? fruit.color : color, 1, new Vector2Int(-1, -1));
                 d.transform.localScale = Vector3.one * Mathf.Max(0.01f, dotScale);

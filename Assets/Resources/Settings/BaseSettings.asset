@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c92e7229d072d0948bbf10de9a580470, type: 3}
   m_Name: BaseSettings
   m_EditorClassIdentifier: 
-  autoInitialize: 0
+  autoInitialize: 1
   runInBackground: 0
   targetFrameRate: 60
   multiTouchEnabled: 1

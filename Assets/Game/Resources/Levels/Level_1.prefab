@@ -261,6 +261,23 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3011d4b2a0560864eaea2e79811fa8fa, type: 2}
   - {fileID: 11400000, guid: 169800e4f5a790741bd40006bd3253b0, type: 2}
   - {fileID: 11400000, guid: a98b67454365f9d4b9558b46fecfbc3c, type: 2}
+  - {fileID: 11400000, guid: e03f07abf0d145141bc52fe7cf41e1c7, type: 2}
+  - {fileID: 11400000, guid: ad82cdcc06d6ceb4d9827507000adbe6, type: 2}
+  - {fileID: 11400000, guid: 631cc570b2ea9f74fb8a14d8a82e3e0b, type: 2}
+  - {fileID: 11400000, guid: ffddd134ec975ef4aae084aabdb08c3c, type: 2}
+  - {fileID: 11400000, guid: b2e0559c059b4ff4e89707363716d1ad, type: 2}
+  - {fileID: 11400000, guid: 824aa6f36bad47746bfd491651ffbc34, type: 2}
+  - {fileID: 11400000, guid: 0683d4ad909a94344a10b3e80da2b365, type: 2}
+  - {fileID: 11400000, guid: 372d7548ef2a447488413654d2e4b3ea, type: 2}
+  - {fileID: 11400000, guid: bb88784e6af92c7448ec182ce080a736, type: 2}
+  - {fileID: 11400000, guid: ed766f87458956f4d8196716b2a34684, type: 2}
+  - {fileID: 11400000, guid: 0eb5bac1c5281ac4fa472010eb4c2759, type: 2}
+  - {fileID: 11400000, guid: f61b024c794b93548ba0fbec4ac06afc, type: 2}
+  - {fileID: 11400000, guid: 310505ad72a83464eac9f341a9e08597, type: 2}
+  - {fileID: 11400000, guid: c19632225905de344837aaf56259aeee, type: 2}
+  - {fileID: 11400000, guid: f5e2e3aad4b81854681db182718de71e, type: 2}
+  threeStarThreshold: 0.5
+  twoStarThreshold: 0.25
 --- !u!114 &5178310927440822054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -331,14 +348,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e300d4aaccd12e48863e9f342a97e17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.GameManager
-  gridManager: {fileID: 0}
   fallingManager: {fileID: 2332499950598303473}
+  moveLimit: 0
+  movesLeftDebug: 0
+  timeLimit: 0
+  timeLeftDebug: 0
   scorePerSorted: 10
   scorePerBucket: 100
   score: 0
+  comboWindow: 2
+  comboBonusPerStep: 5
+  comboBonusMax: 50
+  supplyRiskInterval: 0.5
   scoreText: {fileID: 0}
   dotsLeftText: {fileID: 0}
   onBeltText: {fileID: 0}
+  movesLeftText: {fileID: 0}
+  timeLeftText: {fileID: 0}
+  onWin:
+    m_PersistentCalls:
+      m_Calls: []
+  onLose:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &7727588425096627562
 GameObject:
   m_ObjectHideFlags: 0
@@ -475,6 +507,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FruitSort.FallingPixelManager
   conveyor: {fileID: 0}
+  dotPool: {fileID: 0}
   maxDots: 0
   dotSize: 0.2
   gravity: 22

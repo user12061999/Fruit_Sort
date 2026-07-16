@@ -19,6 +19,8 @@ namespace FruitSort
         [Header("Refs")]
         [Tooltip("Băng chuyền mặc định cho dot đang rơi. Để trống = tự tìm băng đầu tiên.")]
         public ConveyorSpline conveyor;
+        [Tooltip("Pool tái sử dụng Dot runtime. Để trống sẽ tự lấy component cùng GameObject.")]
+        public DotPool dotPool;
 
         [Header("Sức chứa & kích thước")]
         [Tooltip("Số dot tối đa xử lý đồng thời. Vượt trần sẽ bỏ bớt dot mới. <= 0 = KHÔNG giới hạn.")]
@@ -86,6 +88,8 @@ namespace FruitSort
         {
             if (Instance != null && Instance != this) { Destroy(this); return; }
             Instance = this;
+            if (dotPool == null) dotPool = GetComponent<DotPool>();
+            if (dotPool == null) dotPool = gameObject.AddComponent<DotPool>();
         }
 
         void OnDestroy()
@@ -118,7 +122,7 @@ namespace FruitSort
         public void AddDot(Dot d)
         {
             if (d == null) return;
-            if (maxDots > 0 && _dots.Count >= maxDots) { Destroy(d.gameObject); return; } // vượt trần -> bỏ
+            if (maxDots > 0 && _dots.Count >= maxDots) { ReleaseDot(d); return; } // vượt trần -> bỏ
 
             d.state = DotState.Falling;
             d.fallSpeed = 0f;
@@ -130,6 +134,20 @@ namespace FruitSort
             d.ApplyColor();
             d.transform.SetParent(transform, true);
             _dots.Add(d);
+        }
+
+        public Dot AcquireDot(Dot prefab, Vector3 position, Quaternion rotation)
+        {
+            return dotPool != null
+                ? dotPool.Acquire(prefab, position, rotation)
+                : Instantiate(prefab, position, rotation);
+        }
+
+        public void ReleaseDot(Dot dot)
+        {
+            if (dot == null) return;
+            if (dotPool != null) dotPool.Release(dot);
+            else Destroy(dot.gameObject);
         }
 
         /// <summary>Phóng dot theo hướng cấu hình; dot bám vào băng chuyền đầu tiên nó chạm.</summary>
@@ -146,7 +164,7 @@ namespace FruitSort
             bool alreadyManaged = _dots.Contains(d);
             if (!alreadyManaged && ignoredBucket == null && maxDots > 0 && _dots.Count >= maxDots)
             {
-                Destroy(d.gameObject);
+                ReleaseDot(d);
                 return;
             }
 
@@ -192,7 +210,7 @@ namespace FruitSort
         {
             if (d == null) return;
             if (belt == null) belt = conveyor;
-            if (belt == null) { Destroy(d.gameObject); return; }
+            if (belt == null) { ReleaseDot(d); return; }
 
             d.transform.DOKill();
             d.transform.SetParent(transform, true);
@@ -926,7 +944,7 @@ namespace FruitSort
                     if (d.targetBucket != null) d.targetBucket.CancelReservation(d);
                     // Đã vào giỏ -> bucket sở hữu, KHÔNG destroy (sẽ đi theo giỏ khi worker mang đi).
                     if (!d.capturedByBucket && !d.capturedByGrinder)
-                        Destroy(d.gameObject);
+                        ReleaseDot(d);
                 }
             }
         }

@@ -151,6 +151,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1320861363266305505}
     m_Modifications:
+    - target: {fileID: 221697749607100103, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: fillAmount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 625454979706163506, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: m_text
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1040579786063402699, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -229,6 +237,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1320861363266305505}
     m_Modifications:
+    - target: {fileID: 221697749607100103, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: fillAmount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 625454979706163506, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: m_text
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1040579786063402699, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -307,6 +323,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1320861363266305505}
     m_Modifications:
+    - target: {fileID: 221697749607100103, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: fillAmount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 625454979706163506, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: m_text
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1040579786063402699, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -385,6 +409,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1320861363266305505}
     m_Modifications:
+    - target: {fileID: 221697749607100103, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: fillAmount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 625454979706163506, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
+      propertyPath: m_text
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1040579786063402699, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5

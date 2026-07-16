@@ -452,7 +452,8 @@ namespace FruitSort
             if (!TryResolveSpawnAppearance(out int colorId, out Color c, out Sprite spr))
                 return false;
 
-            Dot d = Instantiate(dotPrefab, pos, Quaternion.identity);
+            Dot d = fm.AcquireDot(dotPrefab, pos, Quaternion.identity);
+            if (d == null) return false;
             d.transform.localScale = Vector3.one * dotScale;
             d.Init(colorId, c, dotHP, new Vector2Int(-1, -1), spr);
 

@@ -12,20 +12,31 @@
   <component name="ChangeListManager">
     <list default="true" id="37a0f35e-74ce-4a1a-91d1-042b7b429311" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/LevelSO/Level_01.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/LevelSO/Level_01.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold SDF Fallback.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold SDF Fallback.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold-Outline-Black Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold-Outline-Black Material.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Prefabs/Manager/LoadingView.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Prefabs/Manager/LoadingView.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Prefabs/UI/Elements/currency.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Prefabs/UI/Elements/currency.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/Levels/Level_1.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/Levels/Level_1.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/DialogPanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/DialogPanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/GamePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/GamePanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomePanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomeTabController.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomeTabController.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/LosePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/LosePanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/PausePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/PausePanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/RatePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/RatePanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/SettingsPanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/SettingsPanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/WinPanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/WinPanel.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Game/Scenes/Bootstrap.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Scenes/Bootstrap.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/Conveyor.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/Conveyor.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorBeltRenderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorBeltRenderer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorConnections.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorConnections.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSwitch.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSwitch.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ClassicLevelLoadingTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ClassicLevelLoadingTests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ConveyorBeltRendererTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ConveyorBeltRendererTests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ConveyorConnectionContinuityTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ConveyorConnectionContinuityTests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelEditor/LevelEditorWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelEditor/LevelEditorWindow.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Textures/UI/Loading/LD_bg.png" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Textures/UI/Loading/LD_bg.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Settings/BaseSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Settings/BaseSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawn.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawn.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawnColumn.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawnColumn.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/LevelBuilder.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/LevelBuilder.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/LevelData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/LevelData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/mdfile/unity-sprite-grid-fill-spec.md" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/mdfile/unity-sprite-grid-fill-spec.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/TagManager.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/TagManager.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -191,7 +202,8 @@
       <workItem from="1783937335920" duration="6006000" />
       <workItem from="1783997020904" duration="2474000" />
       <workItem from="1784086914247" duration="603000" />
-      <workItem from="1784113588385" duration="5999000" />
+      <workItem from="1784113588385" duration="7203000" />
+      <workItem from="1784197640442" duration="405000" />
     </task>
     <servers />
   </component>
