@@ -46,6 +46,8 @@ namespace FruitSort
             [Min(1)] public int maxFill = 5;
             [Tooltip("Hướng phóng dot trả về băng khi click nhả giỏ (sẽ normalize).")]
             public Vector2 launchDirection = Vector2.down;
+            [Tooltip("Index conveyor cấp dot cho bucket. -1 = tự liên kết conveyor gần nhất để tương thích level cũ.")]
+            public int inputConveyor = -1;
         }
 
         [Serializable]
@@ -190,6 +192,8 @@ namespace FruitSort
                     BucketData b = data.buckets[i];
                     hash = hash * 31 + b.colorId;
                     hash = hash * 31 + b.maxFill;
+                    if (b.inputConveyor >= 0)
+                        hash = hash * 31 + b.inputConveyor + 1;
                 }
 
                 for (int i = 0; i < data.spawners.Count; i++)

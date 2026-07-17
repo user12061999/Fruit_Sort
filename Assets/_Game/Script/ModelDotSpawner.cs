@@ -171,12 +171,6 @@ namespace FruitSort
             if (packageSprite == null) packageSprite = GetComponent<SpriteRenderer>();
             if (packageSprite == null) return;
 
-            SpriteRenderer defaultDotRenderer = dotPrefab != null
-                ? dotPrefab.GetComponent<SpriteRenderer>()
-                : null;
-            if (defaultDotRenderer != null && defaultDotRenderer.sprite != null)
-                packageSprite.sprite = defaultDotRenderer.sprite;
-
             FruitData fruit = (fixedColorId >= 0 && fruitDatabase != null)
                 ? fruitDatabase.GetById(fixedColorId) : null;
 

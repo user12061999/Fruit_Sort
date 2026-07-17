@@ -14,9 +14,12 @@ namespace FruitSort
         public static bool IsPointerOverUI()
         {
             EventSystem eventSystem = EventSystem.current;
-            // Parameterless (pointerId -1): với InputSystemUIInputModule nghĩa là
-            // "bất kỳ con trỏ nào" -> đúng cho cả chuột lẫn touch.
-            return eventSystem != null && eventSystem.IsPointerOverGameObject();
+            if (eventSystem == null) return false;
+
+            if (PointerInput.TryGetActiveTouchFingerId(out int fingerId))
+                return eventSystem.IsPointerOverGameObject(fingerId);
+
+            return eventSystem.IsPointerOverGameObject();
         }
     }
 }

@@ -56,6 +56,40 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
+        public void ClosedTarget_ConnectionRouteEndsAtKnotZero()
+        {
+            LevelData data = AssetDatabase.LoadAssetAtPath<LevelData>(
+                "Assets/Game/Resources/LevelSO/Level_03.asset");
+            Assert.That(data, Is.Not.Null);
+
+            GameObject root = LevelBuilder.Build(data);
+            try
+            {
+                ConveyorSpline source = root.transform.Find("Belt_Feeder")
+                    .GetComponent<ConveyorSpline>();
+                ConveyorSpline target = root.transform.Find("Belt_Track")
+                    .GetComponent<ConveyorSpline>();
+                ConveyorBeltRenderer renderer = source.GetComponent<ConveyorBeltRenderer>();
+
+                Assert.That(target.IsClosed, Is.True);
+                Assert.That(renderer.TryGetConnectionRoute(target,
+                    out float sourceStart, out float targetEnd, out float routeLength), Is.True,
+                    "A linked closed conveyor needs a sampled connector instead of a direct reset to knot 0.");
+                Assert.That(sourceStart, Is.LessThan(1f));
+                Assert.That(targetEnd, Is.Zero.Within(0.0001f));
+
+                Assert.That(renderer.TrySampleConnectionRoute(target,
+                    routeLength, 0f, out Vector3 routeEnd, out _), Is.True);
+                Assert.That(Vector2.Distance(routeEnd,
+                    target.GetPositionOnSpline(0f, 0f)), Is.LessThan(0.02f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void ConnectedBelts_KeepTheirEndpointsToPreventVisibleSeams()
         {
             LevelData data = CreateCornerConnectionData();

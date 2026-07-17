@@ -11,32 +11,40 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37a0f35e-74ce-4a1a-91d1-042b7b429311" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/BucketConveyorPickupTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/BucketConveyorPickupTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/GamePanelBoosterItemViewTests.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/GamePanelBoosterItemViewTests.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/FruitSort_BurstDebugInformation_DoNotShip/tempburstlibs/armeabi-v7a/lib_burst_generated.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LoopSort/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold SDF Fallback.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold SDF Fallback.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold-Outline-Black Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Fonts/Noto_Sans/NotoSans-Bold-Outline-Black Material.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Prefabs/Manager/LoadingView.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Prefabs/Manager/LoadingView.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Prefabs/UI/Elements/currency.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Prefabs/UI/Elements/currency.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/Levels/Level_1.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/Levels/Level_1.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/DialogPanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/DialogPanel.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/DefaultVolumeProfile.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/DefaultVolumeProfile.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Data/Items/Magnet.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Data/Items/Magnet.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/GamePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/GamePanel.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomePanel.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomeTabController.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/HomeTabController.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/LosePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/LosePanel.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/PausePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/PausePanel.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/RatePanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/RatePanel.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/SettingsPanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/SettingsPanel.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Resources/UI/WinPanel.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Resources/UI/WinPanel.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Game/Scenes/Bootstrap.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Scenes/Bootstrap.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Game/Textures/UI/Loading/LD_bg.png" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Textures/UI/Loading/LD_bg.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Resources/Settings/BaseSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Settings/BaseSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Game/Scripts/UI/GamePanel/GamePanel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Game/Scripts/UI/GamePanel/GamePanel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRP.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRP.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/UniversalRenderPipelineGlobalSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/UniversalRenderPipelineGlobalSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/Cage.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/Cage.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawn.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawn.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawnColumn.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Prefabs/FruitSpawnColumn.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Bucket.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorBeltRenderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorBeltRenderer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ConveyorSpline.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/BucketColorFlowTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/BucketColorFlowTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ConveyorBeltRendererTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/ConveyorBeltRendererTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/FruitSortSceneBuilder.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/FruitSortSceneBuilder.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelDesign100DotGenerator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelDesign100DotGenerator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelEditor/LevelEditorWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelEditor/LevelEditorWindow.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelEditor/LevelValidator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/Editor/LevelEditor/LevelValidator.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/FallingPixelManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/LevelBuilder.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/LevelBuilder.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/LevelData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/LevelData.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/ModelDotSpawner.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/_Game/mdfile/unity-sprite-grid-fill-spec.md" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/mdfile/unity-sprite-grid-fill-spec.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/TagManager.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/TagManager.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/PointerInput.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/PointerInput.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/_Game/Script/UIPointerGuard.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/_Game/Script/UIPointerGuard.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,61 +66,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="3.31717230687947E-5" />
-      <entry key="MS500" value="0.4320827985968289" />
-      <entry key="S2" value="5.8185601526911945" />
-      <entry key="S5" value="14.912891083826601" />
-      <entry key="S10" value="24.19366637265704" />
-      <entry key="S30" value="36.763722192448895" />
-      <entry key="S60" value="41.433209108847166" />
-      <entry key="M2" value="44.180944770345434" />
-      <entry key="M5" value="53.20544604664401" />
-      <entry key="M10" value="78.8425542591453" />
-      <entry key="M15" value="100.06208360051949" />
-      <entry key="M30" value="138.57409627347536" />
-      <entry key="H1" value="174.89165665541643" />
-      <entry key="H2" value="203.86467606298538" />
-      <entry key="H4" value="223.13980187988992" />
-      <entry key="D1" value="242.64632376294986" />
-      <entry key="W1" value="246.36792907635476" />
+      <entry key="MS100" value="1.2601908366653285" />
+      <entry key="MS500" value="3.3069996856836927" />
+      <entry key="S2" value="8.849844415410617" />
+      <entry key="S5" value="18.855975972903906" />
+      <entry key="S10" value="30.955210453048654" />
+      <entry key="S30" value="57.42071892438115" />
+      <entry key="S60" value="75.21939390710764" />
+      <entry key="M2" value="88.76890282687089" />
+      <entry key="M5" value="105.54856725078491" />
+      <entry key="M10" value="133.4156938590009" />
+      <entry key="M15" value="155.57608697329812" />
+      <entry key="M30" value="195.54462119085892" />
+      <entry key="H1" value="233.0068945145636" />
+      <entry key="H2" value="262.7749357788927" />
+      <entry key="H4" value="282.54594745711114" />
+      <entry key="D1" value="302.5390884055578" />
+      <entry key="W1" value="306.3523846451034" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0" />
-      <entry key="S30" value="1.0" />
-      <entry key="S60" value="1.0" />
-      <entry key="M2" value="1.0" />
-      <entry key="M5" value="1.0" />
-      <entry key="M10" value="1.0" />
-      <entry key="M15" value="1.0" />
-      <entry key="M30" value="1.0" />
-      <entry key="H1" value="1.0" />
-      <entry key="H2" value="1.0" />
-      <entry key="H4" value="1.0" />
-      <entry key="D1" value="1.0" />
-      <entry key="W1" value="1.0" />
+      <entry key="MS100" value="1.001880817353599E-157" />
+      <entry key="MS500" value="3.982568113919651E-32" />
+      <entry key="S2" value="1.412670262349612E-8" />
+      <entry key="S5" value="7.244631856264285E-4" />
+      <entry key="S10" value="0.026915853797091948" />
+      <entry key="S30" value="0.2996880230770962" />
+      <entry key="S60" value="0.5474376887620143" />
+      <entry key="M2" value="0.7398903221167416" />
+      <entry key="M5" value="0.8864759111242622" />
+      <entry key="M10" value="0.9415284972449124" />
+      <entry key="M15" value="0.960628896052525" />
+      <entry key="M30" value="0.9801167767427137" />
+      <entry key="H1" value="0.9900084730661212" />
+      <entry key="H2" value="0.9949916949734418" />
+      <entry key="H4" value="0.9974927042206568" />
+      <entry key="D1" value="0.9995816801352676" />
+      <entry key="W1" value="0.9999402293027844" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="5.483001573104004E-5" />
-      <entry key="MS500" value="0.5456242664899086" />
-      <entry key="S2" value="6.388133942547136" />
-      <entry key="S5" value="15.702583646119733" />
-      <entry key="S10" value="25.077070811326582" />
-      <entry key="S30" value="37.72060599711745" />
-      <entry key="S60" value="42.41091100378374" />
-      <entry key="M2" value="45.16957515224154" />
-      <entry key="M5" value="54.20038260384492" />
-      <entry key="M10" value="79.83919681400755" />
-      <entry key="M15" value="101.05936774241061" />
-      <entry key="M30" value="139.57221709629727" />
-      <entry key="H1" value="175.89036741518936" />
-      <entry key="H2" value="204.8638527364985" />
-      <entry key="H4" value="224.1393226845093" />
-      <entry key="D1" value="243.64623159354292" />
-      <entry key="W1" value="247.36791556068158" />
+      <entry key="MS100" value="1.185319903507993" />
+      <entry key="MS500" value="3.2679771257593" />
+      <entry key="S2" value="8.823820581238458" />
+      <entry key="S5" value="18.83424185100462" />
+      <entry key="S10" value="30.960366958846524" />
+      <entry key="S30" value="57.696294155647976" />
+      <entry key="S60" value="75.74764167501225" />
+      <entry key="M2" value="89.49641425292438" />
+      <entry key="M5" value="106.42883142809835" />
+      <entry key="M10" value="134.3531747274888" />
+      <entry key="M15" value="156.53351021988428" />
+      <entry key="M30" value="196.52259489092646" />
+      <entry key="H1" value="233.99547526225044" />
+      <entry key="H2" value="263.7690324027338" />
+      <entry key="H4" value="283.5429241870401" />
+      <entry key="D1" value="303.53857161832906" />
+      <entry key="W1" value="307.35231045416674" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -124,28 +132,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;Codex__2&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "Codex__2",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "ml.llm.LLMTrustedDomainsConfigurableProvider",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
       <option name="EXE_PATH" value="D:\Hub\6000.4.12f1\Editor\Unity.exe" />

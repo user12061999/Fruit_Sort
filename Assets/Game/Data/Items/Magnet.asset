@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Magnet
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   id: 5
-  icon: {fileID: 21300000, guid: d979f5918961420409448635c8e787c5, type: 3}
+  icon: {fileID: 21300000, guid: 9fc85422e17a2af448f7c32d6efd884a, type: 3}
   displayName: Magnet
   description: "H\xFAt dot \u0111\xFAng m\xE0u tr\xEAn b\u0103ng v\u1EC1 gi\u1ECF
     s\u1EAFp \u0111\u1EA7y nh\u1EA5t."

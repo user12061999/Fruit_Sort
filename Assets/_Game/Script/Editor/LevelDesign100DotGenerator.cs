@@ -165,7 +165,8 @@ namespace FruitSort
                     level.buckets.Add(new LevelData.BucketData
                     {
                         position = new Vector3(5f, y, 0f), colorId = definition.ColorIds[colorIndex],
-                        maxFill = definition.BucketCapacities[capacityIndex++], launchDirection = Vector2.left
+                        maxFill = definition.BucketCapacities[capacityIndex++], launchDirection = Vector2.left,
+                        inputConveyor = branch
                     });
                     bucketIndex++;
                 }

@@ -506,6 +506,13 @@ namespace FruitSort
             d.beltProgress += beltTravel / length;
             if (!d.conveyor.IsClosed && TryBeginConnection(d, length))
             {
+                if (TryAttractFromConveyor(
+                        d, idx, d.conveyor, prevProgress, d.beltProgress))
+                {
+                    ClearConnectionState(d);
+                    return;
+                }
+
                 if (!StepOnConnection(d, sep, dt, idx, advanceByBeltSpeed: false))
                 {
                     // TryBeginConnection đã đổi progress/state. Nếu frame đầu bị chặn hoặc
@@ -518,10 +525,14 @@ namespace FruitSort
             }
             if (d.beltProgress >= 1f)
             {
+                if (TryAttractFromConveyor(
+                        d, idx, d.conveyor, prevProgress, d.beltProgress))
+                    return;
+
                 if (d.conveyor.IsClosed)
                 {
                     // Spline khép vòng → quay lại đầu thay vì xoá.
-                    d.beltProgress -= 1f;
+                    d.beltProgress = Mathf.Repeat(d.beltProgress, 1f);
                 }
                 else if (!AdvanceToNext(d))
                 {
@@ -565,7 +576,7 @@ namespace FruitSort
             _posCache[idx] = candidate; // ghi cache
             d.transform.Rotate(0f, 0f, d.spin * dt);
 
-            TryAttract(d, idx);
+            TryAttractFromConveyor(d, idx, d.conveyor, prevProgress, d.beltProgress);
         }
 
         bool TryBeginConnection(Dot d, float sourceLength)
@@ -683,9 +694,11 @@ namespace FruitSort
                 float targetHalf = Mathf.Max(0f, target.HalfWidth - dotSize * 0.5f);
                 d.lateralOffset = Mathf.Clamp(d.lateralOffset, -targetHalf, targetHalf);
                 d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
-            }
 
-            TryAttract(d, idx);
+                if (TryAttractFromConveyor(
+                        d, idx, target, targetEndProgress, completedTargetProgress))
+                    return true;
+            }
             return true;
         }
 
@@ -728,7 +741,10 @@ namespace FruitSort
                 return false;
 
             d.conveyor = pick;
-            d.beltProgress = 0f;
+            ConveyorBeltRenderer targetRenderer = pick.GetComponent<ConveyorBeltRenderer>();
+            d.beltProgress = targetRenderer != null
+                ? targetRenderer.GetConnectionEntryProgress()
+                : 0f;
             ClearConnectionState(d);
             d.lateralOffset = Mathf.Clamp(d.lateralOffset, -pick.HalfWidth, pick.HalfWidth);
             d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
@@ -824,33 +840,45 @@ namespace FruitSort
             }
         }
 
-        // Tìm bucket cùng màu trong tầm hút -> chuyển sang trạng thái Attracting.
-        void TryAttract(Dot d, int idx)
+        // Chỉ nhận khi dot đi qua pickup point trên đúng conveyor đã liên kết với bucket.
+        bool TryAttractFromConveyor(
+            Dot d,
+            int idx,
+            ConveyorSpline source,
+            float previousProgress,
+            float currentProgress)
         {
-            Vector3 position = _posCache[idx];
-            Bucket ignored = d.ignoredBucket;
-            if (ignored == null)
-            {
-                d.ignoredBucket = null;
-            }
-            else if (!ignored.Contains(position))
-            {
-                d.ignoredBucket = null;
-                ignored = null;
-            }
+            if (d == null || source == null || currentProgress <= previousProgress)
+                return false;
 
             for (int i = 0; i < _buckets.Count; i++)
             {
                 Bucket b = _buckets[i];
-                if (b == null || b == ignored || !b.IsActive) continue;
-                // Phát hiện theo VÙNG VA CHẠM (Collider2D) của bucket, fallback bán kính nếu chưa gán zone.
-                if (b.Contains(position) && b.TryReserve(d)) // dùng cache
+                if (b == null ||
+                    !b.DidCrossPickupPoint(source, previousProgress, currentProgress))
+                    continue;
+
+                // Dot vừa được bucket này nhả ra sẽ bỏ qua đúng một lần đi qua pickup point.
+                if (b == d.ignoredBucket)
+                {
+                    d.ignoredBucket = null;
+                    continue;
+                }
+
+                if (!b.IsActive)
+                    continue;
+
+                if (b.TryReserve(d))
                 {
                     d.state = DotState.Attracting;
                     d.targetBucket = b;
-                    return;
+                    _posCache[idx] = source.GetPositionOnSpline(
+                        b.PickupProgress, d.lateralOffset);
+                    return true;
                 }
             }
+
+            return false;
         }
 
         // ================= VẬT CẢN =================

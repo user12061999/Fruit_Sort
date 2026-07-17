@@ -263,6 +263,27 @@ namespace FruitSort
             return Mathf.Clamp01(progress);
         }
 
+        /// <summary>
+        /// Progress dot bắt đầu đi trên belt sau khi hoàn tất connector đi vào conveyor này.
+        /// Giá trị này độc lập với source để movement fallback không thể quay về knot 0.
+        /// </summary>
+        public float GetConnectionEntryProgress()
+        {
+            if (Conveyor == null || Conveyor.IsClosed)
+                return 0f;
+
+            float length = Mathf.Max(0.01f, Conveyor.GetSplineLength());
+            return Mathf.Clamp01(GetConnectionLead(Conveyor, length) / length);
+        }
+
+        float GetConnectionLead(ConveyorSpline spline, float splineLength)
+        {
+            return Mathf.Clamp(
+                Mathf.Max(connectionMinLead, spline.HalfWidth * connectionWidthFactor),
+                0.01f,
+                Mathf.Max(0.01f, splineLength * connectionMaxProgress));
+        }
+
         float GetOutgoingTrimProgress()
         {
             if (Conveyor.IsClosed || Connections == null)
@@ -291,6 +312,10 @@ namespace FruitSort
                 float progress = Mathf.Lerp(startProgress, endProgress, i / (float)count);
                 _mainPath.Add(Conveyor.GetPositionOnSpline(progress, 0f));
             }
+
+            if (Conveyor.IsClosed && Mathf.Approximately(startProgress, 0f) &&
+                Mathf.Approximately(endProgress, 1f))
+                _mainPath[_mainPath.Count - 1] = _mainPath[0];
 
             BuildDistances(_mainPath, _mainDistances);
         }
@@ -468,7 +493,11 @@ namespace FruitSort
         static Vector3 GetPathTangent(List<Vector3> path, int index)
         {
             Vector3 tangent;
-            if (index <= 0)
+            bool closed = path.Count > 2 &&
+                          (path[0] - path[path.Count - 1]).sqrMagnitude <= 0.00000001f;
+            if (closed && (index <= 0 || index >= path.Count - 1))
+                tangent = path[1] - path[path.Count - 2];
+            else if (index <= 0)
                 tangent = path[1] - path[0];
             else if (index >= path.Count - 1)
                 tangent = path[path.Count - 1] - path[path.Count - 2];
@@ -524,7 +553,7 @@ namespace FruitSort
         bool CanConnectTo(ConveyorSpline target)
         {
             return Conveyor != null && target != null && target != Conveyor &&
-                   !Conveyor.IsClosed && !target.IsClosed;
+                   !Conveyor.IsClosed;
         }
 
         void BuildRoute(ConveyorSpline target, RouteCache route)
@@ -540,24 +569,12 @@ namespace FruitSort
             // Source trim chỉ phụ thuộc source; target trim chỉ phụ thuộc target.
             // Nhờ đó mọi nhánh rời cùng một source có chung điểm bắt đầu và mọi source
             // đi vào cùng một target có chung điểm kết thúc.
-            float sourceLead = Mathf.Clamp(
-                Mathf.Max(connectionMinLead, Conveyor.HalfWidth * connectionWidthFactor),
-                0.01f,
-                Mathf.Max(0.01f, sourceLength * connectionMaxProgress));
-
-            float targetMinLead = targetRenderer != null
-                ? targetRenderer.connectionMinLead
-                : connectionMinLead;
-            float targetWidthFactor = targetRenderer != null
-                ? targetRenderer.connectionWidthFactor
-                : connectionWidthFactor;
-            float targetMaxProgress = targetRenderer != null
-                ? targetRenderer.connectionMaxProgress
-                : connectionMaxProgress;
-            float targetLead = Mathf.Clamp(
-                Mathf.Max(targetMinLead, target.HalfWidth * targetWidthFactor),
-                0.01f,
-                Mathf.Max(0.01f, targetLength * targetMaxProgress));
+            float sourceLead = GetConnectionLead(Conveyor, sourceLength);
+            float targetLead = target.IsClosed
+                ? 0f
+                : targetRenderer != null
+                    ? targetRenderer.GetConnectionLead(target, targetLength)
+                    : GetConnectionLead(target, targetLength);
 
             route.sourceStartProgress = Mathf.Clamp01(1f - sourceLead / sourceLength);
             route.targetEndProgress = Mathf.Clamp01(targetLead / targetLength);

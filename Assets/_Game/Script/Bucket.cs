@@ -17,7 +17,7 @@ namespace FruitSort
 
     /// <summary>
     /// Cage/Bucket dùng SpriteGridFill: mỗi dot nhảy vào một ô rồi tăng fill của shader.
-    /// Dot CÙNG MÀU đi vào VÙNG VA CHẠM (Collider2D chỉnh trong editor) sẽ bị hút vào và
+    /// Dot đi qua điểm nhận trên Input Conveyor sẽ được reserve rồi hút về miệng bucket.
     /// Không scale sprite và không tạo một SpriteRenderer cho từng ô.
     /// Đầy 100% -> punch scale (DOTween) -> Destroy. Cho phép nhiều bucket cùng màu.
     /// </summary>
@@ -36,15 +36,14 @@ namespace FruitSort
         [InspectorName("Filled Dots Debug")]
         public int currentFill = 0;
 
-        [Header("Vùng va chạm (chỉnh trong editor)")]
-        [Tooltip("Collider2D làm vùng phát hiện dot. Để trống = tự lấy Collider2D trên object, " +
-                 "không có thì fallback dùng attractRadius. Nên đặt 'Is Trigger' = true.")]
-        public Collider2D zone;
-        [Tooltip("Bán kính hút dự phòng khi KHÔNG gán zone.")]
-        public float attractRadius = 1.2f;
-        [Tooltip("Kiểm tra chính xác theo hình collider (OverlapPoint, có gọi Physics2D). " +
-                 "TẮT (mặc định) = chỉ kiểm tra AABB bounds, rẻ hơn nhiều, hợp cho zone hình hộp.")]
-        public bool precisePointTest = false;
+        [Header("Nhận dot từ conveyor")]
+        [Tooltip("Conveyor duy nhất cấp dot cho bucket. Điểm nhận được chiếu từ miệng bucket xuống line của conveyor này.")]
+        [SerializeField] ConveyorSpline inputConveyor;
+        [SerializeField, HideInInspector] float pickupProgress;
+
+        [Header("Nhả dot")]
+        [Tooltip("Bán kính click dự phòng quanh bucket nếu prefab không có SpriteRenderer hiển thị. Không dùng Collider2D/Physics.")]
+        [Min(0.05f)] public float bucketClickRadius = 0.7f;
 
         [Header("Hút dot")]
         [Tooltip("Điểm hút (miệng thùng). Để trống = dùng vị trí của bucket.")]
@@ -145,6 +144,11 @@ namespace FruitSort
         public bool IsActive => isActiveAndEnabled && !_full && !_releasing && currentFill < maxFill;
         public float FillRatio => maxFill > 0 ? Mathf.Clamp01(currentFill / (float)maxFill) : 1f;
         public Vector3 MouthPosition => mouth != null ? mouth.position : transform.position;
+        public ConveyorSpline InputConveyor => inputConveyor;
+        public float PickupProgress => pickupProgress;
+        public Vector3 PickupPosition => inputConveyor != null
+            ? inputConveyor.GetPositionOnSpline(pickupProgress, 0f)
+            : MouthPosition;
         public int ContainedColorId => _containedColorId;
         public bool IsFull => _full;
         public int RemainingFillForWin => Mathf.Max(0, maxFill - currentFill);
@@ -162,6 +166,7 @@ namespace FruitSort
             if (!s_all.Contains(this)) s_all.Add(this);
             _containedColorId = currentFill > 0 ? colorId : -1;
             _visibleFill = Mathf.Clamp(currentFill, 0, Mathf.Max(1, maxFill));
+            RefreshPickupProgress();
             ApplyVisual();
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.RegisterBucket(this);
         }
@@ -188,7 +193,7 @@ namespace FruitSort
 
             Vector3 screen = pointerPos;
             screen.z = Mathf.Abs(cam.transform.position.z - transform.position.z);
-            if (Contains(cam.ScreenToWorldPoint(screen)))
+            if (IsBucketClick(cam.ScreenToWorldPoint(screen)))
                 ReleaseContents();
         }
 
@@ -205,21 +210,62 @@ namespace FruitSort
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
         }
 
-        /// <summary>Dot ở world position này có nằm trong vùng bắt của bucket không?</summary>
-        public bool Contains(Vector3 worldPos)
+        /// <summary>World position có nằm trên visual của bucket để nhả dot không?</summary>
+        public bool IsBucketClick(Vector3 worldPos)
         {
-            if (zone != null)
+            SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(false);
+            for (int i = 0; i < renderers.Length; i++)
             {
-                // Đường nhanh: AABB bounds (chỉ là so sánh số, KHÔNG gọi Physics2D).
-                if (!zone.bounds.Contains(new Vector3(worldPos.x, worldPos.y, zone.bounds.center.z)))
-                    return false;
-                // Chỉ khi đã trong AABB mới (tuỳ chọn) test chính xác theo hình.
-                return !precisePointTest || zone.OverlapPoint(worldPos);
+                SpriteRenderer renderer = renderers[i];
+                if (renderer != null && renderer.enabled && renderer.sprite != null &&
+                    IsInsideSpriteBounds(renderer.bounds, worldPos))
+                    return true;
             }
-            // Không có zone: dùng bình phương khoảng cách (tránh Sqrt).
-            float dx = worldPos.x - MouthPosition.x;
-            float dy = worldPos.y - MouthPosition.y;
-            return dx * dx + dy * dy <= attractRadius * attractRadius;
+
+            Vector2 delta = (Vector2)(worldPos - MouthPosition);
+            return delta.sqrMagnitude <= bucketClickRadius * bucketClickRadius;
+        }
+
+        static bool IsInsideSpriteBounds(Bounds bounds, Vector3 worldPos)
+        {
+            return worldPos.x >= bounds.min.x && worldPos.x <= bounds.max.x &&
+                   worldPos.y >= bounds.min.y && worldPos.y <= bounds.max.y;
+        }
+
+        /// <summary>Liên kết bucket với conveyor và tính điểm nhận gần miệng bucket nhất.</summary>
+        public void BindInputConveyor(ConveyorSpline conveyor)
+        {
+            inputConveyor = conveyor;
+            RefreshPickupProgress();
+        }
+
+        public void RefreshPickupProgress()
+        {
+            pickupProgress = inputConveyor != null
+                ? Mathf.Clamp01(inputConveyor.FindClosestProgress(MouthPosition, out _))
+                : 0f;
+        }
+
+        /// <summary>Dot trên đúng conveyor có đi qua điểm nhận trong bước tiến này không?</summary>
+        public bool DidCrossPickupPoint(
+            ConveyorSpline source,
+            float previousProgress,
+            float currentProgress)
+        {
+            const float epsilon = 0.00001f;
+            if (source == null || source != inputConveyor ||
+                currentProgress <= previousProgress)
+                return false;
+
+            float gate = Mathf.Clamp01(pickupProgress);
+            if (!source.IsClosed)
+                return previousProgress <= gate + epsilon &&
+                       currentProgress >= gate - epsilon;
+
+            float cycle = Mathf.Max(0f,
+                Mathf.Ceil(previousProgress - gate - epsilon));
+            float nextGate = gate + cycle;
+            return nextGate <= currentProgress + epsilon;
         }
 
         public bool CanAcceptColor(int incomingColorId)
@@ -382,7 +428,7 @@ namespace FruitSort
                 return true;
             }
 
-            // Nhả DẦN: mỗi dot ra zone thì fill vơi đúng 1/n (như ModelDotSpawner).
+            // Nhả DẦN: mỗi dot làm fill vơi đúng 1/n (như ModelDotSpawner).
             TrackPendingRelease(returning);
             StartCoroutine(ReleaseDotsRoutine(returning, manager));
             if (gamePlay != null) gamePlay.RecordInteraction();
@@ -577,7 +623,6 @@ namespace FruitSort
         public void BePickedUp()
         {
             IsReadyForPickup = false;
-            if (zone != null) zone.enabled = false;
         }
 
         public void RefreshVisuals()
@@ -758,20 +803,25 @@ namespace FruitSort
                 if (backgroundTransform != null)
                     background = backgroundTransform.GetComponent<SpriteRenderer>();
             }
-            if (zone == null) zone = GetComponent<Collider2D>();
             maxFill = Mathf.Max(1, maxFill);
             cellGap = Mathf.Clamp(cellGap, 0f, 0.45f);
             wrongColorLerpDuration = Mathf.Max(0f, wrongColorLerpDuration);
             launchSpeed = Mathf.Max(0.1f, launchSpeed);
             launchSpread = Mathf.Clamp(launchSpread, 0f, 45f);
+            bucketClickRadius = Mathf.Max(0.05f, bucketClickRadius);
             if (body != null && gridFill == null) gridFill = body.GetComponent<SpriteGridFill>();
+            RefreshPickupProgress();
             ApplyVisual();
         }
 
         void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(color.r, color.g, color.b, 0.4f);
-            if (zone == null) Gizmos.DrawWireSphere(MouthPosition, attractRadius);
+            if (inputConveyor != null)
+            {
+                Gizmos.DrawLine(MouthPosition, PickupPosition);
+                Gizmos.DrawWireSphere(PickupPosition, 0.08f);
+            }
         }
     }
 }

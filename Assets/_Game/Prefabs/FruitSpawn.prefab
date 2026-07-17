@@ -202,7 +202,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpriteGridFill
   columns: 3
   rows: 3
-  fillAmount: 0
+  fillAmount: 1
   cellGap: 0
   tint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &4110452341015269552
@@ -270,7 +270,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 0
+  m_text: 5
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: bb24863cf529d4749b3a372f78ea7faf, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 84c796f724e0c0843bc379bece460333, type: 2}

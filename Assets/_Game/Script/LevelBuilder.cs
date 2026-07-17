@@ -75,7 +75,7 @@ namespace FruitSort
                 Debug.LogError("[LevelBuilder] Level có bucket nhưng chưa gán bucketPrefab.", data);
             else
                 for (int i = 0; i < data.buckets.Count; i++)
-                    BuildBucket(data, data.buckets[i], i, root.transform);
+                    BuildBucket(data, data.buckets[i], i, conveyors, root.transform);
 
             if (data.spawners.Count > 0 && data.spawnerPrefab == null)
                 Debug.LogError("[LevelBuilder] Level có spawner nhưng chưa gán spawnerPrefab.", data);
@@ -246,7 +246,12 @@ namespace FruitSort
             return conv;
         }
 
-        static void BuildBucket(LevelData data, LevelData.BucketData bd, int index, Transform parent)
+        static void BuildBucket(
+            LevelData data,
+            LevelData.BucketData bd,
+            int index,
+            List<ConveyorSpline> conveyors,
+            Transform parent)
         {
             var go = Spawn(data.bucketPrefab.gameObject, parent);
             go.name = $"Bucket_{index}_c{bd.colorId}";
@@ -262,8 +267,34 @@ namespace FruitSort
             b.maxFill = bd.maxFill;
             if (bd.launchDirection.sqrMagnitude > 0.0001f) b.launchDirection = bd.launchDirection;
             if (b.fruitDatabase == null) b.fruitDatabase = data.fruitDatabase;
+
+            ConveyorSpline input = bd.inputConveyor >= 0 && bd.inputConveyor < conveyors.Count
+                ? conveyors[bd.inputConveyor]
+                : FindNearestConveyor(b.MouthPosition, conveyors);
+            if (input == null)
+                input = FindNearestConveyor(b.MouthPosition, conveyors);
+            b.BindInputConveyor(input);
+
             b.RefreshVisuals();
             MarkModified(b);
+        }
+
+        static ConveyorSpline FindNearestConveyor(
+            Vector3 worldPosition,
+            List<ConveyorSpline> conveyors)
+        {
+            ConveyorSpline nearest = null;
+            float nearestDistance = float.MaxValue;
+            for (int i = 0; i < conveyors.Count; i++)
+            {
+                ConveyorSpline candidate = conveyors[i];
+                if (candidate == null) continue;
+                candidate.FindClosestProgress(worldPosition, out float distance);
+                if (distance >= nearestDistance) continue;
+                nearestDistance = distance;
+                nearest = candidate;
+            }
+            return nearest;
         }
 
         static void BuildColumn(LevelData data, LevelData.ColumnData cd, int index, Transform parent)

@@ -121,16 +121,20 @@ namespace FruitSort.EditorTools
                     issues.Add(new LevelIssue(MessageType.Warning,
                         $"Column '{col.name}' không có spawner con nào.", col));
 
-            // ---- Bucket: màu hợp lệ + gần băng chuyền ----
+            // ---- Bucket: màu hợp lệ + có conveyor cấp dot ----
             foreach (var b in buckets)
             {
                 if (level.fruitDatabase != null && level.fruitDatabase.GetById(b.colorId) == null)
                     issues.Add(new LevelIssue(MessageType.Warning,
                         $"Bucket '{b.name}' có colorId={b.colorId} không tồn tại trong FruitDatabase.", b));
 
-                if (conveyors.Length > 0 && !IsNearAnyConveyor(b, conveyors))
+                if (conveyors.Length > 0 && b.InputConveyor == null)
                     issues.Add(new LevelIssue(MessageType.Warning,
-                        $"Bucket '{b.name}' nằm xa mọi băng chuyền — có thể không bắt được dot.", b));
+                        $"Bucket '{b.name}' chưa liên kết Input Conveyor nên sẽ không nhận dot.", b));
+                else if (b.InputConveyor != null &&
+                         System.Array.IndexOf(conveyors, b.InputConveyor) < 0)
+                    issues.Add(new LevelIssue(MessageType.Warning,
+                        $"Bucket '{b.name}' đang liên kết conveyor không thuộc level hiện tại.", b));
             }
 
             // ---- Cân đối cung/cầu dot theo màu ----
@@ -145,20 +149,6 @@ namespace FruitSort.EditorTools
             for (int i = 0; i < conn.next.Count; i++)
                 if (conn.next[i] != null) n++;
             return n;
-        }
-
-        /// <summary>Bucket có nằm trong tầm bắt của ít nhất 1 băng chuyền không (bề rộng/2 + attractRadius + dư 1u).</summary>
-        static bool IsNearAnyConveyor(Bucket b, ConveyorSpline[] conveyors)
-        {
-            Vector3 p = b.MouthPosition;
-            foreach (var c in conveyors)
-            {
-                if (c == null) continue;
-                c.FindClosestProgress(p, out float dist);
-                if (dist <= c.HalfWidth + Mathf.Max(b.attractRadius, 1f) + 1f)
-                    return true;
-            }
-            return false;
         }
 
         static void CheckSupplyDemand(Bucket[] buckets, ModelDotSpawner[] spawners, List<LevelIssue> issues)

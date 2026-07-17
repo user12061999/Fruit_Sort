@@ -20,16 +20,12 @@ public class GamePanel : UIFrame
     [Header("[Time Freeze Booster]")]
     [Tooltip("Nút dùng booster đóng băng giờ. Để trống nếu chưa có UI.")]
     [SerializeField] private Button btnFreezeTime;
-    [Tooltip("Text hiển thị số booster đang có (con của nút).")]
-    [SerializeField] private TextMeshProUGUI txtFreezeCount;
     [Tooltip("Số giây đóng băng mỗi lần dùng.")]
     [SerializeField] private float freezeDuration = 10f;
 
     [Header("[Magnet Booster]")]
     [Tooltip("Nút dùng booster nam châm (hút dot đúng màu về giỏ sắp đầy nhất). Để trống nếu chưa có UI.")]
     [SerializeField] private Button btnMagnet;
-    [Tooltip("Text hiển thị số booster nam châm đang có (con của nút).")]
-    [SerializeField] private TextMeshProUGUI txtMagnetCount;
 
     [Header("[Combo & Cảnh báo dot]")]
     [Tooltip("Text hiện 'COMBO xN'. Để trống = tự tạo (clone style đồng hồ).")]
@@ -44,33 +40,13 @@ public class GamePanel : UIFrame
     private void Start()
     {
         btnPause.onClick.AddListener(PauseGame);
-        ApplyItemIcon(btnFreezeTime, ItemID.TimeFreezeBooster);
-        ApplyItemIcon(btnMagnet, ItemID.MagnetBooster);
         if (btnFreezeTime != null) btnFreezeTime.onClick.AddListener(OnClickFreezeTime);
         if (btnMagnet != null) btnMagnet.onClick.AddListener(OnClickMagnet);
         EventDispatcher.AddListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
         EventDispatcher.AddListener<GameEvent.LevelMovesChanged>(UpdateMovesLeft);
         EventDispatcher.AddListener<GameEvent.LevelCountdownChanged>(LevelCountdownChanged);
-        EventDispatcher.AddListener<GameEvent.PlayerInventoryChanged>(OnInventoryChanged);
         GamePlayManager.onComboChanged += OnComboChanged;
         GamePlayManager.onSupplyRiskChanged += OnSupplyRiskChanged;
-    }
-
-    private static void ApplyItemIcon(Button button, int itemId)
-    {
-        if (button == null || button.image == null)
-        {
-            return;
-        }
-
-        Sprite icon = ItemManager.GetIcon(itemId);
-        if (icon == null)
-        {
-            return;
-        }
-
-        button.image.sprite = icon;
-        button.image.preserveAspect = true;
     }
 
     private void OnDestroy()
@@ -78,7 +54,6 @@ public class GamePanel : UIFrame
         EventDispatcher.RemoveListener<GameEvent.LevelTimeChanged>(UpdateCountdownTime);
         EventDispatcher.RemoveListener<GameEvent.LevelMovesChanged>(UpdateMovesLeft);
         EventDispatcher.RemoveListener<GameEvent.LevelCountdownChanged>(LevelCountdownChanged);
-        EventDispatcher.RemoveListener<GameEvent.PlayerInventoryChanged>(OnInventoryChanged);
         GamePlayManager.onComboChanged -= OnComboChanged;
         GamePlayManager.onSupplyRiskChanged -= OnSupplyRiskChanged;
         DOTween.Kill(ComboFadeTweenId);
@@ -93,12 +68,6 @@ public class GamePanel : UIFrame
             btnFreezeTime.interactable = !args.IsPaused;
     }
 
-    private void OnInventoryChanged(GameEvent.PlayerInventoryChanged args)
-    {
-        if (args.ItemStackChange.Id == ItemID.TimeFreezeBooster) RefreshFreezeCount();
-        if (args.ItemStackChange.Id == ItemID.MagnetBooster) RefreshMagnetCount();
-    }
-
     private void OnClickFreezeTime()
     {
         ClassicLevelController controller = ClassicLevelController.instance;
@@ -110,7 +79,6 @@ public class GamePanel : UIFrame
             if (controller.FreezeCountdown(freezeDuration))
             {
                 GameData.Inventory.Remove(cost, "booster");
-                RefreshFreezeCount();
             }
         }
         else
@@ -122,14 +90,6 @@ public class GamePanel : UIFrame
                 if (c != null) c.FreezeCountdown(freezeDuration);
             });
         }
-    }
-
-    private void RefreshFreezeCount()
-    {
-        if (txtFreezeCount == null) return;
-        int count = GameData.Inventory.GetCount(ItemID.TimeFreezeBooster);
-        // Hết booster -> hiện icon ad thay số (dùng qua rewarded ad).
-        txtFreezeCount.text = count > 0 ? count.ToString() : "AD";
     }
 
     private void OnClickMagnet()
@@ -144,7 +104,6 @@ public class GamePanel : UIFrame
             if (controller.UseMagnetBooster())
             {
                 GameData.Inventory.Remove(cost, "booster");
-                RefreshMagnetCount();
             }
         }
         else
@@ -156,13 +115,6 @@ public class GamePanel : UIFrame
                 if (c != null) c.UseMagnetBooster();
             });
         }
-    }
-
-    private void RefreshMagnetCount()
-    {
-        if (txtMagnetCount == null) return;
-        int count = GameData.Inventory.GetCount(ItemID.MagnetBooster);
-        txtMagnetCount.text = count > 0 ? count.ToString() : "AD";
     }
 
     // ================= COMBO + CẢNH BÁO THIẾU DOT =================
@@ -254,8 +206,6 @@ public class GamePanel : UIFrame
         {
             SetMovesText(gamePlayManager.HasMoveLimit, gamePlayManager.MovesLeft);
         }
-        RefreshFreezeCount();
-        RefreshMagnetCount();
         // Ẩn text combo/cảnh báo còn sót từ ván trước.
         DOTween.Kill(ComboFadeTweenId);
         DOTween.Kill(SupplyBlinkTweenId);

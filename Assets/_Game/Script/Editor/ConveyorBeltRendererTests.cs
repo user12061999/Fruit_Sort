@@ -363,6 +363,73 @@ namespace FruitSort.EditorTests
             }
         }
 
+        [Test]
+        public void ClosedConveyor_FirstAndLastStripEdgesMatchAtSeam()
+        {
+            GameObject conveyorAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ConveyorPrefabPath);
+            ConveyorSpline conveyorPrefab = conveyorAsset.GetComponent<ConveyorSpline>();
+            LevelData data = ScriptableObject.CreateInstance<LevelData>();
+            data.conveyorPrefab = conveyorPrefab;
+            data.conveyors.Add(CreateClosedConveyor());
+
+            GameObject root = LevelBuilder.Build(data);
+            try
+            {
+                ConveyorBeltRenderer renderer = root.transform.Find("Belt_Closed")
+                    .GetComponent<ConveyorBeltRenderer>();
+                renderer.showWalls = true;
+                renderer.segments = 48;
+                renderer.BuildMesh();
+
+                Vector3[] vertices = renderer.GetComponent<MeshFilter>().sharedMesh.vertices;
+                int stripVertexCount = (Mathf.Max(2, renderer.segments) + 1) * 2;
+                for (int strip = 0; strip < 3; strip++)
+                {
+                    int first = strip * stripVertexCount;
+                    int last = first + stripVertexCount - 2;
+                    Assert.That(Vector3.Distance(vertices[first], vertices[last]),
+                        Is.LessThan(0.001f), $"Strip {strip} left edge must close without a gap.");
+                    Assert.That(Vector3.Distance(vertices[first + 1], vertices[last + 1]),
+                        Is.LessThan(0.001f), $"Strip {strip} right edge must close without a gap.");
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
+        public void ClosedConveyor_StartAndEndTangentsMatch()
+        {
+            GameObject conveyorAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ConveyorPrefabPath);
+            ConveyorSpline conveyorPrefab = conveyorAsset.GetComponent<ConveyorSpline>();
+            LevelData data = ScriptableObject.CreateInstance<LevelData>();
+            data.conveyorPrefab = conveyorPrefab;
+            data.conveyors.Add(CreateClosedConveyor());
+
+            GameObject root = LevelBuilder.Build(data);
+            try
+            {
+                ConveyorSpline conveyor = root.transform.Find("Belt_Closed")
+                    .GetComponent<ConveyorSpline>();
+
+                Assert.That(conveyor.TrySampleCenterline(0f, out Vector3 start, out Vector3 startTangent),
+                    Is.True);
+                Assert.That(conveyor.TrySampleCenterline(1f, out Vector3 end, out Vector3 endTangent),
+                    Is.True);
+                Assert.That(Vector3.Distance(start, end), Is.LessThan(0.001f));
+                Assert.That(Vector3.Dot(startTangent, endTangent), Is.GreaterThan(0.999f),
+                    "Movement tangent must be continuous when progress wraps from 1 back to 0.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(data);
+            }
+        }
+
         static LevelData CreateSplitJunctionData(ConveyorSpline conveyorPrefab)
         {
             LevelData data = ScriptableObject.CreateInstance<LevelData>();
@@ -399,6 +466,27 @@ namespace FruitSort.EditorTests
                 cornerRadius = 0f,
                 cornerSegments = 1,
                 knots = new List<Vector3> { start, end },
+            };
+        }
+
+        static LevelData.ConveyorData CreateClosedConveyor()
+        {
+            return new LevelData.ConveyorData
+            {
+                name = "Belt_Closed",
+                beltWidth = 1.4f,
+                closed = true,
+                straightEdges = true,
+                cornerRadius = 0.65f,
+                cornerSegments = 8,
+                rendererSegments = 48,
+                knots = new List<Vector3>
+                {
+                    new Vector3(-3f, 1.5f),
+                    new Vector3(3f, 1.5f),
+                    new Vector3(3f, -1.5f),
+                    new Vector3(-3f, -1.5f),
+                },
             };
         }
     }

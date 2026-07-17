@@ -106,7 +106,7 @@ namespace FruitSort.EditorTools
             {
                 float t = ts[i % ts.Length];
                 Vector3 onBelt = conveyor.GetPositionOnSpline(t, 0f);
-                Vector3 pos = onBelt + new Vector3(0f, 0.9f, 0f); // hơi cao hơn băng chuyền, trong attractRadius
+                Vector3 pos = onBelt + new Vector3(0f, 0.9f, 0f);
 
                 var b = new GameObject($"_FS_Bucket_{i}");
                 b.transform.position = pos;
@@ -119,9 +119,9 @@ namespace FruitSort.EditorTools
                 bucket.colorId = i;
                 bucket.color = Palette[i];
                 bucket.maxFill = 5;
-                bucket.attractRadius = 1.4f;
                 bucket.attractSpeed = 7f;
                 bucket.body = sr;
+                bucket.BindInputConveyor(conveyor);
             }
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());

@@ -159,6 +159,14 @@ namespace FruitSort
                 _tangents[i] = Normalize2D((Vector3)tangent);
             }
 
+            if (IsClosed && resolution >= 2)
+            {
+                _positions[resolution] = _positions[0];
+                Vector3 seamTangent = Normalize2D(_positions[1] - _positions[resolution - 1]);
+                _tangents[0] = seamTangent;
+                _tangents[resolution] = seamTangent;
+            }
+
             _length = CalculateLength(_positions);
             return _length > 0.0001f;
         }
@@ -274,7 +282,18 @@ namespace FruitSort
 
         void SmoothTangents()
         {
-            for (int i = 0; i <= _resolution; i++)
+            int first = 0;
+            int last = _resolution;
+            if (IsClosed && _resolution >= 2)
+            {
+                Vector3 seamTangent = Normalize2D(_positions[1] - _positions[_resolution - 1]);
+                _tangents[first] = seamTangent;
+                _tangents[last] = seamTangent;
+                first++;
+                last--;
+            }
+
+            for (int i = first; i <= last; i++)
             {
                 Vector3 tangent;
                 if (i == 0)

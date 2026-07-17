@@ -1080,6 +1080,8 @@ GameObject:
   - component: {fileID: 4974529723905783420}
   - component: {fileID: 9102577456345811778}
   - component: {fileID: 2080486473938874333}
+  - component: {fileID: 4017460211704334001}
+  - component: {fileID: 4984339707398985505}
   m_Layer: 5
   m_Name: btnFreezeTime
   m_TagString: Untagged
@@ -1106,7 +1108,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -188, y: 0}
-  m_SizeDelta: {x: 1080, y: 160}
+  m_SizeDelta: {x: 160, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4974529723905783420
 CanvasRenderer:
@@ -1200,6 +1202,40 @@ MonoBehaviour:
     volume: 1
     loop: 1
     delay: 0
+--- !u!114 &4017460211704334001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4248263210467196606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 887188ea90100d2499035c116b092f26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemView
+  onModelChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  imgIcon: {fileID: 4513859665510090653}
+  txtName: {fileID: 0}
+  txtAmount: {fileID: 4479082564643998642}
+  customValueFomat: 
+  animationValue: 1
+--- !u!114 &4984339707398985505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4248263210467196606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0922066103d14dd4e921129be794e577, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemListener
+  itemID: 4
+  itemView: {fileID: 4017460211704334001}
 --- !u!1 &4599355925023891451
 GameObject:
   m_ObjectHideFlags: 0
@@ -1805,6 +1841,8 @@ GameObject:
   - component: {fileID: 3780100759219979167}
   - component: {fileID: 3886769118853585653}
   - component: {fileID: 3870891929737586592}
+  - component: {fileID: 8287216334355912966}
+  - component: {fileID: 2367942694789073264}
   m_Layer: 5
   m_Name: btnMagnet
   m_TagString: Untagged
@@ -1831,7 +1869,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 92, y: 0}
-  m_SizeDelta: {x: 1080, y: 136}
+  m_SizeDelta: {x: 160, y: 136}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3780100759219979167
 CanvasRenderer:
@@ -1925,6 +1963,40 @@ MonoBehaviour:
     volume: 1
     loop: 1
     delay: 0
+--- !u!114 &8287216334355912966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7856774502221423777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 887188ea90100d2499035c116b092f26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemView
+  onModelChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  imgIcon: {fileID: 2277458175942681554}
+  txtName: {fileID: 0}
+  txtAmount: {fileID: 1736903719698151639}
+  customValueFomat: 
+  animationValue: 1
+--- !u!114 &2367942694789073264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7856774502221423777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0922066103d14dd4e921129be794e577, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemListener
+  itemID: 5
+  itemView: {fileID: 8287216334355912966}
 --- !u!1 &8066107050898224783
 GameObject:
   m_ObjectHideFlags: 0

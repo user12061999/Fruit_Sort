@@ -180,6 +180,38 @@ namespace FruitSort.EditorTests
         }
 
         [Test]
+        public void RefreshVisuals_PreservesPackageSpriteWhenDotPrefabChanges()
+        {
+            var spawnerObject = new GameObject("Spawner under test");
+            SpriteRenderer packageRenderer = spawnerObject.AddComponent<SpriteRenderer>();
+            ModelDotSpawner spawner = spawnerObject.AddComponent<ModelDotSpawner>();
+            spawner.packageSprite = packageRenderer;
+
+            Texture2D packageTexture = new Texture2D(1, 1);
+            Sprite packageSprite = Sprite.Create(packageTexture, new Rect(0, 0, 1, 1), Vector2.one * 0.5f);
+            packageRenderer.sprite = packageSprite;
+
+            var dotPrefabObject = new GameObject("Dot prefab under test");
+            SpriteRenderer dotRenderer = dotPrefabObject.AddComponent<SpriteRenderer>();
+            Dot dotPrefab = dotPrefabObject.AddComponent<Dot>();
+            Texture2D dotTexture = new Texture2D(1, 1);
+            Sprite dotSprite = Sprite.Create(dotTexture, new Rect(0, 0, 1, 1), Vector2.one * 0.5f);
+            dotRenderer.sprite = dotSprite;
+            spawner.dotPrefab = dotPrefab;
+
+            spawner.RefreshVisuals();
+
+            Assert.That(packageRenderer.sprite, Is.SameAs(packageSprite));
+
+            Object.DestroyImmediate(dotPrefabObject);
+            Object.DestroyImmediate(spawnerObject);
+            Object.DestroyImmediate(dotSprite);
+            Object.DestroyImmediate(dotTexture);
+            Object.DestroyImmediate(packageSprite);
+            Object.DestroyImmediate(packageTexture);
+        }
+
+        [Test]
         public void LaunchDot_UsesNormalizedDirectionAndConfiguredSpeed()
         {
             var managerObject = new GameObject("FallingPixelManager under test");

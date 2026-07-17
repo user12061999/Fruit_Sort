@@ -519,6 +519,7 @@ namespace FruitSort.EditorTools
             b.maxFill = _bucketMaxFill;
             if (_bucketLaunchDir.sqrMagnitude > 0.0001f) b.launchDirection = _bucketLaunchDir;
             if (b.fruitDatabase == null) b.fruitDatabase = _level.fruitDatabase;
+            b.BindInputConveyor(PickConveyor(b.MouthPosition, float.MaxValue));
             b.RefreshVisuals();
             MarkPrefabOverride(b);
             MarkPrefabOverride(b.fruitSprite);  // sprite quả đổi theo colorId
@@ -1237,12 +1238,20 @@ namespace FruitSort.EditorTools
             // ---- Buckets ----
             foreach (var b in Object.FindObjectsByType<Bucket>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
+                ConveyorSpline input = b.InputConveyor;
+                if (input == null || !index.ContainsKey(input))
+                    input = PickConveyor(b.MouthPosition, float.MaxValue);
+                b.BindInputConveyor(input);
+
                 _level.buckets.Add(new LevelData.BucketData
                 {
                     position = b.transform.position,
                     colorId = b.colorId,
                     maxFill = b.maxFill,
                     launchDirection = b.launchDirection,
+                    inputConveyor = input != null && index.TryGetValue(input, out int inputIndex)
+                        ? inputIndex
+                        : -1,
                 });
             }
 
