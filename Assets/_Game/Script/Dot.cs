@@ -126,6 +126,8 @@ namespace FruitSort
             if (currentHP <= 0)
             {
                 currentHP = 0;
+                if (EffectManager.Instance != null)
+                    EffectManager.Instance.Play(GameEffectType.DotDestroyed, transform.position);
                 return true;
             }
             return false;

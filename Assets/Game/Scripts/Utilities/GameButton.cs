@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine.EventSystems;
 using DG.Tweening;
 using HAVIGAME.Audios;
+using FruitSort;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -46,7 +47,7 @@ public class GameButton : Button, IPointerDownHandler, IPointerUpHandler {
         if (!pressAudio.IsEmpty) {
             pressAudio.Play();
         }
-        else {
+        else if (GameAudioLibrary.Active == null || !GameAudioLibrary.Active.PlayButtonClick()) {
             ConfigDatabase.Instance.DefaultButtonPressAudio.Play();
         }
     }

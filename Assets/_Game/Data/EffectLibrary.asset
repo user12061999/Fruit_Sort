@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b28d4611162dd6142b7d8af1ab7a924e, type: 3}
+  m_Name: EffectLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::FruitSort.EffectLibrary
+  effects:
+  - effectType: 1
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 9084ee25622fa7d4e826faafc0fdab4c, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 0.6
+    followTarget: 0
+  - effectType: 2
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 7626411c566d53c409764b2d408d7720, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 1
+    followTarget: 0
+  - effectType: 3
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 20f5d08885cbfcd4aace829942262bbb, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 0.6
+    followTarget: 0
+  - effectType: 4
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 9084ee25622fa7d4e826faafc0fdab4c, type: 3}
+    soundDelay: 0.05
+    volume: 1
+    cleanupDelay: 1
+    followTarget: 0
+  - effectType: 5
+    particlePrefab: {fileID: 1232391318599344, guid: 67c0f649764d5044d8d384e923c5138e, type: 3}
+    sound: {fileID: 8300000, guid: 2e4030392f203474d9d3c6518106c95b, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 1.5
+    followTarget: 1
+  - effectType: 6
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 7626411c566d53c409764b2d408d7720, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 1
+    followTarget: 0
+  - effectType: 7
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 74c3a2d114bc63b49af5e2dc8cd85143, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 1
+    followTarget: 0
+  - effectType: 8
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 20f5d08885cbfcd4aace829942262bbb, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 0.8
+    followTarget: 0
+  - effectType: 9
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 78c5316e824769944b2234ddbedb8416, type: 3}
+    soundDelay: 0.05
+    volume: 1
+    cleanupDelay: 2
+    followTarget: 0
+  - effectType: 10
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 8e25d835c7ef6914a865e4af8d65ac5f, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 1.5
+    followTarget: 0
+  - effectType: 11
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: 0f952eb35279cc246b585064938cea32, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 1
+    followTarget: 0
+  - effectType: 12
+    particlePrefab: {fileID: 1873985756121678, guid: 5f6d6d77f4d0d074a8033eac55e37e4b, type: 3}
+    sound: {fileID: 8300000, guid: b64f92f614845874284a3ddefe5e7b4f, type: 3}
+    soundDelay: 0
+    volume: 1
+    cleanupDelay: 0.8
+    followTarget: 0

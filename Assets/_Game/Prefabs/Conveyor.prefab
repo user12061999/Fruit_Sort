@@ -264,8 +264,8 @@ MonoBehaviour:
   segments: 959
   zOffset: 0.05
   renderConnections: 1
-  connectionSegments: 40
-  connectionMinLead: 0.9
+  connectionSegments: 500
+  connectionMinLead: 1.25
   connectionWidthFactor: 1.25
   connectionMaxProgress: 0.35
   straightConnectionDot: 0.995

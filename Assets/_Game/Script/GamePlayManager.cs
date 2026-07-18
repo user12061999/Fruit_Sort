@@ -152,6 +152,8 @@ namespace FruitSort
         void Start()
         {
             if (fallingManager == null) fallingManager = FallingPixelManager.Instance;
+            if (GameAudioLibrary.Active != null)
+                GameAudioLibrary.Active.PlayMusic(GameMusicTrack.Gameplay);
             // Đã khôi phục tiến trình từ save trước khi Start chạy -> không reset đè lên.
             if (!_progressRestored)
             {
@@ -423,6 +425,8 @@ namespace FruitSort
         {
             if (_state != PlayState.Playing) return;
             _state = PlayState.Won;
+            if (GameAudioLibrary.Active != null)
+                GameAudioLibrary.Active.PlayMusic(GameMusicTrack.Win);
             _loseReason = LoseReason.None;
             onWin?.Invoke();
         }
@@ -431,6 +435,8 @@ namespace FruitSort
         {
             if (_state != PlayState.Playing) return;
             _state = PlayState.Lost;
+            if (GameAudioLibrary.Active != null)
+                GameAudioLibrary.Active.PlayMusic(GameMusicTrack.Lose);
             _loseReason = reason;
             onLose?.Invoke();
         }

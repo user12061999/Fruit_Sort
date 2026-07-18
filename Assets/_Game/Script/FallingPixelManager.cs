@@ -436,6 +436,8 @@ namespace FruitSort
                 d.lateralOffset = lat;
                 d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
                 _posCache[idx] = pos;
+                if (EffectManager.Instance != null)
+                    EffectManager.Instance.Play(GameEffectType.DotLand, pos);
                 return;
             }
 
@@ -472,6 +474,8 @@ namespace FruitSort
                     ClearConnectionState(d);
                     d.lateralOffset = Random.Range(-conveyor.HalfWidth, conveyor.HalfWidth);
                     d.beltSpeedFactor = 1f + Random.Range(-speedJitter, speedJitter);
+                    if (EffectManager.Instance != null)
+                        EffectManager.Instance.Play(GameEffectType.DotLand, pos);
                 }
                 else
                 {

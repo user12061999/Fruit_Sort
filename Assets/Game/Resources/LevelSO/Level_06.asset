@@ -23,7 +23,7 @@ MonoBehaviour:
   moveLimit: 14
   conveyors:
   - name: Input
-    beltWidth: 2.5
+    beltWidth: 1
     closed: 0
     hasSwitch: 1
     hasSwitchSettings: 1
@@ -46,18 +46,18 @@ MonoBehaviour:
     switchInactiveBranchSortingOffset: 20
     switchActiveBranchOwnedKnotCount: 2
     switchActiveIndex: 0
-    hasRendererSettings: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.5
     cornerSegments: 8
-    bakeResolution: 96
+    bakeResolution: 500
     autoRebakeAtRuntime: 0
-    beltMaterial: {fileID: 0}
-    beltTexture: {fileID: 0}
-    rendererSegments: 64
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
     rendererZOffset: 0.05
     renderConnections: 1
-    connectionSegments: 16
+    connectionSegments: 40
     connectionMinLead: 0.9
     connectionWidthFactor: 1.25
     connectionMaxProgress: 0.35
@@ -65,19 +65,19 @@ MonoBehaviour:
     connectionSnapWidthFactor: 0.08
     tilesAcrossWidth: 1
     scrollSpeed: 0.5
-    showWalls: 0
-    wallWidth: 0.15
-    wallZOffset: -0.01
+    showWalls: 1
+    wallWidth: 0.5
+    wallZOffset: 0
     scrollWalls: 0
-    wallMaterialOuter: {fileID: 0}
-    wallTextureOuter: {fileID: 0}
-    wallMaterialInner: {fileID: 0}
-    wallTextureInner: {fileID: 0}
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
-    - {x: -8, y: 0, z: 0}
+    - {x: -5, y: 0, z: 0}
     - {x: -1, y: 0, z: 0}
   - name: Route_0
-    beltWidth: 2.5
+    beltWidth: 1
     closed: 0
     hasSwitch: 0
     hasSwitchSettings: 0
@@ -100,18 +100,18 @@ MonoBehaviour:
     switchInactiveBranchSortingOffset: 20
     switchActiveBranchOwnedKnotCount: 2
     switchActiveIndex: 0
-    hasRendererSettings: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.5
     cornerSegments: 8
-    bakeResolution: 96
+    bakeResolution: 500
     autoRebakeAtRuntime: 0
-    beltMaterial: {fileID: 0}
-    beltTexture: {fileID: 0}
-    rendererSegments: 64
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
     rendererZOffset: 0.05
     renderConnections: 1
-    connectionSegments: 16
+    connectionSegments: 40
     connectionMinLead: 0.9
     connectionWidthFactor: 1.25
     connectionMaxProgress: 0.35
@@ -119,19 +119,19 @@ MonoBehaviour:
     connectionSnapWidthFactor: 0.08
     tilesAcrossWidth: 1
     scrollSpeed: 0.5
-    showWalls: 0
-    wallWidth: 0.15
-    wallZOffset: -0.01
+    showWalls: 1
+    wallWidth: 0.5
+    wallZOffset: 0
     scrollWalls: 0
-    wallMaterialOuter: {fileID: 0}
-    wallTextureOuter: {fileID: 0}
-    wallMaterialInner: {fileID: 0}
-    wallTextureInner: {fileID: 0}
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
     - {x: -1, y: 0, z: 0}
-    - {x: 5, y: 4.5, z: 0}
+    - {x: -1, y: 3, z: 0}
   - name: Route_1
-    beltWidth: 2.5
+    beltWidth: 1
     closed: 0
     hasSwitch: 0
     hasSwitchSettings: 0
@@ -154,18 +154,18 @@ MonoBehaviour:
     switchInactiveBranchSortingOffset: 20
     switchActiveBranchOwnedKnotCount: 2
     switchActiveIndex: 0
-    hasRendererSettings: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.5
     cornerSegments: 8
-    bakeResolution: 96
+    bakeResolution: 500
     autoRebakeAtRuntime: 0
-    beltMaterial: {fileID: 0}
-    beltTexture: {fileID: 0}
-    rendererSegments: 64
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
     rendererZOffset: 0.05
     renderConnections: 1
-    connectionSegments: 16
+    connectionSegments: 40
     connectionMinLead: 0.9
     connectionWidthFactor: 1.25
     connectionMaxProgress: 0.35
@@ -173,19 +173,19 @@ MonoBehaviour:
     connectionSnapWidthFactor: 0.08
     tilesAcrossWidth: 1
     scrollSpeed: 0.5
-    showWalls: 0
-    wallWidth: 0.15
-    wallZOffset: -0.01
+    showWalls: 1
+    wallWidth: 0.5
+    wallZOffset: 0
     scrollWalls: 0
-    wallMaterialOuter: {fileID: 0}
-    wallTextureOuter: {fileID: 0}
-    wallMaterialInner: {fileID: 0}
-    wallTextureInner: {fileID: 0}
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
     - {x: -1, y: 0, z: 0}
-    - {x: 5, y: 0, z: 0}
+    - {x: 2, y: 0, z: 0}
   - name: Route_2
-    beltWidth: 2.5
+    beltWidth: 1
     closed: 0
     hasSwitch: 0
     hasSwitchSettings: 0
@@ -208,18 +208,18 @@ MonoBehaviour:
     switchInactiveBranchSortingOffset: 20
     switchActiveBranchOwnedKnotCount: 2
     switchActiveIndex: 0
-    hasRendererSettings: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.5
     cornerSegments: 8
-    bakeResolution: 96
+    bakeResolution: 500
     autoRebakeAtRuntime: 0
-    beltMaterial: {fileID: 0}
-    beltTexture: {fileID: 0}
-    rendererSegments: 64
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
     rendererZOffset: 0.05
     renderConnections: 1
-    connectionSegments: 16
+    connectionSegments: 40
     connectionMinLead: 0.9
     connectionWidthFactor: 1.25
     connectionMaxProgress: 0.35
@@ -227,17 +227,17 @@ MonoBehaviour:
     connectionSnapWidthFactor: 0.08
     tilesAcrossWidth: 1
     scrollSpeed: 0.5
-    showWalls: 0
-    wallWidth: 0.15
-    wallZOffset: -0.01
+    showWalls: 1
+    wallWidth: 0.5
+    wallZOffset: 0
     scrollWalls: 0
-    wallMaterialOuter: {fileID: 0}
-    wallTextureOuter: {fileID: 0}
-    wallMaterialInner: {fileID: 0}
-    wallTextureInner: {fileID: 0}
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
     - {x: -1, y: 0, z: 0}
-    - {x: 5, y: -4.5, z: 0}
+    - {x: -1, y: -3, z: 0}
   conveyorLinks:
   - from: 0
     to: 1
@@ -246,33 +246,36 @@ MonoBehaviour:
   - from: 0
     to: 3
   buckets:
-  - position: {x: 5, y: 4.5, z: 0}
-    colorId: 0
+  - position: {x: -1, y: -3.5, z: 0}
+    colorId: 2
     maxFill: 100
-    launchDirection: {x: -1, y: 0}
-  - position: {x: 5, y: 0, z: 0}
+    launchDirection: {x: -0.00000004371139, y: 1}
+    inputConveyor: 3
+  - position: {x: 2.5, y: 0, z: 0}
     colorId: 1
     maxFill: 100
     launchDirection: {x: -1, y: 0}
-  - position: {x: 5, y: -4.5, z: 0}
-    colorId: 2
+    inputConveyor: 2
+  - position: {x: -1, y: 3.5, z: 0}
+    colorId: 0
     maxFill: 100
-    launchDirection: {x: -1, y: 0}
+    launchDirection: {x: -0.00000004371139, y: -1}
+    inputConveyor: 1
   spawners:
-  - position: {x: -8, y: 3.5, z: 0}
-    fixedColorId: 0
+  - position: {x: -4.5, y: -1.2, z: 0}
+    fixedColorId: 2
     totalDots: 100
     spawnCount: 25
-    launchDirection: {x: 1, y: 0}
+    launchDirection: {x: -0.00000004371139, y: 1}
     launchSpeed: 12
-  - position: {x: -8, y: 1.9, z: 0}
+  - position: {x: -4.5, y: 1.15, z: 0}
     fixedColorId: 1
     totalDots: 100
     spawnCount: 25
-    launchDirection: {x: 1, y: 0}
+    launchDirection: {x: -0.00000004371139, y: -1}
     launchSpeed: 12
-  - position: {x: -8, y: 0.29999995, z: 0}
-    fixedColorId: 2
+  - position: {x: -5.5, y: 0, z: 0}
+    fixedColorId: 0
     totalDots: 100
     spawnCount: 25
     launchDirection: {x: 1, y: 0}

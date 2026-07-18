@@ -16,56 +16,160 @@ MonoBehaviour:
   spawnerPrefab: {fileID: 7586780288578330236, guid: 15095b628e9ae4949a0934e2a4df70c1, type: 3}
   columnPrefab: {fileID: 2732737590822570767, guid: 0140749776e76c544a08ff732eb76360, type: 3}
   conveyorPrefab: {fileID: 8734211276015217555, guid: 3cac9b7b6eabe7c409e9905b9eda177d, type: 3}
+  obstaclePrefab: {fileID: 0}
+  grinderPrefab: {fileID: 0}
   fruitDatabase: {fileID: 11400000, guid: 667ce4a834fb82c4f94a141d2cdbbf8b, type: 2}
   timeLimit: 0
+  moveLimit: 0
   conveyors:
-  - name: Belt_Top
-    beltWidth: 1
-    closed: 1
-    straightEdges: 1
-    cornerRadius: 0.7
-    cornerSegments: 12
-    knots:
-    - {x: -2.2, y: 3.5, z: 0}
-    - {x: 2.2, y: 3.5, z: 0}
-    - {x: 2.2, y: 4.9, z: 0}
-    - {x: -2.2, y: 4.9, z: 0}
   - name: Belt_Bottom
     beltWidth: 1
     closed: 1
+    hasSwitch: 0
+    hasSwitchSettings: 0
+    switchClickRadius: 1.1
+    switchBranchClickPadding: 0.15
+    switchBranchClickStartProgress: 0.08
+    switchLinkedBranchSprite: {fileID: 0}
+    switchIndicatorColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+    switchLinkedSpriteProgress: 0.35
+    switchLinkedSpriteSize: 0.45
+    switchLinkedSpriteSortingOrder: 60
+    switchUseCombinedRenderer: 0
+    switchLinkedKnotCount: 0
+    switchHideSourceRenderer: 1
+    switchCombinedRendererZOffset: -0.002
+    switchDuplicateKnotTolerance: 0.01
+    switchCombinedSortingOrderOffset: 1
+    switchInactiveDimAlpha: 0.45
+    switchInactiveBranchZOffset: 0.35
+    switchInactiveBranchSortingOffset: 20
+    switchActiveBranchOwnedKnotCount: 2
+    switchActiveIndex: 0
+    hasRendererSettings: 1
     straightEdges: 1
     cornerRadius: 0.7
     cornerSegments: 12
+    bakeResolution: 500
+    autoRebakeAtRuntime: 0
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
+    rendererZOffset: 0.05
+    renderConnections: 1
+    connectionSegments: 40
+    connectionMinLead: 0.9
+    connectionWidthFactor: 1.25
+    connectionMaxProgress: 0.35
+    straightConnectionDot: 0.995
+    connectionSnapWidthFactor: 0.08
+    tilesAcrossWidth: 1
+    scrollSpeed: 0.5
+    showWalls: 1
+    wallWidth: 0.5
+    wallZOffset: 0
+    scrollWalls: 0
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
     knots:
     - {x: -2.2, y: -1.2, z: 0}
     - {x: 2.2, y: -1.2, z: 0}
     - {x: 2.2, y: 0.2, z: 0}
     - {x: -2.2, y: 0.2, z: 0}
+  - name: Belt_Top
+    beltWidth: 1
+    closed: 1
+    hasSwitch: 0
+    hasSwitchSettings: 0
+    switchClickRadius: 1.1
+    switchBranchClickPadding: 0.15
+    switchBranchClickStartProgress: 0.08
+    switchLinkedBranchSprite: {fileID: 0}
+    switchIndicatorColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+    switchLinkedSpriteProgress: 0.35
+    switchLinkedSpriteSize: 0.45
+    switchLinkedSpriteSortingOrder: 60
+    switchUseCombinedRenderer: 0
+    switchLinkedKnotCount: 0
+    switchHideSourceRenderer: 1
+    switchCombinedRendererZOffset: -0.002
+    switchDuplicateKnotTolerance: 0.01
+    switchCombinedSortingOrderOffset: 1
+    switchInactiveDimAlpha: 0.45
+    switchInactiveBranchZOffset: 0.35
+    switchInactiveBranchSortingOffset: 20
+    switchActiveBranchOwnedKnotCount: 2
+    switchActiveIndex: 0
+    hasRendererSettings: 1
+    straightEdges: 1
+    cornerRadius: 0.7
+    cornerSegments: 12
+    bakeResolution: 500
+    autoRebakeAtRuntime: 0
+    beltMaterial: {fileID: 2100000, guid: c76a3c0446a84bc4cbb65ec20806b9a3, type: 2}
+    beltTexture: {fileID: 2800000, guid: d47be5305d31ea8409421308e1f88874, type: 3}
+    rendererSegments: 959
+    rendererZOffset: 0.05
+    renderConnections: 1
+    connectionSegments: 40
+    connectionMinLead: 0.9
+    connectionWidthFactor: 1.25
+    connectionMaxProgress: 0.35
+    straightConnectionDot: 0.995
+    connectionSnapWidthFactor: 0.08
+    tilesAcrossWidth: 1
+    scrollSpeed: 0.5
+    showWalls: 1
+    wallWidth: 0.5
+    wallZOffset: 0
+    scrollWalls: 0
+    wallMaterialOuter: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureOuter: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    wallMaterialInner: {fileID: 2100000, guid: 2753d6276b2c8544c95056972fa129d6, type: 2}
+    wallTextureInner: {fileID: 2800000, guid: ed98cbf30fc704b44ad4ed01931c43c8, type: 3}
+    knots:
+    - {x: -2.2, y: 3.5, z: 0}
+    - {x: 2.2, y: 3.5, z: 0}
+    - {x: 2.2, y: 4.9, z: 0}
+    - {x: -2.2, y: 4.9, z: 0}
   conveyorLinks: []
   buckets:
-  - position: {x: -2, y: 6.1, z: 0}
-    colorId: 0
-    maxFill: 5
-    launchDirection: {x: 0, y: -1}
-  - position: {x: 0, y: 6.1, z: 0}
-    colorId: 1
-    maxFill: 5
-    launchDirection: {x: 0, y: -1}
   - position: {x: 2, y: 6.1, z: 0}
     colorId: 2
     maxFill: 5
     launchDirection: {x: 0, y: -1}
-  - position: {x: -1.2, y: -2.4, z: 0}
-    colorId: 3
+    inputConveyor: 1
+  - position: {x: 0, y: 6.1, z: 0}
+    colorId: 1
     maxFill: 5
-    launchDirection: {x: 0, y: 1}
+    launchDirection: {x: 0, y: -1}
+    inputConveyor: 1
   - position: {x: 1.2, y: -2.4, z: 0}
     colorId: 0
     maxFill: 5
     launchDirection: {x: 0, y: 1}
+    inputConveyor: 0
+  - position: {x: -1.2, y: -2.4, z: 0}
+    colorId: 3
+    maxFill: 5
+    launchDirection: {x: 0, y: 1}
+    inputConveyor: 0
+  - position: {x: -2, y: 6.1, z: 0}
+    colorId: 0
+    maxFill: 5
+    launchDirection: {x: 0, y: -1}
+    inputConveyor: 1
   spawners:
-  - position: {x: -2.3, y: 2.3, z: 0}
-    fixedColorId: 0
+  - position: {x: 1.15, y: 1.4, z: 0}
+    fixedColorId: 3
+    totalDots: 7
+    spawnCount: 4
+    launchDirection: {x: 0, y: -1}
+    launchSpeed: 10
+  - position: {x: 0, y: 2.3, z: 0}
+    fixedColorId: 2
     totalDots: 7
     spawnCount: 4
     launchDirection: {x: 0, y: 1}
@@ -76,17 +180,11 @@ MonoBehaviour:
     spawnCount: 4
     launchDirection: {x: 0, y: 1}
     launchSpeed: 10
-  - position: {x: 0, y: 2.3, z: 0}
-    fixedColorId: 2
+  - position: {x: -2.3, y: 2.3, z: 0}
+    fixedColorId: 0
     totalDots: 7
     spawnCount: 4
     launchDirection: {x: 0, y: 1}
-    launchSpeed: 10
-  - position: {x: 1.15, y: 1.4, z: 0}
-    fixedColorId: 3
-    totalDots: 7
-    spawnCount: 4
-    launchDirection: {x: 0, y: -1}
     launchSpeed: 10
   - position: {x: 2.3, y: 1.4, z: 0}
     fixedColorId: 0
@@ -95,3 +193,5 @@ MonoBehaviour:
     launchDirection: {x: 0, y: -1}
     launchSpeed: 10
   columns: []
+  obstacles: []
+  grinders: []

@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f506e8f17b3f78440a8ca868f820abcb, type: 3}
+  m_Name: GameAudioLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::FruitSort.GameAudioLibrary
+  buttonClick:
+    clip: {fileID: 8300000, guid: 80126d1b2de87fc48b9179d5193e5e63, type: 3}
+    channel: 2
+    volume: 0.5
+    loop: 0
+    delay: 0
+  screenClick:
+    clip: {fileID: 8300000, guid: b64f92f614845874284a3ddefe5e7b4f, type: 3}
+    channel: 2
+    volume: 0.3
+    loop: 0
+    delay: 0
+  dotDestroyed:
+    clip: {fileID: 8300000, guid: b64f92f614845874284a3ddefe5e7b4f, type: 3}
+    channel: 2
+    volume: 0.45
+    loop: 0
+    delay: 0
+  dotLand:
+    clip: {fileID: 8300000, guid: b64f92f614845874284a3ddefe5e7b4f, type: 3}
+    channel: 2
+    volume: 0.25
+    loop: 0
+    delay: 0
+  bucketReceive:
+    clip: {fileID: 8300000, guid: 80126d1b2de87fc48b9179d5193e5e63, type: 3}
+    channel: 2
+    volume: 0.35
+    loop: 0
+    delay: 0.05
+  bucketComplete:
+    clip: {fileID: 8300000, guid: 898a91fe99f5ebc4dab247f8f56e8860, type: 3}
+    channel: 2
+    volume: 0.75
+    loop: 0
+    delay: 0
+  bucketRelease:
+    clip: {fileID: 8300000, guid: b64f92f614845874284a3ddefe5e7b4f, type: 3}
+    channel: 2
+    volume: 0.5
+    loop: 0
+    delay: 0
+  menuMusic:
+    clip: {fileID: 8300000, guid: 18f87f3f87cef6944939a2fe83ee0adc, type: 3}
+    channel: 1
+    volume: 0.5
+    loop: 1
+    delay: 0
+  gameplayMusic:
+    clip: {fileID: 8300000, guid: 2457db8c04ed59e4c933fec32d5dd00f, type: 3}
+    channel: 1
+    volume: 0.45
+    loop: 1
+    delay: 0
+  winMusic:
+    clip: {fileID: 8300000, guid: 898a91fe99f5ebc4dab247f8f56e8860, type: 3}
+    channel: 1
+    volume: 0.6
+    loop: 0
+    delay: 0
+  loseMusic:
+    clip: {fileID: 8300000, guid: 166aae3135f37e342b24c41cba317391, type: 3}
+    channel: 1
+    volume: 0.5
+    loop: 0
+    delay: 0

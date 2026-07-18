@@ -364,6 +364,8 @@ namespace FruitSort
             d.transform.DOLocalRotate(Vector3.zero, dropDuration);
 
             AddFill(1);
+            if (EffectManager.Instance != null)
+                EffectManager.Instance.Play(GameEffectType.BucketReceive, targetWorld);
             return true;
         }
 
@@ -407,6 +409,8 @@ namespace FruitSort
                 return false;
 
             // Hủy đặt chỗ các dot đang bay tới (chưa vào giỏ) -> trả về belt.
+            if (EffectManager.Instance != null)
+                EffectManager.Instance.Play(GameEffectType.BucketRelease, MouthPosition);
             CancelAllReservations();
 
             List<Dot> returning = new List<Dot>(_contained);
@@ -607,6 +611,8 @@ namespace FruitSort
         void DoFull()
         {
             _full = true;
+            if (EffectManager.Instance != null)
+                EffectManager.Instance.Play(GameEffectType.BucketComplete, transform);
             if (GamePlayManager.Instance != null) GamePlayManager.Instance.OnBucketFilled(this);
             if (FallingPixelManager.Instance != null) FallingPixelManager.Instance.UnregisterBucket(this);
 
